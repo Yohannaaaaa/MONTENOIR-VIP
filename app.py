@@ -1,13 +1,10 @@
 from flask import Flask, render_template_string, request
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit, join_room
 import random, string, os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'codenamesvip'
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*"
-)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 rooms = {}
 MAX_PLAYERS = 10
 
@@ -123,9 +120,13 @@ function renderStats(st){scoreText.innerHTML='🏆 Mavi: '+st.blueWins+' | Kırm
 function renderGame(g){board.innerHTML='';blueCount.innerHTML=g.blueCount;redCount.innerHTML=g.redCount;phaseText.innerHTML=g.phase+((g.guessLimit&&g.guessLimit>0)?'<br>🎯 Tahmin hakkı: '+g.guessesMade+' / '+g.guessLimit:'');clueDisplay.innerHTML=g.clue;turnDisplay.innerHTML=g.turn==='blue'?'🔵 Sıra Mavi Takımda':'🔴 Sıra Kırmızı Takımda';clueLog.innerHTML=(g.clueLog&&g.clueLog.length)?'📜 Oyun bandı:<br>'+g.clueLog.slice(-8).reverse().join('<br>'):'📜 Oyun bandı: Henüz ipucu yok.';if(g.moveLog&&g.moveLog.length)clueLog.innerHTML+='<hr>🃏 Kart kaydı:<br>'+g.moveLog.slice(-8).reverse().join('<br>');g.cards.forEach((c,i)=>{let cls='card';if(c.guessed)cls+=' guessed';if(c.open||canSeeRole()||g.winner)cls+=' open '+c.role+'Card';let names=(c.guessedBy||[]).join(', '),gb=names?`<div class='guessName'>🎯 ${names}</div>`:'';board.innerHTML+=`<div class="${cls}" onclick="toggleGuess(${i})"><button class="revealBtn" onclick="revealCard(${i}, event)">A♠</button><button class="guessBtn" onclick="showGuesses(${i}, event)">Tahmin</button>${c.word}${gb}</div>`});if(g.winner)showWinner(g.winner)}function showWinner(t){winnerText.innerHTML=t;winnerOverlay.style.display='flex';setTimeout(()=>winnerOverlay.style.display='none',5000)}function updateTimerDisplay(){let m=Math.floor(seconds/60),s=seconds%60;timer.innerHTML=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function startTimer(){if(timerRunning)return;timerRunning=true;timerInterval=setInterval(()=>{if(seconds>0){seconds--;updateTimerDisplay()}},1000)}function pauseTimer(){timerRunning=false;clearInterval(timerInterval)}function setTimer(v){pauseTimer();seconds=v;updateTimerDisplay()}
 socket.on('connect',()=>{mySid=socket.id;restoreLocalFields()});socket.on('room_created',d=>{roomCode=d.room;isAdmin=true;roomText.innerHTML='Oda: '+roomCode+' 👑 Admin sensin';saveLocalProfile()});socket.on('room_joined',d=>{roomCode=d.room;isAdmin=false;roomText.innerHTML='Oda: '+roomCode;saveLocalProfile()});socket.on('error_msg',d=>alert(d.msg));socket.on('players_update',d=>renderPlayers(d.players,d.locks));socket.on('game_update',d=>{let me=d.players.find(p=>p.sid===mySid||p.name===myName);if(me){myName=me.name;myTeam=me.team;myRole=me.role;isAdmin=me.isAdmin;currentChips=me.chips||1000;setSavedChips(myName,currentChips);saveLocalProfile()}lobby.classList.add('hidden');gameScreen.classList.remove('hidden');roleText.innerHTML='Bu cihazda: '+myName+' · Rol: '+roleLabel(myRole);chipsText.innerHTML='🪙 Jeton: '+currentChips;betChips.innerHTML=currentChips;shopChips.innerHTML=currentChips;renderPlayers(d.players,d.locks);renderStats(d.stats);renderBets(d.bets);renderGame(d.game)});socket.on('chat_update',d=>{messages.innerHTML+='<b>'+d.name+':</b> '+d.msg+'<br>'});socket.on('kicked',()=>{alert('Odadan çıkarıldın.');localStorage.clear();location.reload()});socket.on('made_spectator',()=>{myRole='spectator';myTeam='spectator';saveLocalProfile();alert('Seyirci moduna alındın.')});socket.on('guess_names',d=>{alert('Bu kartı tahmin edenler: '+((d.names&&d.names.length)?d.names.join(', '):'Henüz tahmin yok.'))});updateTimerDisplay();
 </script></body></html>
+HTML = r'''
+<!DOCTYPE html>
+<html>
+</html>
 '''
 
-@app.route('/')
+@app.route("/")
 def index():
     return render_template_string(HTML)
 
