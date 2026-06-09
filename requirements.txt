@@ -1,3 +1,6 @@
 flask
 flask-socketio
 gunicorn
+eventlet==0.33.3
+python-socketio==5.11.2
+python-engineio==4.9.0
