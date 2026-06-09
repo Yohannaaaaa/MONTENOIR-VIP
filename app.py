@@ -4,7 +4,7 @@ import random, string, os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'codenamesvip'
-socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode='eventlet')
 rooms = {}
 MAX_PLAYERS = 10
 
