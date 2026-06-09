@@ -1,5 +1,5 @@
 from flask import Flask, render_template_string, request
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO
 import random, string, os
 
 app = Flask(__name__)
