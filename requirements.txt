@@ -4,4 +4,3 @@ python-socketio==5.11.2
 python-engineio==4.9.0
 gunicorn==22.0.0
 simple-websocket
-eventlet==0.40.3
