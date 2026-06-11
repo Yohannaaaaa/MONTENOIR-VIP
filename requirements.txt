@@ -1,6 +1,6 @@
 Flask
 Flask-SocketIO
-gunicorn
-eventlet
 python-socketio
 python-engineio
+gunicorn
+eventlet>=0.24.1
