@@ -4,179 +4,70 @@ html, body{
     width:100%;
     height:100%;
     overflow:hidden;
-    font-family:'Cinzel', Georgia, serif;
-}
-
-body{
-    color:#f4d27a;
     background:#000;
+    font-family:Georgia, serif;
 }
 
-/* IMAGE DE COUVERTURE PLEIN ÉCRAN */
-.lux-bg{
+.cover-bg{
     position:fixed;
-    top:0;
-    left:0;
-    width:100vw;
-    height:100vh;
+    inset:0;
     background-image:url("/static/PAGEDECOUVERTURE.lux.site.jpeg");
-    background-size:cover;
-    background-position:center center;
+    background-size:100% 100%;
+    background-position:center;
     background-repeat:no-repeat;
     z-index:0;
 }
 
-/* FILTRE SOMBRE */
-.lux-overlay{
+.cover-overlay{
     position:fixed;
     inset:0;
-    background:
-        linear-gradient(
-            rgba(0,0,0,.25),
-            rgba(0,0,0,.55)
-        );
+    background:rgba(0,0,0,0.12);
     z-index:1;
 }
 
-/* HEADER */
-.lux-header{
-    position:relative;
-    z-index:10;
+.home-buttons{
+    position:fixed;
+    left:50%;
+    bottom:70px;
+    transform:translateX(-50%);
+    z-index:5;
     display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:25px 40px;
+    gap:28px;
 }
 
-.logo{
-    font-size:34px;
-    font-weight:900;
-    letter-spacing:4px;
-    color:#ffd76a;
-    text-shadow:
-        0 0 10px #d4af37,
-        0 0 25px #d4af37,
-        0 0 40px #000;
-}
-
-.header-buttons{
-    display:flex;
-    gap:15px;
-}
-
-/* BOUTONS */
-.header-buttons button,
-.gold-button{
-    background:
-        linear-gradient(
-            145deg,
-            #fff6c2,
-            #e0b84a 45%,
-            #8b5b00
-        );
-
-    color:#120800;
-    border:none;
-    border-radius:18px;
-    padding:14px 28px;
-    font-size:16px;
-    font-weight:900;
+.lux-button{
+    min-width:210px;
+    text-align:center;
+    padding:16px 34px;
+    border-radius:24px;
     text-decoration:none;
-    cursor:pointer;
-
+    font-size:20px;
+    font-weight:900;
+    color:#120800;
+    background:linear-gradient(145deg,#fff2a8,#d4af37 45%,#7b4a00);
+    border:2px solid #fff0a8;
     box-shadow:
-        0 0 15px rgba(212,175,55,.6),
-        inset 0 0 10px rgba(255,255,255,.5);
-
+        0 0 22px rgba(212,175,55,.8),
+        inset 0 0 14px rgba(255,255,255,.45);
     transition:.25s;
 }
 
-.header-buttons button:hover,
-.gold-button:hover{
-    transform:translateY(-2px) scale(1.05);
-
+.lux-button:hover{
+    transform:translateY(-4px) scale(1.05);
     box-shadow:
-        0 0 25px rgba(212,175,55,.9),
-        0 0 40px rgba(212,175,55,.5);
+        0 0 35px rgba(212,175,55,1),
+        0 0 60px rgba(212,175,55,.6);
 }
 
-/* CONTENU CENTRE */
-.center-content{
-    position:relative;
-    z-index:10;
-
-    height:75vh;
-
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-
-    text-align:center;
-}
-
-.center-content h1{
-    margin:0;
-
-    font-size:78px;
-    letter-spacing:8px;
-
-    color:#ffd76a;
-
-    text-shadow:
-        0 0 15px #d4af37,
-        0 0 30px #d4af37,
-        0 0 50px #000;
-}
-
-.slogan{
-    margin-top:15px;
-
-    font-size:22px;
-    letter-spacing:6px;
-
-    color:#fff0b0;
-}
-
-.main-buttons{
-    margin-top:35px;
-
-    display:flex;
-    gap:25px;
-}
-
-/* FOOTER */
-footer{
-    position:fixed;
-
-    bottom:18px;
-    left:0;
-    right:0;
-
-    z-index:10;
-
-    text-align:center;
-
-    color:#d4af37;
-
-    letter-spacing:14px;
-    font-size:24px;
-
-    text-shadow:0 0 12px #d4af37;
-}
-
-/* MOBILE */
-@media(max-width:900px){
-
-    .center-content h1{
-        font-size:42px;
-    }
-
-    .main-buttons{
+@media(max-width:800px){
+    .home-buttons{
         flex-direction:column;
+        bottom:45px;
+        gap:16px;
     }
 
-    .header-buttons{
-        display:none;
+    .lux-button{
+        min-width:230px;
+        font-size:18px;
     }
 }
