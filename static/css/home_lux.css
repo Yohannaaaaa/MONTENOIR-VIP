@@ -21,8 +21,35 @@ html, body{
 .cover-overlay{
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,0.12);
+    background:rgba(0,0,0,0.08);
     z-index:1;
+}
+
+.lux-header{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:5;
+    display:flex;
+    justify-content:space-between;
+    padding:24px 34px;
+}
+
+.header-buttons{
+    display:flex;
+    gap:14px;
+}
+
+.small-lux-button{
+    text-decoration:none;
+    color:#120800;
+    font-weight:900;
+    padding:12px 22px;
+    border-radius:18px;
+    background:linear-gradient(145deg,#fff2a8,#d4af37 45%,#7b4a00);
+    border:2px solid #fff0a8;
+    box-shadow:0 0 18px rgba(212,175,55,.8);
 }
 
 .home-buttons{
@@ -46,17 +73,68 @@ html, body{
     color:#120800;
     background:linear-gradient(145deg,#fff2a8,#d4af37 45%,#7b4a00);
     border:2px solid #fff0a8;
-    box-shadow:
-        0 0 22px rgba(212,175,55,.8),
-        inset 0 0 14px rgba(255,255,255,.45);
-    transition:.25s;
+    box-shadow:0 0 22px rgba(212,175,55,.8), inset 0 0 14px rgba(255,255,255,.45);
+    cursor:pointer;
 }
 
-.lux-button:hover{
-    transform:translateY(-4px) scale(1.05);
-    box-shadow:
-        0 0 35px rgba(212,175,55,1),
-        0 0 60px rgba(212,175,55,.6);
+.lux-button:hover,
+.small-lux-button:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 35px rgba(212,175,55,1);
+}
+
+.games-panel{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%) scale(.9);
+    width:620px;
+    max-width:90vw;
+    z-index:20;
+    display:none;
+    padding:28px;
+    border-radius:28px;
+    background:rgba(0,0,0,.88);
+    border:2px solid #d4af37;
+    box-shadow:0 0 45px rgba(212,175,55,.8);
+    text-align:center;
+}
+
+.games-panel.show{
+    display:block;
+}
+
+.games-panel h2{
+    color:#ffd76a;
+    font-size:32px;
+    margin-top:0;
+    text-shadow:0 0 18px #d4af37;
+}
+
+.games-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+}
+
+.games-grid a{
+    text-decoration:none;
+    color:#120800;
+    font-weight:900;
+    padding:16px;
+    border-radius:18px;
+    background:linear-gradient(145deg,#fff2a8,#d4af37 45%,#7b4a00);
+    border:1px solid #fff0a8;
+}
+
+.close-btn{
+    margin-top:22px;
+    padding:12px 28px;
+    border-radius:18px;
+    border:1px solid #d4af37;
+    background:#050505;
+    color:#d4af37;
+    font-weight:900;
 }
 
 @media(max-width:800px){
@@ -66,8 +144,12 @@ html, body{
         gap:16px;
     }
 
-    .lux-button{
-        min-width:230px;
-        font-size:18px;
+    .header-buttons{
+        right:15px;
+        gap:8px;
+    }
+
+    .games-grid{
+        grid-template-columns:1fr;
     }
 }
