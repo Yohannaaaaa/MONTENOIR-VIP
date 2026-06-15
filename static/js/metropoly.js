@@ -388,3 +388,46 @@ socket.on("monopoly_animate_move", d => {
 window.addEventListener("resize", () => {
   if(currentState) render(currentState);
 });
+function createRoom(){
+    myName = name();
+    localStorage.setItem("metropolyUser", myName);
+
+    socket.emit("monopoly_create_room", {
+        username: myName,
+        token: document.getElementById("tokenSelect").value
+    });
+}
+
+function joinRoom(){
+    myName = name();
+    localStorage.setItem("metropolyUser", myName);
+
+    socket.emit("monopoly_join_room", {
+        username: myName,
+        token: document.getElementById("tokenSelect").value,
+        code: document.getElementById("roomCodeInput").value.trim().toUpperCase()
+    });
+}
+
+function startGame(){
+    if(!roomCode){
+        alert("Önce oda oluştur veya odaya gir.");
+        return;
+    }
+
+    socket.emit("monopoly_start_game", {
+        code: roomCode
+    });
+}
+
+function rollDice(){
+    if(!roomCode || !myName){
+        alert("Önce odaya gir.");
+        return;
+    }
+
+    socket.emit("monopoly_roll_dice", {
+        code: roomCode,
+        username: myName
+    });
+}
