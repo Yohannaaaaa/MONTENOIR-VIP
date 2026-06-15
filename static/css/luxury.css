@@ -1,1 +1,25 @@
 
+body{
+    margin:0;
+    padding:0;
+    background:#000;
+    color:#d4af37;
+    font-family:Georgia,serif;
+}
+
+.hero{
+    min-height:100vh;
+    background-image:url("/static/PAGEDECOUVERTURE.lux.site.jpeg");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+}
+
+button{
+    background:linear-gradient(#f5d67b,#b8860b);
+    border:none;
+    border-radius:20px;
+    color:black;
+    font-weight:bold;
+    padding:12px 24px;
+}
