@@ -1,29 +1,103 @@
 html, body{
     margin:0;
     padding:0;
+    width:100%;
     min-height:100%;
+    overflow:hidden;
+    font-family: "Cinzel", Georgia, serif;
 }
 
 body{
-    background: url("/static/PAGEDECOUVERTURE.lux.site.jpeg") center center/cover no-repeat fixed !important;
-    color:#d4af37;
+    background:#050505;
+    color:#f6d77b;
 }
 
 .lux-bg{
-    display:none;
+    position:fixed;
+    inset:0;
+    background-image:url("/static/PAGEDECOUVERTURE.lux.site.jpeg");
+    background-size:contain;
+    background-position:center center;
+    background-repeat:no-repeat;
+    background-color:#050505;
+    z-index:0;
 }
 
 .lux-overlay{
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,0.35);
-    z-index:0;
-    pointer-events:none;
+    background:radial-gradient(circle, rgba(0,0,0,0.15), rgba(0,0,0,0.72));
+    z-index:1;
 }
 
-.lux-header,
-.center-content,
-footer{
+.lux-header{
     position:relative;
-    z-index:2;
+    z-index:3;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:22px 38px;
+}
+
+.logo{
+    font-size:28px;
+    font-weight:900;
+    letter-spacing:3px;
+    color:#ffd76a;
+    text-shadow:0 0 18px #d4af37;
+}
+
+.header-buttons button,
+.gold-button{
+    background:linear-gradient(145deg,#fff0a8,#d4af37 45%,#7a4700);
+    color:#160900;
+    border:1px solid #fff0a8;
+    border-radius:22px;
+    padding:14px 28px;
+    font-weight:900;
+    text-decoration:none;
+    box-shadow:0 0 20px rgba(212,175,55,.65), inset 0 0 12px rgba(255,255,255,.35);
+}
+
+.center-content{
+    position:relative;
+    z-index:3;
+    min-height:70vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+}
+
+.center-content h1{
+    font-size:64px;
+    margin:0;
+    color:#ffd76a;
+    text-shadow:0 0 18px #d4af37,0 0 45px #000;
+    letter-spacing:6px;
+}
+
+.slogan{
+    font-size:20px;
+    letter-spacing:5px;
+    color:#ffe8a3;
+}
+
+.main-buttons{
+    display:flex;
+    gap:24px;
+    margin-top:26px;
+}
+
+footer{
+    position:fixed;
+    bottom:20px;
+    left:0;
+    right:0;
+    z-index:3;
+    text-align:center;
+    color:#d4af37;
+    letter-spacing:18px;
+    font-size:26px;
 }
