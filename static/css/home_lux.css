@@ -2,102 +2,181 @@ html, body{
     margin:0;
     padding:0;
     width:100%;
-    min-height:100%;
+    height:100%;
     overflow:hidden;
-    font-family: "Cinzel", Georgia, serif;
+    font-family:'Cinzel', Georgia, serif;
 }
 
 body{
-    background:#050505;
-    color:#f6d77b;
+    color:#f4d27a;
+    background:#000;
 }
 
+/* IMAGE DE COUVERTURE PLEIN ÉCRAN */
 .lux-bg{
     position:fixed;
-    inset:0;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
     background-image:url("/static/PAGEDECOUVERTURE.lux.site.jpeg");
-    background-size:contain;
+    background-size:cover;
     background-position:center center;
     background-repeat:no-repeat;
-    background-color:#050505;
     z-index:0;
 }
 
+/* FILTRE SOMBRE */
 .lux-overlay{
     position:fixed;
     inset:0;
-    background:radial-gradient(circle, rgba(0,0,0,0.15), rgba(0,0,0,0.72));
+    background:
+        linear-gradient(
+            rgba(0,0,0,.25),
+            rgba(0,0,0,.55)
+        );
     z-index:1;
 }
 
+/* HEADER */
 .lux-header{
     position:relative;
-    z-index:3;
+    z-index:10;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:22px 38px;
+    padding:25px 40px;
 }
 
 .logo{
-    font-size:28px;
+    font-size:34px;
     font-weight:900;
-    letter-spacing:3px;
+    letter-spacing:4px;
     color:#ffd76a;
-    text-shadow:0 0 18px #d4af37;
+    text-shadow:
+        0 0 10px #d4af37,
+        0 0 25px #d4af37,
+        0 0 40px #000;
 }
 
+.header-buttons{
+    display:flex;
+    gap:15px;
+}
+
+/* BOUTONS */
 .header-buttons button,
 .gold-button{
-    background:linear-gradient(145deg,#fff0a8,#d4af37 45%,#7a4700);
-    color:#160900;
-    border:1px solid #fff0a8;
-    border-radius:22px;
+    background:
+        linear-gradient(
+            145deg,
+            #fff6c2,
+            #e0b84a 45%,
+            #8b5b00
+        );
+
+    color:#120800;
+    border:none;
+    border-radius:18px;
     padding:14px 28px;
+    font-size:16px;
     font-weight:900;
     text-decoration:none;
-    box-shadow:0 0 20px rgba(212,175,55,.65), inset 0 0 12px rgba(255,255,255,.35);
+    cursor:pointer;
+
+    box-shadow:
+        0 0 15px rgba(212,175,55,.6),
+        inset 0 0 10px rgba(255,255,255,.5);
+
+    transition:.25s;
 }
 
+.header-buttons button:hover,
+.gold-button:hover{
+    transform:translateY(-2px) scale(1.05);
+
+    box-shadow:
+        0 0 25px rgba(212,175,55,.9),
+        0 0 40px rgba(212,175,55,.5);
+}
+
+/* CONTENU CENTRE */
 .center-content{
     position:relative;
-    z-index:3;
-    min-height:70vh;
+    z-index:10;
+
+    height:75vh;
+
     display:flex;
     flex-direction:column;
-    align-items:center;
     justify-content:center;
+    align-items:center;
+
     text-align:center;
 }
 
 .center-content h1{
-    font-size:64px;
     margin:0;
+
+    font-size:78px;
+    letter-spacing:8px;
+
     color:#ffd76a;
-    text-shadow:0 0 18px #d4af37,0 0 45px #000;
-    letter-spacing:6px;
+
+    text-shadow:
+        0 0 15px #d4af37,
+        0 0 30px #d4af37,
+        0 0 50px #000;
 }
 
 .slogan{
-    font-size:20px;
-    letter-spacing:5px;
-    color:#ffe8a3;
+    margin-top:15px;
+
+    font-size:22px;
+    letter-spacing:6px;
+
+    color:#fff0b0;
 }
 
 .main-buttons{
+    margin-top:35px;
+
     display:flex;
-    gap:24px;
-    margin-top:26px;
+    gap:25px;
 }
 
+/* FOOTER */
 footer{
     position:fixed;
-    bottom:20px;
+
+    bottom:18px;
     left:0;
     right:0;
-    z-index:3;
+
+    z-index:10;
+
     text-align:center;
+
     color:#d4af37;
-    letter-spacing:18px;
-    font-size:26px;
+
+    letter-spacing:14px;
+    font-size:24px;
+
+    text-shadow:0 0 12px #d4af37;
+}
+
+/* MOBILE */
+@media(max-width:900px){
+
+    .center-content h1{
+        font-size:42px;
+    }
+
+    .main-buttons{
+        flex-direction:column;
+    }
+
+    .header-buttons{
+        display:none;
+    }
 }
