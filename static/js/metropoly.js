@@ -1,3 +1,13 @@
+console.log("METROPOLY JS OK");
+const socket = io();
+
+socket.on("connect", () => {
+    console.log("SOCKET CONNECTÉ", socket.id);
+});
+
+socket.on("connect_error", (err) => {
+    console.error("SOCKET ERREUR", err);
+});
 const socket = io();
 
 let roomCode = "";
