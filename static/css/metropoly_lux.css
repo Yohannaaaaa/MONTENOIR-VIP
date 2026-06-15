@@ -1,3 +1,116 @@
+html,body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:#050505;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+}
+
+.metropoly-body{
+    width:100%;
+    height:100%;
+}
+
+#gameArea{
+    position:fixed;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#boardContainer{
+    position:relative;
+    width:95vw;
+    height:95vh;
+}
+
+#boardImg{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+}
+
+#overlay{
+    position:absolute;
+    inset:0;
+}
+
+.left-panel{
+    position:fixed;
+    left:15px;
+    top:50%;
+    transform:translateY(-50%);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    z-index:100;
+}
+
+.left-panel button{
+    padding:12px 18px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(145deg,#fff2a8,#d4af37,#7b4a00);
+    font-weight:900;
+    cursor:pointer;
+}
+
+.right-panel{
+    position:fixed;
+    right:15px;
+    top:50%;
+    transform:translateY(-50%);
+    width:220px;
+    background:rgba(0,0,0,.8);
+    border:2px solid #d4af37;
+    border-radius:16px;
+    padding:12px;
+    color:#fff;
+    z-index:100;
+}
+
+#diceArea{
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:12px;
+    z-index:50;
+}
+
+.diceImg{
+    width:64px;
+    height:64px;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    background:#111;
+    color:white;
+    padding:25px;
+    border-radius:18px;
+    border:2px solid gold;
+    z-index:999;
+}
+
+#moneyToast{
+    position:fixed;
+    left:50%;
+    top:90px;
+    transform:translateX(-50%);
+    color:#00ff66;
+    font-size:26px;
+    font-weight:bold;
+    z-index:1000;
+}
 .tokenImg{
     position:absolute;
     width:64px;
