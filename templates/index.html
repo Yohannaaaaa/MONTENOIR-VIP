@@ -12,10 +12,41 @@
 <div class="cover-bg"></div>
 <div class="cover-overlay"></div>
 
+<header class="lux-header">
+    <div></div>
+    <div class="header-buttons">
+        <a href="/login" class="small-lux-button">👤 Connexion</a>
+        <a href="/premium" class="small-lux-button">💎 Premium</a>
+    </div>
+</header>
+
 <div class="home-buttons">
-    <a href="/jeux" class="lux-button">🎮 JEUX</a>
+    <button class="lux-button" onclick="toggleGames()">🎮 JEUX</button>
     <a href="/tarot" class="lux-button">🔮 TAROT & RITUEL</a>
 </div>
+
+<div id="gamesPanel" class="games-panel">
+    <h2>🎮 Jeux Montenoir</h2>
+
+    <div class="games-grid">
+        <a href="/codenames">Codenames VIP</a>
+        <a href="/metropoly">Metropoly</a>
+        <a href="/poker">Poker</a>
+        <a href="/tavla">Tavla</a>
+        <a href="/okey">Okey</a>
+        <a href="/101">101</a>
+        <a href="/ludo">Ludo</a>
+        <a href="/bowling">Bowling</a>
+    </div>
+
+    <button class="close-btn" onclick="toggleGames()">Fermer</button>
+</div>
+
+<script>
+function toggleGames(){
+    document.getElementById("gamesPanel").classList.toggle("show");
+}
+</script>
 
 </body>
 </html>
