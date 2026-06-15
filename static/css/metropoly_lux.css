@@ -1,0 +1,61 @@
+.tokenImg{
+    position:absolute;
+    width:64px;
+    height:64px;
+    transform:translate(-50%,-78%);
+    object-fit:contain;
+    z-index:20;
+}
+
+.tokenImg.tap{
+    animation:pawnTap .28s ease;
+}
+
+@keyframes pawnTap{
+    0%{transform:translate(-50%,-78%) scale(1);}
+    50%{transform:translate(-50%,-95%) scale(1.08);}
+    100%{transform:translate(-50%,-78%) scale(1);}
+}
+
+.ownerDot{
+    position:absolute;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    border:3px solid #ffe7a6;
+    transform:translate(-50%,-50%);
+    z-index:18;
+}
+
+.building{
+    position:absolute;
+    transform:translate(-50%,-100%);
+    object-fit:contain;
+    z-index:19;
+}
+
+.building.house{
+    width:42px;
+}
+
+.building.hotel{
+    width:58px;
+}
+
+.diceArea.rolling .diceImg:first-child{
+    animation:diceA 1s ease;
+}
+
+.diceArea.rolling .diceImg:last-child{
+    animation:diceB 1s ease;
+}
+
+@keyframes diceA{
+    from{transform:rotate(0deg) scale(.8);}
+    to{transform:rotate(720deg) scale(1);}
+}
+
+@keyframes diceB{
+    from{transform:rotate(0deg) scale(.8);}
+    to{transform:rotate(-720deg) scale(1);}
+}
