@@ -4,90 +4,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>METROPOLY VIP</title>
 
-<link rel="stylesheet" href="/static/css/luxury.css">
+<link rel="stylesheet" href="/static/css/metropoly_lux.css">
+
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 </head>
 
 <body class="metropoly-body">
-
-<header class="game-header">
-
-```
-<div class="logo-zone">
-    ♛ METROPOLY VIP
-</div>
-
-<div class="player-zone">
-
-    <input type="text"
-           id="username"
-           placeholder="Nom du joueur">
-
-    <select id="tokenSelect">
-        <option value="horse">🐴 Cheval</option>
-        <option value="car">🚗 Voiture</option>
-        <option value="boat">🛥️ Bateau</option>
-        <option value="hat">🎩 Chapeau</option>
-        <option value="cat">🐈 Chat Noir</option>
-        <option value="jackpot">🎰 Machine à sous</option>
-    </select>
-
-    <button onclick="createRoom()">
-        Créer une salle
-    </button>
-
-    <input id="roomCodeInput"
-           placeholder="Code salle">
-
-    <button onclick="joinRoom()">
-        Rejoindre
-    </button>
-
-    <button onclick="startGame()">
-        Démarrer
-    </button>
-
-</div>
-```
-
-</header>
-
-<div class="left-panel">
-
-```
-<button id="buildHouseBtn">
-    🏠 ACHETER MAISON
-</button>
-
-<button id="buildHotelBtn">
-    🏨 ACHETER HÔTEL
-</button>
-
-<div class="game-info">
-
-    • Maison seulement si toute la couleur est possédée
-
-    • Hôtel uniquement après 4 maisons
-
-    • Construction uniquement sur la case où le pion est posé
-
-</div>
-```
-
-</div>
-
-<div class="right-panel">
-
-```
-<h3>JOUEURS</h3>
-
-<div id="playersList"></div>
-```
-
-</div>
 
 <div id="gameArea">
 
@@ -100,62 +26,15 @@
         alt="Metropoly">
 
     <div id="overlay">
-
         <div id="tokens"></div>
-
         <div id="owners"></div>
-
         <div id="buildings"></div>
-
     </div>
 
 </div>
-
-<div id="diceContainer">
-
-    <img
-        id="dice1"
-        src="/static/assets/metropoly/dice_gold.png">
-
-    <img
-        id="dice2"
-        src="/static/assets/metropoly/dice_gold.png">
-
-    <button id="rollButton"
-            onclick="rollDice()">
-
-        🎲 LANCER LES DÉS
-
-    </button>
-
-</div>
 ```
 
 </div>
-
-<div id="buyPanel" class="popup">
-
-```
-<h2 id="buyCity">
-    Ville
-</h2>
-
-<p id="buyPrice">
-    Prix
-</p>
-
-<button onclick="buyProperty()">
-    Acheter
-</button>
-
-<button onclick="hideBuy()">
-    Annuler
-</button>
-```
-
-</div>
-
-<div id="chatLog"></div>
 
 <script src="/static/js/metropoly.js"></script>
 
