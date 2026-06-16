@@ -9,13 +9,13 @@ function init3D(){
     scene.background = new THREE.Color("#050505");
 
     camera = new THREE.PerspectiveCamera(
-        28,
+        45,
         window.innerWidth / window.innerHeight,
         0.1,
         100
     );
 
-    camera.position.set(0, 12, 0.01);
+    camera.position.set(0, 30, 0.01);
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({
@@ -26,7 +26,7 @@ function init3D(){
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio || 1);
 
-    const light = new THREE.AmbientLight(0xffffff, 1.6);
+    const light = new THREE.AmbientLight(0xffffff, 1.8);
     scene.add(light);
 
     const boardTexture = new THREE.TextureLoader().load(
@@ -36,7 +36,7 @@ function init3D(){
     boardTexture.colorSpace = THREE.SRGBColorSpace;
 
     const board = new THREE.Mesh(
-        new THREE.BoxGeometry(14.8, 0.18, 10),
+        new THREE.BoxGeometry(11.5, 0.18, 7.8),
         new THREE.MeshStandardMaterial({
             map: boardTexture,
             roughness: 0.35,
@@ -47,7 +47,7 @@ function init3D(){
     scene.add(board);
 
     const table = new THREE.Mesh(
-        new THREE.BoxGeometry(16, 0.25, 11.2),
+        new THREE.BoxGeometry(12.8, 0.25, 9),
         new THREE.MeshStandardMaterial({
             color: "#120900",
             roughness: 0.45,
