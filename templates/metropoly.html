@@ -3,16 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>METROPOLY VIP</title>
-<link rel="stylesheet" href="/static/css/metropoly_lux.css">
+<title>METROPOLY VIP 3D</title>
+
+<link rel="stylesheet" href="/static/css/metropoly_3d.css">
+
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
-<body class="metropoly-body">
+<body>
 
-<div class="top-bar">
-    <a href="/jeux" class="top-btn">← JEUX</a>
+<div id="threeStage">
+    <canvas id="threeCanvas"></canvas>
+</div>
+
+<div class="topHud">
+    <a href="/jeux" class="hudBtn">← JEUX</a>
     <input id="username" placeholder="Nom joueur">
+
     <select id="tokenSelect">
         <option value="horse">🐴 Cheval</option>
         <option value="jackpot">🎰 Machine</option>
@@ -21,37 +30,24 @@
         <option value="hat">🎩 Chapeau</option>
         <option value="cat">🐈 Chat noir</option>
     </select>
+
     <button onclick="createRoom()">Créer salle</button>
     <input id="roomCodeInput" placeholder="Code salle">
     <button onclick="joinRoom()">Entrer</button>
     <button onclick="startGame()">Démarrer</button>
+    <span id="roomLabel">Salle : -</span>
 </div>
 
-<div class="left-panel">
-    <button id="rollBtn" onclick="rollDice()">🎲 ZAR AT</button>
-    <button id="buildHouseBtn" onclick="buildHouse()">🏠 EV AL</button>
-    <button id="buildHotelBtn" onclick="buildHotel()">🏨 OTEL AL</button>
-    <div id="buildHint">Ev için aynı renk serisini tamamla.</div>
+<div class="leftHud">
+    <button onclick="rollDice()">🎲 ZAR AT</button>
+    <button onclick="buildHouse()">🏠 EV AL</button>
+    <button onclick="buildHotel()">🏨 OTEL AL</button>
+    <div id="buildHint">Maison : série complète + être sur la case.</div>
 </div>
 
-<div class="right-panel">
+<div class="rightHud">
     <h3>ONLINE</h3>
     <div id="playersList"></div>
-</div>
-
-<div id="gameArea">
-    <div id="boardContainer">
-        <img id="boardImg" src="/static/metroploy_plateau_lux.png.png" alt="Metropoly">
-        <div id="overlay">
-            <div id="diceArea">
-                <img class="diceImg" src="/static/dice_gold.png">
-                <img class="diceImg" src="/static/dice_gold.png">
-            </div>
-            <div id="tokens"></div>
-            <div id="owners"></div>
-            <div id="buildings"></div>
-        </div>
-    </div>
 </div>
 
 <div id="buyPanel" class="modal">
@@ -61,8 +57,8 @@
     <button onclick="hideBuy()">Annuler</button>
 </div>
 
-<div id="moneyToast"></div>
+<div id="toast"></div>
 
-<script src="/static/js/metropoly.js"></script>
+<script src="/static/js/metropoly_three.js?v=1"></script>
 </body>
 </html>
