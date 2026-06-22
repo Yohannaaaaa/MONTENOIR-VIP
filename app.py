@@ -6275,3 +6275,31 @@ if __name__ == "__main__":
         sys.stdout.flush()
         sys.stderr.flush()
         raise
+@app.route("/register")
+def register():
+    return """
+    <html>
+    <head>
+        <title>MONTENOIR VIP</title>
+        <style>
+            body{
+                background:#0b0b0b;
+                color:#d4af37;
+                font-family:Arial,sans-serif;
+                text-align:center;
+                padding-top:120px;
+            }
+            a{
+                color:white;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>📝 Üyelik</h1>
+        <h2>MONTENOIR VIP</h2>
+        <p>Inscription bientôt disponible.</p>
+        <br>
+        <a href="/">← Retour accueil</a>
+    </body>
+    </html>
+    """
