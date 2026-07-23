@@ -74,154 +74,49 @@
     font-size:15px;
     font-family:inherit;
   }
-  .token-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-top:6px;
-  }
+  .token-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
   .token-btn{
-    font-size:20px;
-    padding:8px 10px;
-    background:#181b23;
-    border:1px solid var(--gold-dim);
-    border-radius:6px;
-    cursor:pointer;
+    font-size:20px;padding:8px 10px;background:#181b23;
+    border:1px solid var(--gold-dim);border-radius:6px;cursor:pointer;
   }
-  .token-btn.selected{
-    box-shadow:0 0 0 2px var(--gold);
-    background:#22262f;
-  }
+  .token-btn.selected{box-shadow:0 0 0 2px var(--gold);background:#22262f;}
   button{
     font-family:inherit;
     background:linear-gradient(180deg,#c9a86a,#a8875090);
-    color:#141414;
-    border:none;
-    padding:11px 16px;
-    border-radius:5px;
-    font-size:13px;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    cursor:pointer;
-    font-weight:bold;
-    width:100%;
-    margin-top:14px;
+    color:#141414;border:none;padding:11px 16px;border-radius:5px;
+    font-size:13px;letter-spacing:1px;text-transform:uppercase;
+    cursor:pointer;font-weight:bold;width:100%;margin-top:14px;
   }
-  button.secondary{
-    background:transparent;
-    border:1px solid var(--gold-dim);
-    color:var(--gold);
-  }
-  button:disabled{
-    background:#333;
-    color:#777;
-    cursor:not-allowed;
-  }
-  .error-msg{
-    color:var(--brick);
-    font-size:13px;
-    margin-top:8px;
-    min-height:16px;
-  }
+  button.secondary{background:transparent;border:1px solid var(--gold-dim);color:var(--gold);}
+  button:disabled{background:#333;color:#777;cursor:not-allowed;}
+  .error-msg{color:var(--brick);font-size:13px;margin-top:8px;min-height:16px;}
 
-  /* --- LOBBY --- */
-  .room-code{
-    font-size:32px;
-    letter-spacing:4px;
-    color:var(--gold);
-    text-align:center;
-    margin:10px 0;
-    font-weight:bold;
-  }
+  .room-code{font-size:32px;letter-spacing:4px;color:var(--gold);text-align:center;margin:10px 0;font-weight:bold;}
   .player-chip{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 10px;
-    background:#181b23;
-    border-radius:6px;
-    margin-bottom:6px;
-    font-size:14px;
+    display:flex;align-items:center;gap:8px;padding:8px 10px;
+    background:#181b23;border-radius:6px;margin-bottom:6px;font-size:14px;
   }
-  .player-chip .dot{
-    width:8px;height:8px;border-radius:50%;
-  }
+  .player-chip .dot{width:8px;height:8px;border-radius:50%;}
 
   /* --- GAME --- */
-  .game-wrap{
+  .game-wrap{width:100%;max-width:520px;}
+  .board-image-wrap{
     width:100%;
-    max-width:640px;
-  }
-  .board-wrap{
-    width:100%;
-    max-width:640px;
-    aspect-ratio:1/1;
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    grid-template-rows:repeat(8,1fr);
-    gap:2px;
-    background:#000;
-    border:2px solid var(--gold-dim);
-    border-radius:6px;
-    padding:2px;
-    margin:0 auto;
-  }
-  .cell{
-    background:var(--panel);
-    border-radius:2px;
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    font-size:6.5px;
-    text-align:center;
-    padding:1px;
+    border-radius:8px;
     overflow:hidden;
-    border:1px solid #22262f;
+    border:2px solid var(--gold-dim);
+    box-shadow:0 0 24px rgba(201,168,106,.15);
   }
-  .cell.special{
-    background:#181b23;
-    font-size:7.5px;
-    color:var(--gold);
-    font-weight:bold;
+  .board-image-wrap img{
+    width:100%;
+    display:block;
   }
-  .cell .name{font-size:6px;line-height:1;color:var(--cream);}
-  .cell .price{font-size:5.5px;color:var(--gold-dim);}
-  .colorband{position:absolute;top:0;left:0;right:0;height:4px;}
-  .cell.owned{box-shadow:inset 0 0 0 2px var(--owner-color, var(--gold));}
-  .buildmarks{position:absolute;bottom:1px;display:flex;gap:1px;}
-  .house-icon{width:3px;height:3px;background:var(--emerald);border-radius:1px;}
-  .hotel-icon{width:6px;height:4px;background:var(--brick);border-radius:1px;}
-  .tokens-on-cell{position:absolute;top:1px;display:flex;gap:1px;flex-wrap:wrap;}
-  .tok{font-size:8px;}
 
-  .center-panel{
-    grid-column:2/8;
-    grid-row:2/8;
-    background:linear-gradient(160deg,#151822,#0b0d12);
-    border-radius:4px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-  }
-  .logo-center{font-size:15px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;opacity:.85;}
-  .die3d{
-    width:36px;height:36px;
-    perspective:400px;
-  }
+  .die3d{width:38px;height:38px;margin:0 auto;}
   .die-face{
-    width:36px;height:36px;
-    background:var(--cream);
-    border:1px solid #999;
-    border-radius:5px;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    grid-template-rows:repeat(3,1fr);
-    padding:4px;
-    transition:transform 1s cubic-bezier(.34,1.56,.64,1);
+    width:38px;height:38px;background:var(--cream);border:1px solid #999;
+    border-radius:5px;display:grid;grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);padding:4px;
   }
   .die-face.rolling{animation:spin 0.9s ease-out;}
   @keyframes spin{
@@ -231,37 +126,22 @@
   }
   .pip{width:5px;height:5px;background:#1a1a1a;border-radius:50%;align-self:center;justify-self:center;opacity:0;}
 
+  .dice-row{
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    margin:14px 0 6px 0;
+  }
+  .dice-value{color:var(--gold);font-size:15px;font-weight:bold;}
+
   .panel{
-    width:100%;
-    background:var(--panel);
-    border:1px solid #22262f;
-    border-radius:6px;
-    margin-top:12px;
-    padding:12px;
+    width:100%;background:var(--panel);border:1px solid #22262f;
+    border-radius:6px;margin-top:12px;padding:12px;
   }
-  .turn-banner{
-    font-size:13px;
-    color:var(--gold);
-    text-align:center;
-    margin-bottom:8px;
-    min-height:18px;
-  }
-  .players-strip{
-    display:flex;
-    gap:8px;
-    overflow-x:auto;
-    margin-bottom:10px;
-    padding-bottom:6px;
-  }
+  .turn-banner{font-size:13px;color:var(--gold);text-align:center;margin-bottom:8px;min-height:18px;}
+  .my-position{font-size:12px;color:var(--cream);text-align:center;margin-bottom:10px;}
+  .players-strip{display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:6px;}
   .p-card{
-    flex:0 0 auto;
-    background:#181b23;
-    border-radius:6px;
-    padding:6px 10px;
-    font-size:11px;
-    border:1px solid #22262f;
-    min-width:76px;
-    text-align:center;
+    flex:0 0 auto;background:#181b23;border-radius:6px;padding:6px 10px;
+    font-size:11px;border:1px solid #22262f;min-width:76px;text-align:center;
   }
   .p-card.active-turn{box-shadow:0 0 0 2px var(--gold);}
   .p-card .pmoney{color:var(--gold);font-weight:bold;font-size:12px;}
@@ -271,41 +151,20 @@
 
   .my-props{margin-top:10px;}
   .prop-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:#181b23;
-    border-radius:5px;
-    padding:6px 8px;
-    margin-bottom:5px;
-    font-size:11px;
+    display:flex;justify-content:space-between;align-items:center;
+    background:#181b23;border-radius:5px;padding:6px 8px;margin-bottom:5px;font-size:11px;
   }
   .prop-row .build-btns{display:flex;gap:5px;}
   .prop-row button{width:auto;margin:0;padding:5px 8px;font-size:9px;}
 
   .log{
-    font-size:11px;
-    color:var(--slate);
-    margin-top:10px;
-    max-height:70px;
-    overflow-y:auto;
-    line-height:1.5;
+    font-size:11px;color:var(--slate);margin-top:10px;
+    max-height:70px;overflow-y:auto;line-height:1.5;
   }
-
-  .chat-box{
-    display:flex;
-    gap:6px;
-    margin-top:10px;
-  }
+  .chat-box{display:flex;gap:6px;margin-top:10px;}
   .chat-box input{flex:1;}
   .chat-box button{width:auto;margin:0;padding:10px 14px;}
-  .chat-log{
-    font-size:11px;
-    color:var(--cream);
-    max-height:70px;
-    overflow-y:auto;
-    margin-top:6px;
-  }
+  .chat-log{font-size:11px;color:var(--cream);max-height:70px;overflow-y:auto;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -354,16 +213,19 @@
 <!-- ============ GAME SCREEN ============ -->
 <div class="screen" id="screen-game">
   <div class="game-wrap">
-    <div class="board-wrap" id="board">
-      <div class="center-panel">
-        <div class="logo-center">METROPOLY</div>
-        <div class="die3d"><div class="die-face" id="dieFace"></div></div>
-        <div id="lastDiceValue" style="color:var(--gold);font-size:13px;">—</div>
-      </div>
+
+    <div class="board-image-wrap">
+      <img src="/static/metroploy_plateau_lux.png.png" alt="Plateau Metropoly">
+    </div>
+
+    <div class="dice-row">
+      <div class="die3d"><div class="die-face" id="dieFace"></div></div>
+      <div class="dice-value" id="lastDiceValue">—</div>
     </div>
 
     <div class="panel">
       <div class="turn-banner" id="turnBanner">En attente...</div>
+      <div class="my-position" id="myPosition"></div>
       <div class="players-strip" id="playersStrip"></div>
 
       <div class="actions">
@@ -418,21 +280,6 @@ const CELLS = [
   ["Pékin","property",160,18,"red"],
   ["Compagnie Électrique","utility",150,0,"utility"],
   ["Tokyo","property",180,20,"red"]
-];
-const N = CELLS.length;
-
-const COLORS = {
-  green:'#3a7d63', brown:'#7a5230', orange:'#d98a3d', purple:'#7d5aa6',
-  yellow:'#d9c23d', blue:'#3a5a8c', red:'#a4453b', transport:'#5c6470',
-  utility:'#3a8c8c', tax:'#a4453b', corner:'#12151c', special:'#8a7550'
-};
-
-// perimeter positions on an 8x8 grid
-const GRID_POS = [
-  [8,8],[8,7],[8,6],[8,5],[8,4],[8,3],[8,2],[8,1],
-  [7,1],[6,1],[5,1],[4,1],[3,1],[2,1],[1,1],
-  [1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],
-  [2,8],[3,8],[4,8],[5,8],[6,8],[7,8]
 ];
 
 // ---- State ----
@@ -505,49 +352,6 @@ function sendChat(){
   input.value = '';
 }
 
-// ---- Build board DOM (once) ----
-const boardEl = document.getElementById('board');
-CELLS.forEach((cell, i)=>{
-  const [name, typ, price, rent, group] = cell;
-  const div = document.createElement('div');
-  const isSpecial = ['start','jail','bank','tax','auction'].includes(typ);
-  div.className = 'cell' + (isSpecial ? ' special' : '');
-  div.id = 'cell-'+i;
-  const pos = GRID_POS[i] || [1,1];
-  div.style.gridColumn = pos[1];
-  div.style.gridRow = pos[0];
-
-  if(typ === 'property'){
-    const band = document.createElement('div');
-    band.className = 'colorband';
-    band.style.background = COLORS[group] || COLORS.corner;
-    div.appendChild(band);
-  }
-  const nameEl = document.createElement('div');
-  nameEl.className = 'name';
-  nameEl.textContent = name;
-  div.appendChild(nameEl);
-
-  if(price > 0){
-    const priceEl = document.createElement('div');
-    priceEl.className = 'price';
-    priceEl.textContent = price + '€';
-    div.appendChild(priceEl);
-  }
-
-  const buildEl = document.createElement('div');
-  buildEl.className = 'buildmarks';
-  buildEl.id = 'build-'+i;
-  div.appendChild(buildEl);
-
-  const tokEl = document.createElement('div');
-  tokEl.className = 'tokens-on-cell';
-  tokEl.id = 'tok-'+i;
-  div.appendChild(tokEl);
-
-  boardEl.appendChild(div);
-});
-
 // ---- Dice pip layouts ----
 const PIP_LAYOUT = {
   1:[5], 2:[1,9], 3:[1,5,9], 4:[1,3,7,9], 5:[1,3,5,7,9], 6:[1,3,4,6,7,9]
@@ -576,7 +380,6 @@ function renderState(state){
   const players = state.players || {};
   const names = Object.keys(players);
 
-  // players strip
   const strip = document.getElementById('playersStrip');
   strip.innerHTML = '';
   const activeNames = names.filter(n => !players[n].bankrupt);
@@ -595,55 +398,15 @@ function renderState(state){
     ? (currentTurnName === myUsername ? 'À toi de jouer !' : `Tour de ${currentTurnName || '...'}`)
     : 'En attente du lancement de la partie...';
 
-  // clear board ownership/build marks/tokens
-  CELLS.forEach((c,i)=>{
-    const cellEl = document.getElementById('cell-'+i);
-    cellEl.classList.remove('owned');
-    cellEl.style.removeProperty('--owner-color');
-    document.getElementById('build-'+i).innerHTML = '';
-    document.getElementById('tok-'+i).innerHTML = '';
-  });
+  const me = players[myUsername];
+  if(me){
+    const cellName = (CELLS[me.position] || ['?'])[0];
+    document.getElementById('myPosition').textContent = 'Tu es sur : ' + cellName + ' — ' + me.money + '€';
+  }
 
-  // ownership + houses/hotels
   const owners = state.owners || {};
   const houses = state.houses || {};
   const hotels = state.hotels || {};
-  Object.keys(owners).forEach(posStr=>{
-    const cellEl = document.getElementById('cell-'+posStr);
-    if(!cellEl) return;
-    cellEl.classList.add('owned');
-    const ownerName = owners[posStr];
-    const ownerData = players[ownerName];
-    cellEl.style.setProperty('--owner-color', (ownerData && ownerData.color) || '#c9a86a');
-    const buildEl = document.getElementById('build-'+posStr);
-    if(hotels[posStr]){
-      const h = document.createElement('div');
-      h.className = 'hotel-icon';
-      buildEl.appendChild(h);
-    } else {
-      const count = parseInt(houses[posStr] || 0);
-      for(let k=0;k<count;k++){
-        const h = document.createElement('div');
-        h.className = 'house-icon';
-        buildEl.appendChild(h);
-      }
-    }
-  });
-
-  // player tokens on their current cell
-  names.forEach(n=>{
-    const p = players[n];
-    if(p.bankrupt) return;
-    const tokEl = document.getElementById('tok-'+p.position);
-    if(tokEl){
-      const t = document.createElement('div');
-      t.className = 'tok';
-      t.textContent = p.token || '🎩';
-      tokEl.appendChild(t);
-    }
-  });
-
-  // my properties + build buttons
   const myPropsEl = document.getElementById('myProps');
   myPropsEl.innerHTML = '';
   Object.keys(owners).forEach(posStr=>{
@@ -671,8 +434,6 @@ function renderState(state){
     myPropsEl.appendChild(row);
   });
 
-  // roll/end-turn button states
-  const me = players[myUsername];
   const isMyTurn = currentTurnName === myUsername && state.started && me && !me.bankrupt;
   document.getElementById('rollBtn').disabled = !isMyTurn || (me && me.hasRolled && state.lastDice !== 6);
   document.getElementById('endTurnBtn').disabled = !isMyTurn;
