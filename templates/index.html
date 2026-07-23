@@ -3,65 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Metropoly</title>
+<title>Montenoir VIP</title>
 <style>
-  :root{
-    --bg:#0b0d12;
-    --panel:#12151c;
-    --gold:#c9a86a;
-    --gold-dim:#8a7550;
-    --cream:#efe9db;
-    --brick:#a4453b;
-    --emerald:#3a7d63;
-    --slate:#5c6470;
-  }
-  *{box-sizing:border-box;}
-  body{
+  html,body{
     margin:0;
-    background:radial-gradient(ellipse at 50% 0%, #171b24 0%, #0b0d12 60%);
-    color:var(--cream);
-    font-family:'Georgia', 'Times New Roman', serif;
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding:16px;
-  }
-  h1{
-    font-family:'Georgia', serif;
-    letter-spacing:6px;
-    font-weight:400;
-    font-size:28px;
-    color:var(--gold);
-    text-transform:uppercase;
-    margin:8px 0 2px 0;
-  }
-  .tagline{
-    color:var(--slate);
-    font-size:11px;
-    letter-spacing:3px;
-    text-transform:uppercase;
-    margin-bottom:14px;
-  }
-  .board-wrap{
-    width:100%;
-    max-width:520px;
-    aspect-ratio:1/1;
-    display:grid;
-    grid-template-columns:repeat(6,1fr);
-    grid-template-rows:repeat(6,1fr);
-    gap:3px;
+    padding:0;
+    min-height:100%;
     background:#000;
-    border:2px solid var(--gold-dim);
-    border-radius:6px;
-    padding:3px;
+    font-family:Georgia,serif;
   }
-  .cell{
-    background:var(--panel);
-    border-radius:3px;
+  .cover{
     position:relative;
+    min-height:100vh;
+    width:100%;
+    background-image:url('/static/PAGEDECOUVERTURE.lux.site.jpeg');
+    background-size:cover;
+    background-position:center top;
+    background-repeat:no-repeat;
     display:flex;
     flex-direction:column;
-    align-items:center;
+    justify-content:space-between;
+  }
+  .top-nav{
+    display:flex;
+    justify-content:flex-end;
+    gap:12px;
+    padding:22px 20px;
+    flex-wrap:wrap;
+  }
+  .top-nav a{
+    text-decoration:none;
+    color:#1a1200;
+    font-weight:700;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:20px;
+    background:linear-gradient(145deg,#fff4b0,#d4af37 55%,#8a6a1f);
+    border:1px solid #fff2ad;
+    box-shadow:0 0 14px rgba(212,175,55,.6);
+    white-space:nowrap;
+  }
+  .bottom-nav{
+    display:flex;
     justify-content:center;
-    font-size:8
+    gap:16px;
+    padding:24px 20px 40px 20px;
+    flex-wrap:wrap;
+  }
+  .bottom-nav a{
+    text-decoration:none;
+    color:#1a1200;
+    font-weight:800;
+    font-size:15px;
+    letter-spacing:1px;
+    padding:14px 30px;
+    border-radius:22px;
+    background:linear-gradient(145deg,#fff4b0,#d4af37 55%,#8a6a1f);
+    border:2px solid #fff2ad;
+    box-shadow:0 0 20px rgba(212,175,55,.7);
+  }
+  @media(max-width:480px){
+    .top-nav a{font-size:11px; padding:8px 12px;}
+    .bottom-nav a{font-size:13px; padding:12px 22px;}
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="top-nav">
+      <a href="/register">📝 Üyelik</a>
+      <a href="/login">👤 Connexion</a>
+      <a href="/premium">💎 Premium</a>
+    </div>
+    <div class="bottom-nav">
+      <a href="/games">🎮 JEUX</a>
+      <a href="/tarot">🔮 TAROT &amp; RITUEL</a>
+    </div>
+  </div>
+</body>
+</html>
