@@ -114,3 +114,168 @@
     <div class="top-nav">
       <a href="/register" class="text-register">📝 <span>Register</span></a>
       <a href="/login" class="text-login">👤 <span>Login</span></a>
+      <a href="/premium" class="text-premium">💎 <span>Premium</span></a>
+    </div>
+    <div class="bottom-nav">
+      <a href="/games" class="text-games">🎮 <span>GAMES</span></a>
+      <a href="/tarot" class="text-tarot">🔮 <span>TAROT & RITUAL</span></a>
+    </div>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        register: 'Register',
+        login: 'Login',
+        premium: 'Premium',
+        games: 'GAMES',
+        tarot: 'TAROT & RITUAL'
+      },
+      fr: {
+        register: 'Inscription',
+        login: 'Connexion',
+        premium: 'Premium',
+        games: 'JEUX',
+        tarot: 'TAROT & RITUEL'
+      },
+      es: {
+        register: 'Registro',
+        login: 'Iniciar sesión',
+        premium: 'Premium',
+        games: 'JUEGOS',
+        tarot: 'TAROT Y RITUAL'
+      },
+      de: {
+        register: 'Registrierung',
+        login: 'Anmelden',
+        premium: 'Premium',
+        games: 'SPIELE',
+        tarot: 'TAROT & RITUAL'
+      },
+      it: {
+        register: 'Registrazione',
+        login: 'Accedi',
+        premium: 'Premium',
+        games: 'GIOCHI',
+        tarot: 'TAROCCHI E RITUALE'
+      },
+      nl: {
+        register: 'Registreren',
+        login: 'Inloggen',
+        premium: 'Premium',
+        games: 'SPELLEN',
+        tarot: 'TAROT & RITUAAL'
+      },
+      ru: {
+        register: 'Регистрация',
+        login: 'Вход',
+        premium: 'Premium',
+        games: 'ИГРЫ',
+        tarot: 'ТАРО И РИТУАЛ'
+      },
+      ar: {
+        register: 'تسجيل',
+        login: 'دخول',
+        premium: 'Premium',
+        games: 'ألعاب',
+        tarot: 'التارو والطقس'
+      },
+      pt: {
+        register: 'Registrar',
+        login: 'Entrar',
+        premium: 'Premium',
+        games: 'JOGOS',
+        tarot: 'TARÔ E RITUAL'
+      },
+      pl: {
+        register: 'Rejestracja',
+        login: 'Zaloguj się',
+        premium: 'Premium',
+        games: 'GRY',
+        tarot: 'TAROT I RYTUAŁ'
+      },
+      tr: {
+        register: 'Kayıt Ol',
+        login: 'Giriş Yap',
+        premium: 'Premium',
+        games: 'OYUNLAR',
+        tarot: 'TAROT VE RITÜEL'
+      },
+      ja: {
+        register: '登録',
+        login: 'ログイン',
+        premium: 'Premium',
+        games: 'ゲーム',
+        tarot: 'タロット&儀式'
+      },
+      zh: {
+        register: '注册',
+        login: '登录',
+        premium: 'Premium',
+        games: '游戏',
+        tarot: '塔罗和仪式'
+      },
+      ko: {
+        register: '등록',
+        login: '로그인',
+        premium: 'Premium',
+        games: '게임',
+        tarot: '타로 & 의식'
+      }
+    };
+
+    const languages = [
+      {code: 'en', flag: '🇬🇧'},
+      {code: 'fr', flag: '🇫🇷'},
+      {code: 'es', flag: '🇪🇸'},
+      {code: 'de', flag: '🇩🇪'},
+      {code: 'it', flag: '🇮🇹'},
+      {code: 'nl', flag: '🇳🇱'},
+      {code: 'ru', flag: '🇷🇺'},
+      {code: 'ar', flag: '🇸🇦'},
+      {code: 'pt', flag: '🇵🇹'},
+      {code: 'pl', flag: '🇵🇱'},
+      {code: 'tr', flag: '🇹🇷'},
+      {code: 'ja', flag: '🇯🇵'},
+      {code: 'zh', flag: '🇨🇳'},
+      {code: 'ko', flag: '🇰🇷'}
+    ];
+
+    let currentLang = 'en';
+
+    // Build language selector
+    const selector = document.getElementById('langSelector');
+    languages.forEach(lang => {
+      const btn = document.createElement('button');
+      btn.className = 'lang-btn' + (lang.code === 'en' ? ' active' : '');
+      btn.textContent = lang.flag;
+      btn.title = lang.code.toUpperCase();
+      btn.dataset.lang = lang.code;
+      btn.addEventListener('click', switchLanguage);
+      selector.appendChild(btn);
+    });
+
+    function switchLanguage(e) {
+      const lang = e.target.dataset.lang;
+      if(lang === currentLang) return;
+      
+      currentLang = lang;
+      
+      // Update active button
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      
+      // Update text
+      const t = translations[lang];
+      document.querySelector('.text-register span').textContent = t.register;
+      document.querySelector('.text-login span').textContent = t.login;
+      document.querySelector('.text-premium span').textContent = t.premium;
+      document.querySelector('.text-games span').textContent = t.games;
+      document.querySelector('.text-tarot span').textContent = t.tarot;
+
+      // Set page direction if Arabic
+      document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+    }
+  </script>
+</body>
+</html>
