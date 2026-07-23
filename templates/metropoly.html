@@ -528,7 +528,7 @@ socket.on('monopoly_animate_move', (data) => {
     gameState = data.state;
     document.getElementById('lastLog').textContent = data.state.lastLog;
   }
-});
+});.
 
 socket.on('monopoly_error', (data) => {
   document.getElementById('loginError').textContent = data.msg;
