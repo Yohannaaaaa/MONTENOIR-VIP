@@ -3,62 +3,745 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>METROPOLY VIP 3D</title>
+<title>Metropoly</title>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --panel:#12151c;
+    --gold:#c9a86a;
+    --gold-dim:#8a7550;
+    --cream:#efe9db;
+    --brick:#a4453b;
+    --emerald:#3a7d63;
+    --slate:#5c6470;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:radial-gradient(ellipse at 50% 0%, #171b24 0%, #0b0d12 60%);
+    color:var(--cream);
+    font-family:'Georgia', 'Times New Roman', serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:16px;
+  }
+  h1{
+    font-family:'Georgia', serif;
+    letter-spacing:6px;
+    font-weight:400;
+    font-size:28px;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin:8px 0 2px 0;
+  }
+  .tagline{
+    color:var(--slate);
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .board-wrap{
+    width:100%;
+    max-width:520px;
+    aspect-ratio:1/1;
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    grid-template-rows:repeat(6,1fr);
+    gap:3px;
+    background:#000;
+    border:2px solid var(--gold-dim);
+    border-radius:6px;
+    padding:3px;
+  }
+  .cell{
+    background:var(--panel);
+    border-radius:3px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-size:8px;
+    text-align:center;
+    padding:2px;
+    overflow:hidden;
+    border:1px solid #22262f;
+  }
+  .cell.corner{
+    background:#181b23;
+    font-size:9px;
+    color:var(--gold);
+    font-weight:bold;
+  }
+  .cell .name{
+    font-size:7.5px;
+    line-height:1.1;
+    color:var(--cream);
+  }
+  .cell .price{
+    font-size:7px;
+    color:var(--gold-dim);
+    margin-top:1px;
+  }
+  .colorband{
+    position:absolute;
+    top:0;left:0;right:0;
+    height:5px;
+  }
+  .cell.owned{
+    box-shadow:inset 0 0 0 2px var(--gold);
+  }
+  .houses{
+    position:absolute;
+    bottom:2px;
+    display:flex;
+    gap:1px;
+  }
+  .house-icon{
+    width:4px;height:4px;
+    background:var(--emerald);
+    border-radius:1px;
+  }
+  .hotel-icon{
+    width:8px;height:5px;
+    background:var(--brick);
+    border-radius:1px;
+  }
+  .center{
+    grid-column:2/6;
+    grid-row:2/6;
+    background:linear-gradient(160deg,#151822,#0b0d12);
+    border-radius:4px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    position:relative;
+  }
+  .logo-center{
+    font-size:15px;
+    letter-spacing:4px;
+    color:var(--gold);
+    text-transform:uppercase;
+    opacity:0.85;
+  }
+  .skyline{
+    display:flex;
+    align-items:flex-end;
+    gap:2px;
+    height:34px;
+  }
+  .skyline div{
+    width:6px;
+    background:var(--gold-dim);
+    opacity:0.5;
+  }
 
-<link rel="stylesheet" href="/static/css/metropoly_3d.css">
+  .score-badge{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:2px solid var(--gold);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+    color:var(--gold);
+    font-weight:bold;
+    background:#0d0f14;
+  }
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+  /* DICE 3D */
+  .dice-area{
+    perspective:600px;
+    display:flex;
+    align-items:center;
+    gap:22px;
+  }
+  .die{
+    width:38px;height:38px;
+    position:relative;
+    transform-style:preserve-3d;
+    transition:transform 1.1s cubic-bezier(.34,1.56,.64,1);
+  }
+  .die .face{
+    position:absolute;
+    width:38px;height:38px;
+    background:var(--cream);
+    border:1px solid #999;
+    border-radius:5px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);
+    padding:5px;
+  }
+  .pip{
+    width:6px;height:6px;
+    background:#1a1a1a;
+    border-radius:50%;
+    align-self:center;
+    justify-self:center;
+    opacity:0;
+  }
+  .face-1 .p5{opacity:1;}
+  .face-2 .p1{opacity:1;} .face-2 .p9{opacity:1;}
+  .face-3 .p1{opacity:1;} .face-3 .p5{opacity:1;} .face-3 .p9{opacity:1;}
+  .face-4 .p1{opacity:1;} .face-4 .p3{opacity:1;} .face-4 .p7{opacity:1;} .face-4 .p9{opacity:1;}
+  .face-5 .p1{opacity:1;} .face-5 .p3{opacity:1;} .face-5 .p5{opacity:1;} .face-5 .p7{opacity:1;} .face-5 .p9{opacity:1;}
+  .face-6 .p1{opacity:1;} .face-6 .p3{opacity:1;} .face-6 .p4{opacity:1;} .face-6 .p6{opacity:1;} .face-6 .p7{opacity:1;} .face-6 .p9{opacity:1;}
+
+  .front{transform:translateZ(19px);}
+  .back{transform:rotateY(180deg) translateZ(19px);}
+  .right{transform:rotateY(90deg) translateZ(19px);}
+  .left{transform:rotateY(-90deg) translateZ(19px);}
+  .top{transform:rotateX(90deg) translateZ(19px);}
+  .bottom{transform:rotateX(-90deg) translateZ(19px);}
+
+  .rolling{
+    animation:tumble 1.1s ease-out;
+  }
+  @keyframes tumble{
+    0%{transform:rotateX(0) rotateY(0);}
+    100%{transform:rotateX(var(--rx)) rotateY(var(--ry));}
+  }
+
+  .token{
+    position:absolute;
+    width:9px;height:9px;
+    border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 4px var(--gold);
+    top:3px;left:3px;
+    transition:all 0.5s ease;
+    z-index:5;
+  }
+
+  .panel{
+    width:100%;
+    max-width:520px;
+    background:var(--panel);
+    border:1px solid #22262f;
+    border-radius:6px;
+    margin-top:14px;
+    padding:12px;
+  }
+  .player-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+    margin-bottom:8px;
+    padding-bottom:8px;
+    border-bottom:1px solid #22262f;
+  }
+  .player-name{color:var(--gold);}
+  .cash{font-variant-numeric:tabular-nums;}
+
+  .actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+  }
+  button{
+    font-family:inherit;
+    background:linear-gradient(180deg,#c9a86a,#a8875090);
+    color:#141414;
+    border:none;
+    padding:10px 16px;
+    border-radius:5px;
+    font-size:13px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    cursor:pointer;
+    font-weight:bold;
+  }
+  button:disabled{
+    background:#333;
+    color:#777;
+    cursor:not-allowed;
+  }
+  button.secondary{
+    background:transparent;
+    border:1px solid var(--gold-dim);
+    color:var(--gold);
+  }
+  .build-row{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:6px;
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px solid #22262f;
+  }
+  .build-btn{
+    background:#181b23;
+    border:1px solid var(--gold-dim);
+    border-radius:5px;
+    padding:8px 4px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    cursor:pointer;
+    color:var(--cream);
+  }
+  .build-btn .icon-row{
+    display:flex;
+    gap:2px;
+  }
+  .build-btn .bhouse{
+    width:6px;height:6px;
+    background:var(--emerald);
+    border-radius:1px;
+  }
+  .build-btn .bhotel{
+    width:14px;height:8px;
+    background:var(--brick);
+    border-radius:1px;
+  }
+  .build-btn .blabel{
+    font-size:9px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--gold);
+  }
+  .build-btn .bprice{
+    font-size:9px;
+    color:var(--slate);
+  }
+  .build-btn.active{
+    box-shadow:0 0 0 2px var(--gold);
+  }
+  .build-btn:disabled{
+    opacity:0.35;
+    cursor:not-allowed;
+  }
+  .log{
+    font-size:12px;
+    color:var(--slate);
+    margin-top:10px;
+    max-height:70px;
+    overflow-y:auto;
+    line-height:1.5;
+  }
+  .prop-detail{
+    font-size:12px;
+    margin-top:8px;
+    color:var(--cream);
+    min-height:16px;
+  }
+</style>
 </head>
-
 <body>
 
-<div id="threeStage">
-    <canvas id="threeCanvas"></canvas>
+<h1>Metropoly</h1>
+<div class="tagline">bâtis ton empire</div>
+
+<div class="board-wrap" id="board">
+  <div class="center">
+    <div class="logo-center">METROPOLY</div>
+    <div class="skyline" id="skyline"></div>
+    <div class="dice-area">
+      <div class="die" id="die1"><div class="face front face-1"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face back face-6"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face right face-2"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face left face-5"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face top face-3"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face bottom face-4"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div></div>
+      <div class="die" id="die2"><div class="face front face-1"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face back face-6"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face right face-2"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face left face-5"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face top face-3"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face bottom face-4"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div></div>
+      <div class="score-badge" id="scoreBadge">–</div>
+    </div>
+  </div>
 </div>
 
-<div class="topHud">
-    <a href="/jeux" class="hudBtn">← JEUX</a>
-    <input id="username" placeholder="Nom joueur">
-
-    <select id="tokenSelect">
-        <option value="horse">🐴 Cheval</option>
-        <option value="jackpot">🎰 Machine</option>
-        <option value="boat">🛥️ Bateau</option>
-        <option value="car">🚗 Voiture</option>
-        <option value="hat">🎩 Chapeau</option>
-        <option value="cat">🐈 Chat noir</option>
-    </select>
-
-    <button onclick="createRoom()">Créer salle</button>
-    <input id="roomCodeInput" placeholder="Code salle">
-    <button onclick="joinRoom()">Entrer</button>
-    <button onclick="startGame()">Démarrer</button>
-    <span id="roomLabel">Salle : -</span>
+<div class="panel">
+  <div class="player-row">
+    <span class="player-name" id="pname">Joueur</span>
+    <span class="cash" id="pcash">1500 €</span>
+  </div>
+  <div class="prop-detail" id="propDetail">Lance les dés pour commencer.</div>
+  <div class="actions">
+    <button id="rollBtn">Lancer les dés</button>
+    <button id="buyBtn" class="secondary" disabled>Acheter</button>
+  </div>
+  <div class="build-row" id="buildRow">
+    <button class="build-btn" id="build1" disabled>
+      <div class="icon-row"><div class="bhouse"></div></div>
+      <div class="blabel">1 maison</div>
+      <div class="bprice" id="price1">100€</div>
+    </button>
+    <button class="build-btn" id="build2" disabled>
+      <div class="icon-row"><div class="bhouse"></div><div class="bhouse"></div></div>
+      <div class="blabel">2 maisons</div>
+      <div class="bprice" id="price2">200€</div>
+    </button>
+    <button class="build-btn" id="build3" disabled>
+      <div class="icon-row"><div class="bhouse"></div><div class="bhouse"></div><div class="bhouse"></div></div>
+      <div class="blabel">3 maisons</div>
+      <div class="bprice" id="price3">300€</div>
+    </button>
+    <button class="build-btn" id="build4" disabled>
+      <div class="icon-row"><div class="bhouse"></div><div class="bhouse"></div><div class="bhouse"></div><div class="bhouse"></div></div>
+      <div class="blabel">4 maisons</div>
+      <div class="bprice" id="price4">400€</div>
+    </button>
+    <button class="build-btn" id="build5" disabled>
+      <div class="icon-row"><div class="bhotel"></div></div>
+      <div class="blabel">Hôtel</div>
+      <div class="bprice" id="price5">500€</div>
+    </button>
+  </div>
+  <div class="log" id="log"></div>
 </div>
 
-<div class="leftHud">
-    <button onclick="rollDice()">🎲 ZAR AT</button>
-    <button onclick="buildHouse()">🏠 EV AL</button>
-    <button onclick="buildHotel()">🏨 OTEL AL</button>
-    <div id="buildHint">Maison : série complète + être sur la case.</div>
-</div>
+<script>
+// ---- Board data: 20 cases (simplified square, 6x6 grid perimeter) ----
+const COLORS = {
+  brown:'#7a5230', lightblue:'#8fc7e8', pink:'#c76fa0',
+  orange:'#d98a3d', red:'#a4453b', yellow:'#d9c23d',
+  green:'#3a7d63', blue:'#3a5a8c'
+};
 
-<div class="rightHud">
-    <h3>ONLINE</h3>
-    <div id="playersList"></div>
-</div>
+const board = [
+  {name:'DÉPART', type:'corner'},
+  {name:'Rue Voltaire', type:'prop', price:60, color:'brown', rent:2},
+  {name:'Rue Hugo', type:'prop', price:60, color:'brown', rent:4},
+  {name:'Gare du Nord', type:'station', price:200, rent:25},
+  {name:'Avenue Camus', type:'prop', price:100, color:'lightblue', rent:6},
+  {name:'Avenue Zola', type:'prop', price:100, color:'lightblue', rent:6},
+  {name:'PRISON', type:'corner'},
+  {name:'Boulevard Molière', type:'prop', price:140, color:'pink', rent:10},
+  {name:'Boulevard Racine', type:'prop', price:140, color:'pink', rent:10},
+  {name:'Gare Centrale', type:'station', price:200, rent:25},
+  {name:'Place Rimbaud', type:'prop', price:180, color:'orange', rent:14},
+  {name:'PARC GRATUIT', type:'corner'},
+  {name:'Cours Balzac', type:'prop', price:220, color:'red', rent:18},
+  {name:'Cours Flaubert', type:'prop', price:220, color:'red', rent:18},
+  {name:'Gare du Sud', type:'station', price:200, rent:25},
+  {name:'Impasse Verlaine', type:'prop', price:260, color:'yellow', rent:22},
+  {name:'ALLEZ EN PRISON', type:'corner'},
+  {name:'Quai Baudelaire', type:'prop', price:300, color:'green', rent:26},
+  {name:'Quai Rimbaud', type:'prop', price:300, color:'green', rent:26},
+  {name:'Avenue Métropole', type:'prop', price:400, color:'blue', rent:50}
+];
 
-<div id="buyPanel" class="modal">
-    <h2 id="buyCity">Ville</h2>
-    <p id="buyPrice">Prix</p>
-    <button onclick="buyProperty()">Acheter</button>
-    <button onclick="hideBuy()">Annuler</button>
-</div>
+const N = board.length;
 
-<div id="toast"></div>
+// build cells around perimeter of 6x6 grid, skip center 4x4 (occupied by .center spanning 2/6,2/6)
+const gridPositions = [
+  [6,6],[6,5],[6,4],[6,3],[6,2],[6,1],
+  [5,1],[4,1],[3,1],[2,1],[1,1],
+  [1,2],[1,3],[1,4],[1,5],[1,6],
+  [2,6],[3,6],[4,6],[5,6]
+];
 
-<script src="/static/js/metropoly_three.js?v=1"></script>
+const boardEl = document.getElementById('board');
+const centerEl = document.querySelector('.center');
+
+board.forEach((cell, i)=>{
+  const div = document.createElement('div');
+  div.className = 'cell' + (cell.type==='corner' ? ' corner' : '');
+  div.style.gridColumn = gridPositions[i][1];
+  div.style.gridRow = gridPositions[i][0];
+  div.id = 'cell-'+i;
+
+  if(cell.type==='prop'){
+    const band = document.createElement('div');
+    band.className='colorband';
+    band.style.background = COLORS[cell.color];
+    div.appendChild(band);
+  }
+  const nameEl = document.createElement('div');
+  nameEl.className='name';
+  nameEl.textContent = cell.name;
+  div.appendChild(nameEl);
+
+  if(cell.price){
+    const priceEl = document.createElement('div');
+    priceEl.className='price';
+    priceEl.textContent = cell.price+'€';
+    div.appendChild(priceEl);
+  }
+  if(cell.type!=='corner'){
+    const houses = document.createElement('div');
+    houses.className='houses';
+    houses.id = 'houses-'+i;
+    div.appendChild(houses);
+  }
+  boardEl.insertBefore(div, centerEl);
+});
+
+// skyline decoration
+const sky = document.getElementById('skyline');
+[14,22,10,28,16,20,12].forEach(h=>{
+  const bar = document.createElement('div');
+  bar.style.height = h+'px';
+  sky.appendChild(bar);
+});
+
+// token
+const token = document.createElement('div');
+token.className='token';
+document.getElementById('cell-0').appendChild(token);
+
+// ---- Game state ----
+let position = 0;
+let cash = 1500;
+let owned = {}; // index -> {houses:0}
+let rolling = false;
+
+const pcash = document.getElementById('pcash');
+const propDetail = document.getElementById('propDetail');
+const buyBtn = document.getElementById('buyBtn');
+const rollBtn = document.getElementById('rollBtn');
+const logEl = document.getElementById('log');
+const scoreBadge = document.getElementById('scoreBadge');
+const buildBtns = [1,2,3,4,5].map(n => document.getElementById('build'+n));
+const BUILD_COSTS = [100,200,300,400,500];
+
+function log(msg){
+  const p = document.createElement('div');
+  p.textContent = msg;
+  logEl.prepend(p);
+}
+
+function updateCash(){
+  pcash.textContent = cash + ' €';
+}
+
+function currentCell(){ return board[position]; }
+
+function refreshHousesDisplay(idx){
+  const el = document.getElementById('houses-'+idx);
+  if(!el) return;
+  el.innerHTML='';
+  const o = owned[idx];
+  if(!o) return;
+  if(o.houses < 4){
+    for(let i=0;i<o.houses;i++){
+      const h = document.createElement('div');
+      h.className='house-icon';
+      el.appendChild(h);
+    }
+  } else {
+    const h = document.createElement('div');
+    h.className='hotel-icon';
+    el.appendChild(h);
+  }
+}
+
+function markOwned(idx){
+  document.getElementById('cell-'+idx).classList.add('owned');
+}
+
+// ---------------- SOUND ENGINE (Web Audio, no external files) ----------------
+let audioCtx = null;
+function getCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function tone(freq, start, dur, type, gainPeak){
+  const ctx = getCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+  gain.gain.setValueAtTime(0, ctx.currentTime + start);
+  gain.gain.linearRampToValueAtTime(gainPeak || 0.2, ctx.currentTime + start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime + start);
+  osc.stop(ctx.currentTime + start + dur + 0.02);
+}
+
+function noiseBurst(start, dur, gainPeak){
+  const ctx = getCtx();
+  const bufferSize = Math.floor(ctx.sampleRate * dur);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){
+    data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(gainPeak || 0.15, ctx.currentTime + start);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+  src.connect(gain);
+  gain.connect(ctx.destination);
+  src.start(ctx.currentTime + start);
+}
+
+// dice: a few sharp clicks/rattles while rolling
+function playDiceSound(){
+  for(let i=0;i<6;i++){
+    noiseBurst(i*0.12, 0.09, 0.18);
+    tone(300 + Math.random()*400, i*0.12, 0.06, 'square', 0.05);
+  }
+}
+
+// money coming IN (passing GO, selling): rising two-note chime + coin clinks
+function playCashInSound(){
+  tone(660, 0, 0.12, 'triangle', 0.18);
+  tone(880, 0.1, 0.16, 'triangle', 0.18);
+  tone(1320, 0.22, 0.2, 'sine', 0.12);
+  noiseBurst(0.05, 0.08, 0.06);
+  noiseBurst(0.18, 0.08, 0.06);
+}
+
+// money going OUT (buying, building): descending thud + register click
+function playCashOutSound(){
+  tone(420, 0, 0.14, 'sawtooth', 0.14);
+  tone(280, 0.1, 0.18, 'sawtooth', 0.14);
+  noiseBurst(0, 0.05, 0.12);
+}
+
+// construction: hammer-like knock
+function playBuildSound(){
+  noiseBurst(0, 0.05, 0.25);
+  tone(150, 0, 0.08, 'square', 0.15);
+  noiseBurst(0.15, 0.05, 0.2);
+  tone(150, 0.15, 0.08, 'square', 0.13);
+}
+
+function updateActionButtons(){
+  const cell = currentCell();
+  buyBtn.disabled = true;
+  buildBtns.forEach(b => { b.disabled = true; b.classList.remove('active'); });
+
+  if(cell.type==='prop' || cell.type==='station'){
+    if(owned[position] === undefined){
+      propDetail.textContent = cell.name + ' — libre, prix ' + cell.price + '€';
+      buyBtn.disabled = cash < cell.price;
+    } else if(owned[position].owner === 'me'){
+      const o = owned[position];
+      if(cell.type==='prop'){
+        if(o.houses < 5){
+          const nextLevel = o.houses; // 0-indexed -> build button index o.houses
+          const cost = BUILD_COSTS[nextLevel];
+          propDetail.textContent = cell.name + ' — à toi (' + (o.houses<4? o.houses+' maison(s)':'hôtel') + ')';
+          const btn = buildBtns[nextLevel];
+          btn.disabled = cash < cost;
+          btn.classList.add('active');
+        } else {
+          propDetail.textContent = cell.name + ' — hôtel construit, développement max.';
+        }
+      } else {
+        propDetail.textContent = cell.name + ' — gare à toi.';
+      }
+    }
+  } else {
+    propDetail.textContent = cell.name;
+  }
+}
+
+function movePlayerTo(newPos, passedGo){
+  position = newPos;
+  const targetCell = document.getElementById('cell-'+position);
+  targetCell.appendChild(token);
+  if(passedGo){
+    cash += 200;
+    log('Tu passes par la case DÉPART : +200€');
+    updateCash();
+    playCashInSound();
+  }
+  const cell = currentCell();
+  if(cell.type==='prop' || cell.type==='station'){
+    if(owned[position] && owned[position].owner==='me'){
+      log('Tu es sur ta propriété : ' + cell.name);
+    } else if(owned[position]===undefined){
+      log('Case libre : ' + cell.name + ' (' + cell.price + '€)');
+    }
+  } else {
+    log('Tu arrives sur : ' + cell.name);
+  }
+  updateActionButtons();
+}
+
+function setDieFace(dieEl, value){
+  const rotations = {
+    1:{x:0,y:0},
+    6:{x:0,y:180},
+    2:{x:0,y:-90},
+    5:{x:0,y:90},
+    3:{x:-90,y:0},
+    4:{x:90,y:0}
+  };
+  const r = rotations[value];
+  // add extra full spins for animation feel
+  const spinX = 360*2 + r.x;
+  const spinY = 360*3 + r.y;
+  dieEl.style.setProperty('--rx', spinX+'deg');
+  dieEl.style.setProperty('--ry', spinY+'deg');
+  dieEl.classList.remove('rolling');
+  void dieEl.offsetWidth; // reflow to restart animation
+  dieEl.classList.add('rolling');
+  dieEl.style.transform = 'rotateX('+spinX+'deg) rotateY('+spinY+'deg)';
+}
+
+rollBtn.addEventListener('click', ()=>{
+  if(rolling) return;
+  rolling = true;
+  rollBtn.disabled = true;
+  buyBtn.disabled = true;
+  buildBtns.forEach(b => b.disabled = true);
+  scoreBadge.textContent = '–';
+
+  const d1 = 1 + Math.floor(Math.random()*6);
+  const d2 = 1 + Math.floor(Math.random()*6);
+  setDieFace(document.getElementById('die1'), d1);
+  setDieFace(document.getElementById('die2'), d2);
+  playDiceSound();
+
+  setTimeout(()=>{
+    const total = d1+d2;
+    scoreBadge.textContent = total;
+    log('Dés : ' + d1 + ' + ' + d2 + ' = ' + total);
+    let newPos = position + total;
+    let passedGo = false;
+    if(newPos >= N){ newPos -= N; passedGo = true; }
+    movePlayerTo(newPos, passedGo);
+    rolling = false;
+    rollBtn.disabled = false;
+  }, 1150);
+});
+
+buyBtn.addEventListener('click', ()=>{
+  const cell = currentCell();
+  if(cash < cell.price) return;
+  cash -= cell.price;
+  owned[position] = {owner:'me', houses:0};
+  markOwned(position);
+  updateCash();
+  playCashOutSound();
+  log('Achat : ' + cell.name + ' pour ' + cell.price + '€');
+  updateActionButtons();
+});
+
+buildBtns.forEach((btn, idx) => {
+  btn.addEventListener('click', ()=>{
+    const cell = currentCell();
+    const o = owned[position];
+    if(!o || cell.type!=='prop') return;
+    if(o.houses !== idx) return; // must build sequentially
+    const cost = BUILD_COSTS[idx];
+    if(cash < cost) return;
+    cash -= cost;
+    o.houses += 1;
+    updateCash();
+    playBuildSound();
+    playCashOutSound();
+    refreshHousesDisplay(position);
+    log((o.houses<=4 ? 'Maison construite' : 'Hôtel construit') + ' sur ' + cell.name);
+    updateActionButtons();
+  });
+});
+
+updateCash();
+updateActionButtons();
+</script>
+
 </body>
 </html>
