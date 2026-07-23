@@ -246,6 +246,49 @@
 </head>
 <body>
 
+<!-- HOME BUTTON WITH LANGUAGE SUPPORT -->
+<a id="homeBtn" href="/" style="position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: linear-gradient(180deg, #c9a86a, #a8875090); color: #141414; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 12px; z-index: 1000; letter-spacing: 1px;">ACCUEIL</a>
+
+<script>
+const homeTexts = {
+  'en': 'HOME',
+  'fr': 'ACCUEIL',
+  'es': 'INICIO',
+  'de': 'HOME',
+  'it': 'HOME',
+  'nl': 'THUIS',
+  'ru': 'ДОМА',
+  'ar': 'الرئيسية',
+  'pt': 'INICIO',
+  'pl': 'STRONA GŁÓWNA',
+  'tr': 'LOCA',
+  'ja': 'ホーム',
+  'zh': '首页',
+  'ko': '홈'
+};
+
+function updateHomeButtonLanguage(lang) {
+  const homeBtn = document.getElementById('homeBtn');
+  if (homeBtn && homeTexts[lang]) {
+    homeBtn.textContent = homeTexts[lang];
+  }
+}
+
+// Watch for language changes
+const observer = new MutationObserver(() => {
+  const currentLang = localStorage.getItem('language') || 'fr';
+  updateHomeButtonLanguage(currentLang);
+});
+
+observer.observe(document.body, { attributes: true, subtree: true });
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+  const currentLang = localStorage.getItem('language') || 'fr';
+  updateHomeButtonLanguage(currentLang);
+});
+</script>
+
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="screen active">
   <h1 class="brand">METROPOLY</h1>
