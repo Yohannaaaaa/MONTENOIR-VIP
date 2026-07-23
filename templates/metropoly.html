@@ -98,396 +98,397 @@
   }
   .player-chip .dot{width:8px;height:8px;border-radius:50%;}
 
-  /* --- GAME --- */
-  .game-wrap{width:100%;max-width:520px;}
-  .board-image-wrap{
+  .game-wrap{
     width:100%;
-    border-radius:8px;
+    max-width:1200px;
+    display:grid;
+    grid-template-columns:1fr 280px;
+    gap:20px;
+  }
+
+  .board-section{
+    position:relative;
+    background:#1a1d25;
+    border:2px solid var(--gold);
+    border-radius:10px;
+    padding:15px;
+    aspect-ratio:1;
     overflow:hidden;
-    border:2px solid var(--gold-dim);
-    box-shadow:0 0 24px rgba(201,168,106,.15);
   }
-  .board-image-wrap img{
+
+  .board-img{
     width:100%;
-    display:block;
+    height:100%;
+    background:url('/static/metroploy_plateau_lux.png.png') center/cover;
+    position:relative;
   }
 
-  .die3d{width:38px;height:38px;margin:0 auto;}
-  .die-face{
-    width:38px;height:38px;background:var(--cream);border:1px solid #999;
-    border-radius:5px;display:grid;grid-template-columns:repeat(3,1fr);
-    grid-template-rows:repeat(3,1fr);padding:4px;
+  .tokens-layer{
+    position:absolute;
+    top:0;left:0;width:100%;height:100%;
+    pointer-events:none;
   }
-  .die-face.rolling{animation:spin 0.9s ease-out;}
-  @keyframes spin{
-    0%{transform:rotate(0deg) scale(1);}
-    50%{transform:rotate(360deg) scale(1.15);}
-    100%{transform:rotate(720deg) scale(1);}
-  }
-  .pip{width:5px;height:5px;background:#1a1a1a;border-radius:50%;align-self:center;justify-self:center;opacity:0;}
 
-  .dice-row{
-    display:flex;align-items:center;justify-content:center;gap:12px;
-    margin:14px 0 6px 0;
+  .token{
+    position:absolute;
+    font-size:28px;
+    transform:translate(-50%,-50%);
+    transition:all 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+    filter:drop-shadow(0 0 8px rgba(201,168,106,0.6));
   }
-  .dice-value{color:var(--gold);font-size:15px;font-weight:bold;}
 
-  .panel{
-    width:100%;background:var(--panel);border:1px solid #22262f;
-    border-radius:6px;margin-top:12px;padding:12px;
+  .dice-section{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    align-items:center;
   }
-  .turn-banner{font-size:13px;color:var(--gold);text-align:center;margin-bottom:8px;min-height:18px;}
-  .my-position{font-size:12px;color:var(--cream);text-align:center;margin-bottom:10px;}
-  .players-strip{display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:6px;}
-  .p-card{
-    flex:0 0 auto;background:#181b23;border-radius:6px;padding:6px 10px;
-    font-size:11px;border:1px solid #22262f;min-width:76px;text-align:center;
-  }
-  .p-card.active-turn{box-shadow:0 0 0 2px var(--gold);}
-  .p-card .pmoney{color:var(--gold);font-weight:bold;font-size:12px;}
 
-  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
-  .actions button{width:auto;flex:1;min-width:110px;}
-
-  .my-props{margin-top:10px;}
-  .prop-row{
-    display:flex;justify-content:space-between;align-items:center;
-    background:#181b23;border-radius:5px;padding:6px 8px;margin-bottom:5px;font-size:11px;
+  .dice-container{
+    display:flex;
+    gap:15px;
+    perspective:1200px;
+    justify-content:center;
   }
-  .prop-row .build-btns{display:flex;gap:5px;}
-  .prop-row button{width:auto;margin:0;padding:5px 8px;font-size:9px;}
 
-  .log{
-    font-size:11px;color:var(--slate);margin-top:10px;
-    max-height:70px;overflow-y:auto;line-height:1.5;
+  .die{
+    width:60px;
+    height:60px;
+    position:relative;
+    transform-style:preserve-3d;
+    animation:rollDice 0.6s ease-out;
   }
-  .chat-box{display:flex;gap:6px;margin-top:10px;}
-  .chat-box input{flex:1;}
-  .chat-box button{width:auto;margin:0;padding:10px 14px;}
-  .chat-log{font-size:11px;color:var(--cream);max-height:70px;overflow-y:auto;margin-top:6px;}
+
+  .die.rolling{
+    animation:rollDice 0.8s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes rollDice{
+    0%{transform:rotateX(0deg) rotateY(0deg) rotateZ(0deg);}
+    50%{transform:rotateX(720deg) rotateY(720deg) rotateZ(360deg);}
+    100%{transform:rotateX(0deg) rotateY(0deg) rotateZ(0deg);}
+  }
+
+  .face{
+    position:absolute;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#c9a86a,#a8875090);
+    border:2px solid var(--gold);
+    font-size:24px;
+    font-weight:bold;
+    color:#141414;
+  }
+
+  .face.face1{transform:translateZ(30px);}
+  .face.face2{transform:rotateY(180deg) translateZ(30px);}
+  .face.face3{transform:rotateY(90deg) translateZ(30px);}
+  .face.face4{transform:rotateY(-90deg) translateZ(30px);}
+  .face.face5{transform:rotateX(90deg) translateZ(30px);}
+  .face.face6{transform:rotateX(-90deg) translateZ(30px);}
+
+  .roll-btn{width:100%;background:linear-gradient(180deg,#3a7d63,#2a5d50)!important;color:white;padding:14px;font-size:16px;}
+  .roll-btn:disabled{background:#555!important;}
+  .roll-btn:hover:not(:disabled){box-shadow:0 0 15px rgba(58,125,99,0.8);}
+
+  .right-panel{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+  }
+
+  .panel-box{
+    background:var(--panel);
+    border:1px solid #22262f;
+    border-radius:8px;
+    padding:12px;
+    font-size:13px;
+  }
+
+  .panel-title{
+    color:var(--gold);
+    font-weight:bold;
+    margin-bottom:8px;
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:1px;
+  }
+
+  .player-list{
+    max-height:200px;
+    overflow-y:auto;
+  }
+
+  .player-entry{
+    padding:6px;
+    margin:4px 0;
+    background:#0d0f14;
+    border-radius:4px;
+    font-size:12px;
+    border-left:3px solid var(--gold);
+  }
+
+  .last-log{
+    color:var(--gold);
+    font-size:12px;
+    line-height:1.4;
+    min-height:40px;
+  }
+
+  @media(max-width:900px){
+    .game-wrap{grid-template-columns:1fr;}
+    .board-section{aspect-ratio:auto;min-height:300px;}
+  }
 </style>
 </head>
 <body>
 
-<!-- ============ LOGIN / CREATE-JOIN SCREEN ============ -->
-<div class="screen active" id="screen-login">
-  <h1 class="brand">Metropoly</h1>
-  <div class="tagline">bâtis ton empire — multijoueur</div>
-
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="screen active">
+  <h1 class="brand">METROPOLY</h1>
+  <p class="tagline">Bâtis ton empire – Multijoueur</p>
   <div class="card">
-    <label>Ton pseudo</label>
-    <input type="text" id="usernameInput" placeholder="Ex: Yohanna" maxlength="16">
-
-    <label>Ton jeton</label>
-    <div class="token-row" id="tokenRow">
-      <div class="token-btn selected" data-token="🎩">🎩</div>
-      <div class="token-btn" data-token="🚗">🚗</div>
-      <div class="token-btn" data-token="🐕">🐕</div>
-      <div class="token-btn" data-token="🚀">🚀</div>
-      <div class="token-btn" data-token="⚓">⚓</div>
-      <div class="token-btn" data-token="💎">💎</div>
+    <label>TON PSEUDO</label>
+    <input type="text" id="username" placeholder="Yohanna">
+    <label style="margin-top:16px">TON JETON</label>
+    <div class="token-row">
+      <button class="token-btn" data-token="🎩">🎩</button>
+      <button class="token-btn" data-token="🚗">🚗</button>
+      <button class="token-btn" data-token="🐕">🐕</button>
+      <button class="token-btn" data-token="🚀">🚀</button>
+      <button class="token-btn" data-token="⚓">⚓</button>
+      <button class="token-btn" data-token="💎">💎</button>
     </div>
-
-    <button id="createRoomBtn">Créer une salle</button>
-
-    <label>Ou rejoindre avec un code</label>
-    <input type="text" id="joinCodeInput" placeholder="Ex: MON-1234" style="text-transform:uppercase;">
-    <button class="secondary" id="joinRoomBtn">Rejoindre la salle</button>
-
+    <button id="createRoomBtn">CRÉER UNE SALLE</button>
+    <label style="margin-top:16px">OU REJOINDRE AVEC UN CODE</label>
+    <input type="text" id="roomCode" placeholder="EX: MON-1234">
+    <button id="joinRoomBtn" class="secondary">REJOINDRE LA SALLE</button>
     <div class="error-msg" id="loginError"></div>
   </div>
 </div>
 
-<!-- ============ LOBBY SCREEN ============ -->
-<div class="screen" id="screen-lobby">
-  <h1 class="brand">Salle d'attente</h1>
+<!-- LOBBY SCREEN -->
+<div id="lobbyScreen" class="screen">
+  <h1 class="brand">METROPOLY</h1>
+  <p class="tagline">Bâtis ton empire – Multijoueur</p>
   <div class="card">
-    <div style="text-align:center;color:var(--slate);font-size:11px;text-transform:uppercase;letter-spacing:2px;">Code de la salle</div>
-    <div class="room-code" id="roomCodeDisplay">—</div>
-    <div id="lobbyPlayers"></div>
-    <button id="startGameBtn">Démarrer la partie</button>
+    <p style="text-align:center;margin-bottom:12px;">CODE SALLE</p>
+    <div class="room-code" id="lobbyCode">MON-XXXX</div>
+    <p style="color:var(--gold-dim);text-align:center;font-size:11px;margin-top:12px;">Partage ce code avec tes amis!</p>
+    <p style="color:var(--gold);text-align:center;margin-top:16px;font-weight:bold;">JOUEURS</p>
+    <div id="lobbyPlayers" style="margin:12px 0;"></div>
+    <button id="startGameBtn">DÉMARRER LA PARTIE</button>
     <div class="error-msg" id="lobbyError"></div>
   </div>
 </div>
 
-<!-- ============ GAME SCREEN ============ -->
-<div class="screen" id="screen-game">
+<!-- GAME SCREEN -->
+<div id="gameScreen" class="screen">
+  <h1 class="brand">METROPOLY</h1>
   <div class="game-wrap">
-
-    <div class="board-image-wrap">
-      <img src="/static/metroploy_plateau_lux.png.png" alt="Plateau Metropoly">
+    <div class="board-section">
+      <div class="board-img">
+        <div class="tokens-layer" id="tokensLayer"></div>
+      </div>
     </div>
 
-    <div class="dice-row">
-      <div class="die3d"><div class="die-face" id="dieFace"></div></div>
-      <div class="dice-value" id="lastDiceValue">—</div>
-    </div>
-
-    <div class="panel">
-      <div class="turn-banner" id="turnBanner">En attente...</div>
-      <div class="my-position" id="myPosition"></div>
-      <div class="players-strip" id="playersStrip"></div>
-
-      <div class="actions">
-        <button id="rollBtn">Lancer le dé</button>
-        <button id="buyBtn" class="secondary" disabled>Acheter</button>
-        <button id="endTurnBtn" class="secondary">Fin de tour</button>
+    <div class="right-panel">
+      <div class="dice-section">
+        <div class="dice-container">
+          <div class="die" id="die1">
+            <div class="face face1">1</div>
+            <div class="face face2">6</div>
+            <div class="face face3">3</div>
+            <div class="face face4">4</div>
+            <div class="face face5">5</div>
+            <div class="face face6">2</div>
+          </div>
+          <div class="die" id="die2">
+            <div class="face face1">1</div>
+            <div class="face face2">6</div>
+            <div class="face face3">3</div>
+            <div class="face face4">4</div>
+            <div class="face face5">5</div>
+            <div class="face face6">2</div>
+          </div>
+        </div>
+        <button id="rollBtn" class="roll-btn">LANCER LES DÉS</button>
       </div>
 
-      <div class="my-props" id="myProps"></div>
-
-      <div class="log" id="gameLog"></div>
-
-      <div class="chat-box">
-        <input type="text" id="chatInput" placeholder="Message...">
-        <button id="chatSendBtn">Envoyer</button>
+      <div class="panel-box">
+        <div class="panel-title">JOUEURS</div>
+        <div class="player-list" id="playerList"></div>
       </div>
-      <div class="chat-log" id="chatLog"></div>
+
+      <div class="panel-box">
+        <div class="panel-title">DERNIER COUP</div>
+        <div class="last-log" id="lastLog">En attente...</div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 const socket = io();
+let currentUser = '';
+let currentToken = '🎩';
+let currentRoom = '';
+let gameState = null;
 
-// ---- Cell data (mirrors backend METROPOLY_CELLS exactly) ----
-const CELLS = [
-  ["ALLEZ","start",0,0,"corner"],
-  ["Banque","bank",0,0,"corner"],
-  ["New York","property",220,24,"green"],
-  ["Monaco","property",200,22,"green"],
-  ["Aéroport International","transport",200,25,"transport"],
-  ["Londres","property",200,22,"green"],
-  ["Varsovie","property",100,12,"brown"],
-  ["Zurich","property",100,12,"brown"],
-  ["Prison","jail",0,0,"corner"],
-  ["Paris","property",160,18,"orange"],
-  ["Milan","property",140,16,"orange"],
-  ["Amsterdam","property",140,16,"orange"],
-  ["Compagnies des Eaux","utility",100,0,"utility"],
-  ["Moscou","property",120,14,"purple"],
-  ["Rome","property",100,12,"purple"],
-  ["Madrid","property",100,12,"purple"],
-  ["Impôts","tax",0,200,"tax"],
-  ["Sofia","property",60,6,"yellow"],
-  ["Belgrad","property",70,8,"yellow"],
-  ["Gare Grande Vitesse","transport",100,25,"transport"],
-  ["Istanbul","property",70,8,"yellow"],
-  ["Prague","property",80,10,"blue"],
-  ["Lisbonne","property",90,12,"blue"],
-  ["Enchères","auction",0,0,"special"],
-  ["Dubaï","property",160,18,"red"],
-  ["Pékin","property",160,18,"red"],
-  ["Compagnie Électrique","utility",150,0,"utility"],
-  ["Tokyo","property",180,20,"red"]
+// ===== SOUNDS =====
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function playDiceSound() {
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
+  
+  osc.frequency.setValueAtTime(400, audioContext.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+  
+  gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+  
+  osc.start(audioContext.currentTime);
+  osc.stop(audioContext.currentTime + 0.3);
+}
+
+// ===== TOKEN MOVEMENT =====
+const GRID_POS = [
+  [50, 95], [50, 85], [50, 75], [50, 65], [50, 55], [50, 45], [50, 35], [50, 25],
+  [60, 5], [70, 5], [80, 5], [90, 5], [100, 5],
+  [100, 15], [100, 25], [100, 35], [100, 45], [100, 55], [100, 65], [100, 75], [100, 85],
+  [90, 95], [80, 95], [70, 95], [60, 95]
 ];
 
-// ---- State ----
-let myUsername = '';
-let myToken = '🎩';
-let myRoomCode = '';
-let lastState = null;
-let canBuyNow = false;
-
-// ---- DOM refs ----
-const screens = {
-  login: document.getElementById('screen-login'),
-  lobby: document.getElementById('screen-lobby'),
-  game: document.getElementById('screen-game')
-};
-function showScreen(name){
-  Object.values(screens).forEach(s => s.classList.remove('active'));
-  screens[name].classList.add('active');
-}
-
-// ---- Login screen ----
-document.querySelectorAll('.token-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.token-btn').forEach(b=>b.classList.remove('selected'));
-    btn.classList.add('selected');
-    myToken = btn.dataset.token;
-  });
-});
-
-document.getElementById('createRoomBtn').addEventListener('click', ()=>{
-  const u = document.getElementById('usernameInput').value.trim();
-  if(!u){ document.getElementById('loginError').textContent = 'Entre un pseudo.'; return; }
-  myUsername = u;
-  socket.emit('monopoly_create_room', {username:u, token:myToken});
-});
-
-document.getElementById('joinRoomBtn').addEventListener('click', ()=>{
-  const u = document.getElementById('usernameInput').value.trim();
-  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
-  if(!u){ document.getElementById('loginError').textContent = 'Entre un pseudo.'; return; }
-  if(!code){ document.getElementById('loginError').textContent = 'Entre un code de salle.'; return; }
-  myUsername = u;
-  socket.emit('monopoly_join_room', {username:u, token:myToken, code:code});
-});
-
-// ---- Lobby screen ----
-document.getElementById('startGameBtn').addEventListener('click', ()=>{
-  socket.emit('monopoly_start_game', {code: myRoomCode});
-});
-
-// ---- Game screen actions ----
-document.getElementById('rollBtn').addEventListener('click', ()=>{
-  socket.emit('monopoly_roll_dice', {code: myRoomCode, username: myUsername});
-});
-document.getElementById('buyBtn').addEventListener('click', ()=>{
-  socket.emit('monopoly_buy_property', {code: myRoomCode, username: myUsername});
-});
-document.getElementById('endTurnBtn').addEventListener('click', ()=>{
-  socket.emit('monopoly_end_turn', {code: myRoomCode});
-});
-document.getElementById('chatSendBtn').addEventListener('click', sendChat);
-document.getElementById('chatInput').addEventListener('keydown', e=>{
-  if(e.key === 'Enter') sendChat();
-});
-function sendChat(){
-  const input = document.getElementById('chatInput');
-  const msg = input.value.trim();
-  if(!msg) return;
-  socket.emit('monopoly_chat', {code: myRoomCode, username: myUsername, message: msg});
-  input.value = '';
-}
-
-// ---- Dice pip layouts ----
-const PIP_LAYOUT = {
-  1:[5], 2:[1,9], 3:[1,5,9], 4:[1,3,7,9], 5:[1,3,5,7,9], 6:[1,3,4,6,7,9]
-};
-function renderDie(value){
-  const face = document.getElementById('dieFace');
-  face.innerHTML = '';
-  for(let i=1;i<=9;i++){
-    const p = document.createElement('div');
-    p.className = 'pip';
-    if(PIP_LAYOUT[value] && PIP_LAYOUT[value].includes(i)) p.style.opacity = '1';
-    face.appendChild(p);
-  }
-}
-renderDie(1);
-
-function log(container, msg){
-  const p = document.createElement('div');
-  p.textContent = msg;
-  container.prepend(p);
-}
-
-// ---- Render full room state ----
-function renderState(state){
-  lastState = state;
-  const players = state.players || {};
-  const names = Object.keys(players);
-
-  const strip = document.getElementById('playersStrip');
-  strip.innerHTML = '';
-  const activeNames = names.filter(n => !players[n].bankrupt);
-  const currentTurnName = activeNames[state.turnIndex % (activeNames.length || 1)];
-
-  names.forEach(n=>{
-    const p = players[n];
-    const card = document.createElement('div');
-    card.className = 'p-card' + (n === currentTurnName ? ' active-turn' : '');
-    card.innerHTML = `<div>${p.token || '🎩'} ${n}</div><div class="pmoney">${p.money}€</div>` +
-      (p.bankrupt ? '<div style="color:var(--brick);font-size:9px;">FAILLITE</div>' : '');
-    strip.appendChild(card);
-  });
-
-  document.getElementById('turnBanner').textContent = state.started
-    ? (currentTurnName === myUsername ? 'À toi de jouer !' : `Tour de ${currentTurnName || '...'}`)
-    : 'En attente du lancement de la partie...';
-
-  const me = players[myUsername];
-  if(me){
-    const cellName = (CELLS[me.position] || ['?'])[0];
-    document.getElementById('myPosition').textContent = 'Tu es sur : ' + cellName + ' — ' + me.money + '€';
+function animateTokenMove(username, fromPos, toPos) {
+  const layer = document.getElementById('tokensLayer');
+  let tokenEl = layer.querySelector(`[data-user="${username}"]`);
+  
+  if (!tokenEl) {
+    tokenEl = document.createElement('div');
+    tokenEl.className = 'token';
+    tokenEl.dataset.user = username;
+    layer.appendChild(tokenEl);
   }
 
-  const owners = state.owners || {};
-  const houses = state.houses || {};
-  const hotels = state.hotels || {};
-  const myPropsEl = document.getElementById('myProps');
-  myPropsEl.innerHTML = '';
-  Object.keys(owners).forEach(posStr=>{
-    if(owners[posStr] !== myUsername) return;
-    const idx = parseInt(posStr);
-    const [name, typ] = CELLS[idx];
-    if(typ !== 'property') return;
-    const row = document.createElement('div');
-    row.className = 'prop-row';
-    const hasHotel = !!hotels[posStr];
-    const houseCount = parseInt(houses[posStr] || 0);
-    row.innerHTML = `<span>${name} ${hasHotel ? '(hôtel)' : houseCount ? '('+houseCount+' maison(s))' : ''}</span>`;
-    const btnWrap = document.createElement('div');
-    btnWrap.className = 'build-btns';
-    if(!hasHotel){
-      const hBtn = document.createElement('button');
-      hBtn.textContent = houseCount < 4 ? '+ Maison' : '+ Hôtel';
-      hBtn.addEventListener('click', ()=>{
-        const evt = houseCount < 4 ? 'monopoly_add_house' : 'monopoly_add_hotel';
-        socket.emit(evt, {code: myRoomCode, username: myUsername, cell: posStr});
-      });
-      btnWrap.appendChild(hBtn);
+  const totalSteps = Math.abs(toPos - fromPos) || (28 - fromPos + toPos);
+  let currentStep = 0;
+
+  function moveStep() {
+    const pos = (fromPos + currentStep) % 28;
+    const [x, y] = GRID_POS[pos];
+    tokenEl.style.left = x + '%';
+    tokenEl.style.top = y + '%';
+    
+    currentStep++;
+    if (currentStep <= totalSteps) {
+      setTimeout(moveStep, 150);
     }
-    row.appendChild(btnWrap);
-    myPropsEl.appendChild(row);
-  });
-
-  const isMyTurn = currentTurnName === myUsername && state.started && me && !me.bankrupt;
-  document.getElementById('rollBtn').disabled = !isMyTurn || (me && me.hasRolled && state.lastDice !== 6);
-  document.getElementById('endTurnBtn').disabled = !isMyTurn;
-  document.getElementById('buyBtn').disabled = !(isMyTurn && canBuyNow);
-
-  if(state.lastLog){
-    log(document.getElementById('gameLog'), state.lastLog);
   }
+
+  moveStep();
 }
 
-// ---- Socket events ----
-socket.on('monopoly_room_state', (state)=>{
-  myRoomCode = state.code;
-  document.getElementById('roomCodeDisplay').textContent = state.code;
+// ===== UI FUNCTIONS =====
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
 
-  if(!state.started){
-    showScreen('lobby');
-    const lobbyPlayersEl = document.getElementById('lobbyPlayers');
-    lobbyPlayersEl.innerHTML = '';
-    Object.keys(state.players || {}).forEach(n=>{
-      const p = state.players[n];
-      const chip = document.createElement('div');
-      chip.className = 'player-chip';
-      chip.innerHTML = `<span class="dot" style="background:${p.color||'#c9a86a'}"></span> ${p.token||'🎩'} ${n}`;
-      lobbyPlayersEl.appendChild(chip);
-    });
-  } else {
-    showScreen('game');
+// ===== TOKEN SELECTION =====
+document.querySelectorAll('.token-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.token-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentToken = btn.dataset.token;
+  });
+});
+
+// ===== CREATE ROOM =====
+document.getElementById('createRoomBtn').addEventListener('click', () => {
+  currentUser = document.getElementById('username').value.trim();
+  if (!currentUser) {
+    document.getElementById('loginError').textContent = 'Pseudo requis';
+    return;
   }
-  canBuyNow = false;
-  renderState(state);
+  socket.emit('monopoly_create_room', { username: currentUser, token: currentToken });
 });
 
-socket.on('monopoly_animate_move', (data)=>{
-  showScreen('game');
-  document.getElementById('lastDiceValue').textContent = 'Dé : ' + data.dice;
-  const face = document.getElementById('dieFace');
-  face.classList.remove('rolling');
-  void face.offsetWidth;
-  face.classList.add('rolling');
-  renderDie(data.dice);
-  canBuyNow = !!data.pendingBuy;
-  renderState(data.state);
+// ===== JOIN ROOM =====
+document.getElementById('joinRoomBtn').addEventListener('click', () => {
+  currentUser = document.getElementById('username').value.trim();
+  currentRoom = document.getElementById('roomCode').value.trim().toUpperCase();
+  if (!currentUser || !currentRoom) {
+    document.getElementById('loginError').textContent = 'Pseudo et code requis';
+    return;
+  }
+  socket.emit('monopoly_join_room', { username: currentUser, token: currentToken, code: currentRoom });
 });
 
-socket.on('monopoly_error', (data)=>{
-  const msg = (data && data.msg) || 'Erreur.';
-  document.getElementById('loginError').textContent = msg;
-  document.getElementById('lobbyError').textContent = msg;
-  log(document.getElementById('gameLog'), '⚠ ' + msg);
+// ===== START GAME =====
+document.getElementById('startGameBtn').addEventListener('click', () => {
+  socket.emit('monopoly_start_game', { code: currentRoom });
 });
 
-socket.on('monopoly_chat_message', (data)=>{
-  log(document.getElementById('chatLog'), (data.username||'?') + ': ' + data.message);
+// ===== ROLL DICE =====
+document.getElementById('rollBtn').addEventListener('click', () => {
+  playDiceSound();
+  document.getElementById('die1').classList.add('rolling');
+  document.getElementById('die2').classList.add('rolling');
+  
+  setTimeout(() => {
+    socket.emit('monopoly_roll_dice', { code: currentRoom, username: currentUser });
+  }, 800);
+});
+
+// ===== SOCKET EVENTS =====
+socket.on('monopoly_room_state', (state) => {
+  gameState = state;
+  currentRoom = state.code;
+  
+  if (!state.started) {
+    showScreen('lobbyScreen');
+    document.getElementById('lobbyCode').textContent = state.code;
+    const playersHtml = Object.keys(state.players)
+      .map(u => `<div class="player-entry">${state.players[u].token} ${u} — ${state.players[u].money}€</div>`)
+      .join('');
+    document.getElementById('lobbyPlayers').innerHTML = playersHtml;
+  } else {
+    showScreen('gameScreen');
+    document.getElementById('lastLog').textContent = state.lastLog || 'En attente...';
+    const playersHtml = Object.keys(state.players)
+      .map(u => `<div class="player-entry">${state.players[u].token} ${u}<br/>${state.players[u].money}€</div>`)
+      .join('');
+    document.getElementById('playerList').innerHTML = playersHtml;
+  }
+});
+
+socket.on('monopoly_animate_move', (data) => {
+  const { username, from, to, dice1, dice2 } = data;
+  
+  // Affiche les dés
+  document.getElementById('die1').textContent = dice1;
+  document.getElementById('die2').textContent = dice2;
+  document.getElementById('die1').classList.remove('rolling');
+  document.getElementById('die2').classList.remove('rolling');
+  
+  // Anime le token
+  animateTokenMove(username, from, to);
+  
+  // Update log
+  if (data.state) {
+    gameState = data.state;
+    document.getElementById('lastLog').textContent = data.state.lastLog;
+  }
+});
+
+socket.on('monopoly_error', (data) => {
+  document.getElementById('loginError').textContent = data.msg;
 });
 </script>
 
