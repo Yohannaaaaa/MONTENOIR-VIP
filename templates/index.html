@@ -1,68 +1,68 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MONTENOIR VIP</title>
-    <link rel="stylesheet" href="/static/css/home_lux.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metropoly</title>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div class="cover-bg"></div>
-<div class="cover-overlay"></div>
+<h1>Metropoly</h1>
+<div class="tagline">bâtis ton empire</div>
 
-<header class="lux-header">
-    <div></div>
-
-    <div class="header-buttons">
-
-        <a href="/register" class="small-lux-button">
-            📝 Üyelik
-        </a>
-
-        <a href="/login" class="small-lux-button">
-            👤 Connexion
-        </a>
-
-        <a href="/premium" class="small-lux-button">
-            💎 Premium
-        </a>
-
+<div class="board-wrap" id="board">
+  <div class="center">
+    <div class="logo-center">METROPOLY</div>
+    <div class="skyline" id="skyline"></div>
+    <div class="dice-area">
+      <div class="die" id="die1"><div class="face front face-1"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face back face-6"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face right face-2"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face left face-5"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face top face-3"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face bottom face-4"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div></div>
+      <div class="die" id="die2"><div class="face front face-1"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face back face-6"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face right face-2"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face left face-5"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face top face-3"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div><div class="face bottom face-4"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div></div>
+      <div class="score-badge" id="scoreBadge">–</div>
     </div>
-</header>
-
-<div class="home-buttons">
-    <button class="lux-button" onclick="toggleGames()">🎮 JEUX</button>
-    <a href="/tarot" class="lux-button">🔮 TAROT & RITUEL</a>
+  </div>
 </div>
 
-<div id="gamesPanel" class="games-panel">
-
-    <h2>🎮 Jeux Montenoir</h2>
-
-    <div class="games-grid">
-        <a href="/codenames">Codenames VIP</a>
-        <a href="/metropoly">Metropoly</a>
-        <a href="/poker">Poker</a>
-        <a href="/tavla">Tavla</a>
-        <a href="/okey">Okey</a>
-        <a href="/101">101</a>
-        <a href="/ludo">Ludo</a>
-        <a href="/bowling">Bowling</a>
-    </div>
-
-    <button class="close-btn" onclick="toggleGames()">
-        Fermer
+<div class="panel">
+  <div class="player-row">
+    <span class="player-name" id="pname">Joueur</span>
+    <span class="cash" id="pcash">1500 €</span>
+  </div>
+  <div class="prop-detail" id="propDetail">Lance les dés pour commencer.</div>
+  <div class="actions">
+    <button id="rollBtn">Lancer les dés</button>
+    <button id="buyBtn" class="secondary" disabled>Acheter</button>
+  </div>
+  <div class="build-row" id="buildRow">
+    <button class="build-btn" id="build1" disabled>
+      <div class="icon-row"><div class="bhouse"></div></div>
+      <div class="blabel">1 maison</div>
+      <div class="bprice" id="price1">100€</div>
     </button>
-
+    <button class="build-btn" id="build2" disabled>
+      <div class="icon-row"><div class="bhouse"></div><div class="bhouse"></div></div>
+      <div class="blabel">2 maisons</div>
+      <div class="bprice" id="price2">200€</div>
+    </button>
+    <button class="build-btn" id="build3" disabled>
+      <div class="icon-row"><div class="bhouse"></div><div class="bhouse"></div><div class="bhouse"></div></div>
+      <div class="blabel">3 maisons</div>
+      <div class="bprice" id="price3">300€</div>
+    </button>
+    <button class="build-btn" id="build4" disabled>
+      <div class="icon-row"><div class="bhouse"></div><div class="bhouse"></div><div class="bhouse"></div><div class="bhouse"></div></div>
+      <div class="blabel">4 maisons</div>
+      <div class="bprice" id="price4">400€</div>
+    </button>
+    <button class="build-btn" id="build5" disabled>
+      <div class="icon-row"><div class="bhotel"></div></div>
+      <div class="blabel">Hôtel</div>
+      <div class="bprice" id="price5">500€</div>
+    </button>
+  </div>
+  <div class="log" id="log"></div>
 </div>
 
-<script>
-function toggleGames(){
-    document.getElementById("gamesPanel").classList.toggle("show");
-}
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
