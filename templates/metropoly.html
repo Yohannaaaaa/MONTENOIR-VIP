@@ -31,8 +31,8 @@
   .board { position: relative; width: 900px; height: 900px; border: 8px solid #d4af37; border-radius: 25px; background: linear-gradient(135deg, #0a0a0a, #1a1512); box-shadow: 0 0 70px rgba(212,175,55,0.8), inset 0 0 40px rgba(212,175,55,0.15); overflow: hidden; }
   .board-inner { width: 100%; height: 100%; position: relative; background: #000; }
   .board-title { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 80px; font-weight: bold; color: #d4af37; letter-spacing: 10px; text-shadow: 0 0 40px rgba(212,175,55,0.7); z-index: 5; }
-  .dices { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); display: flex; gap: 180px; perspective: 3000px; z-index: 15; margin-top: 80px; }
-  .dice-container { width: 200px; height: 200px; position: relative; transform-style: preserve-3d; }
+  .dices { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); display: flex; gap: 120px; perspective: 3000px; z-index: 3; }
+  .dice-container { width: 140px; height: 140px; position: relative; transform-style: preserve-3d; }
   .dice-3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.8s ease-out; }
   .dice-3d.rolling { animation: spin 1.5s cubic-bezier(0.25,0.46,0.45,0.94); }
   @keyframes spin {
@@ -42,17 +42,17 @@
     75% { transform: rotateX(2160deg) rotateY(2160deg) rotateZ(1080deg); }
     100% { transform: rotateX(0) rotateY(0) rotateZ(0); }
   }
-  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, #ffd700 0%, #ffed4e 15%, #ffe680 30%, #daa520 50%, #b8860b 70%, #8b6914 100%); border: 8px solid #8a7550; border-radius: 30px; display: flex; align-items: center; justify-content: center; box-shadow: inset -10px -10px 30px rgba(0,0,0,0.5), inset 15px 15px 40px rgba(255,255,255,0.8), 0 25px 60px rgba(0,0,0,0.8), 0 0 80px rgba(212,175,55,1.2); }
-  .die-face::before { content: ''; position: absolute; width: 100%; height: 100%; background: radial-gradient(ellipse 60% 40% at 30% 30%, rgba(255,255,255,0.8), transparent 70%); border-radius: 25px; }
-  .pip-dot { position: absolute; width: 25px; height: 25px; background: radial-gradient(circle at 35% 35%, #2a2a2a, #000); border-radius: 50%; box-shadow: inset 0 3px 8px rgba(0,0,0,1), 0 2px 5px rgba(0,0,0,0.8); z-index: 2; }
-  .face-1 { transform: translateZ(100px); }
-  .face-2 { transform: rotateY(180deg) translateZ(100px); }
-  .face-3 { transform: rotateY(90deg) translateZ(100px); }
-  .face-4 { transform: rotateY(-90deg) translateZ(100px); }
-  .face-5 { transform: rotateX(90deg) translateZ(100px); }
-  .face-6 { transform: rotateX(-90deg) translateZ(100px); }
-  .tokens-layer { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-  .token { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 45px; filter: drop-shadow(0 0 20px rgba(212,175,55,1.2)); transition: all 0.35s cubic-bezier(0.25,0.46,0.45,0.94); transform: translate(-50%,-50%); z-index: 20; }
+  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, #ffd700 0%, #ffed4e 15%, #ffe680 30%, #daa520 50%, #b8860b 70%, #8b6914 100%); border: 6px solid #8a7550; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: inset -8px -8px 25px rgba(0,0,0,0.5), inset 12px 12px 35px rgba(255,255,255,0.8), 0 20px 50px rgba(0,0,0,0.8), 0 0 60px rgba(212,175,55,1); }
+  .die-face::before { content: ''; position: absolute; width: 100%; height: 100%; background: radial-gradient(ellipse 60% 40% at 30% 30%, rgba(255,255,255,0.8), transparent 70%); border-radius: 20px; }
+  .pip-dot { position: absolute; width: 18px; height: 18px; background: radial-gradient(circle at 35% 35%, #2a2a2a, #000); border-radius: 50%; box-shadow: inset 0 3px 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,0.8); z-index: 2; }
+  .face-1 { transform: translateZ(70px); }
+  .face-2 { transform: rotateY(180deg) translateZ(70px); }
+  .face-3 { transform: rotateY(90deg) translateZ(70px); }
+  .face-4 { transform: rotateY(-90deg) translateZ(70px); }
+  .face-5 { transform: rotateX(90deg) translateZ(70px); }
+  .face-6 { transform: rotateX(-90deg) translateZ(70px); }
+  .tokens-layer { position: absolute; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+  .token { position: absolute; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; filter: drop-shadow(0 0 15px rgba(212,175,55,1)); transition: all 0.35s cubic-bezier(0.25,0.46,0.45,0.94); transform: translate(-50%,-50%); z-index: 10; }
   .panel { width: 320px; background: rgba(26,26,26,0.98); border: 2px solid #d4af37; border-radius: 20px; padding: 20px; box-shadow: 0 0 40px rgba(212,175,55,0.3); max-height: 900px; overflow-y: auto; }
   .panel-box { background: rgba(10,10,10,0.9); border: 1px solid #d4af37; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
   .panel-title { color: #d4af37; font-weight: bold; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #d4af37; }
@@ -244,7 +244,6 @@ document.getElementById('rollBtn').addEventListener('click', () => {
 socket.on('monopoly_room_state', (state) => {
   room = state.code;
   Object.keys(state.players).forEach(u => playerTokens[u] = state.players[u].token);
-  
   if (!state.started) {
     show('lobbyScreen');
     document.getElementById('roomCodeDisplay').textContent = state.code;
