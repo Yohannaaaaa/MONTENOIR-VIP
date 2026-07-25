@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monopoly VIP</title>
+<title>Metropoly VIP</title>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -324,7 +324,7 @@
 
 <!-- LOGIN -->
 <div id="loginScreen" class="screen active">
-  <h1>♠️ MONOPOLY ♦️</h1>
+  <h1>♠️ METROPOLY ♦️</h1>
   <div class="card">
     <label>🎮 TON PSEUDO</label>
     <input type="text" id="username" placeholder="Ton nom">
@@ -349,10 +349,10 @@
 
 <!-- LOBBY -->
 <div id="lobbyScreen" class="screen">
-  <h1>MONOPOLY</h1>
+  <h1>METROPOLY</h1>
   <div class="card">
     <p style="text-align: center; color: #d4af37; margin-bottom: 10px;">CODE DE LA SALLE</p>
-    <div class="room-code" id="roomDisplay">MON-XXXX</div>
+    <div class="room-code" id="roomDisplay">MET-XXXX</div>
     <label>👥 JOUEURS</label>
     <div id="playersList" class="player-list"></div>
     <button id="startBtn">🚀 DÉMARRER</button>
@@ -361,7 +361,7 @@
 
 <!-- GAME -->
 <div id="gameScreen" class="screen">
-  <h1>MONOPOLY</h1>
+  <h1>METROPOLY</h1>
   <div class="game-wrap">
     <div class="plateau">
       <div class="tokens-layer" id="tokensLayer"></div>
@@ -411,7 +411,6 @@ const socket = io();
 let user = '', token = '✈️', room = '', isRolling = false;
 let playerTokens = {};
 
-// 40 POSITIONS
 const GRID_POS = [
   {x: 400, y: 760}, {x: 330, y: 760}, {x: 260, y: 760}, {x: 190, y: 760}, {x: 120, y: 760},
   {x: 50, y: 760}, {x: 40, y: 690}, {x: 40, y: 620}, {x: 40, y: 550}, {x: 40, y: 480},
@@ -435,7 +434,6 @@ function setDiceValue(diceEl, value) {
   diceEl.style.transform = rotations[value] || 'rotateX(0deg) rotateY(0deg)';
 }
 
-// SÉLECTION JETON
 document.querySelectorAll('.token-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.token-btn').forEach(b => b.classList.remove('selected'));
@@ -444,7 +442,6 @@ document.querySelectorAll('.token-btn').forEach(btn => {
   });
 });
 
-// CRÉER SALLE
 document.getElementById('createBtn').addEventListener('click', () => {
   user = document.getElementById('username').value.trim();
   if (!user) return document.getElementById('errorMsg').textContent = '❌ Pseudo requis';
@@ -452,7 +449,6 @@ document.getElementById('createBtn').addEventListener('click', () => {
   socket.emit('monopoly_create_room', {username: user, token});
 });
 
-// REJOINDRE
 document.getElementById('joinBtn').addEventListener('click', () => {
   user = document.getElementById('username').value.trim();
   room = document.getElementById('roomCode').value.trim().toUpperCase();
@@ -461,12 +457,10 @@ document.getElementById('joinBtn').addEventListener('click', () => {
   socket.emit('monopoly_join_room', {username: user, token, code: room});
 });
 
-// DÉMARRER
 document.getElementById('startBtn').addEventListener('click', () => {
   socket.emit('monopoly_start_game', {code: room});
 });
 
-// LANCER DÉS
 document.getElementById('rollBtn').addEventListener('click', () => {
   if (isRolling) return;
   isRolling = true;
@@ -510,7 +504,6 @@ function moveToken(username, fromPos, toPos) {
   animate();
 }
 
-// ÉVÉNEMENTS
 socket.on('monopoly_room_state', (state) => {
   room = state.code;
   Object.keys(state.players).forEach(u => {
