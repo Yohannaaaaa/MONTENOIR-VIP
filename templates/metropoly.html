@@ -7,465 +7,72 @@
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  body {
-    background: #0a0a0a;
-    color: #f5e6d3;
-    font-family: 'Arial', sans-serif;
-    min-height: 100vh;
-  }
-
-  .screen {
-    display: none;
-    width: 100%;
-    min-height: 100vh;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: linear-gradient(135deg, #0a0a0a 0%, #1a1512 100%);
-  }
-
+  body { background: #0a0a0a; color: #f5e6d3; font-family: Arial; min-height: 100vh; }
+  .screen { display: none; width: 100%; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, #0a0a0a 0%, #1a1512 100%); }
   .screen.active { display: flex; }
-
-  h1 {
-    font-size: 64px;
-    font-weight: bold;
-    color: #d4af37;
-    text-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
-    margin-bottom: 40px;
-    letter-spacing: 6px;
-  }
-
-  .card {
-    background: rgba(26, 26, 26, 0.98);
-    border: 3px solid #d4af37;
-    border-radius: 20px;
-    padding: 50px;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: 0 0 50px rgba(212, 175, 55, 0.4);
-  }
-
-  .label {
-    display: block;
-    color: #d4af37;
-    font-weight: bold;
-    margin-top: 20px;
-    margin-bottom: 12px;
-    font-size: 14px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .input {
-    width: 100%;
-    padding: 16px;
-    background: #0a0a0a;
-    border: 2px solid #d4af37;
-    color: #f5e6d3;
-    border-radius: 10px;
-    font-size: 16px;
-    margin-bottom: 5px;
-    transition: all 0.3s;
-  }
-
-  .input:focus {
-    outline: none;
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
-  }
-
-  .token-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin: 20px 0;
-  }
-
-  .token-btn {
-    aspect-ratio: 1;
-    padding: 15px;
-    background: rgba(40, 40, 40, 0.8);
-    border: 2px solid #d4af37;
-    color: #f5e6d3;
-    cursor: pointer;
-    border-radius: 12px;
-    font-size: 32px;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .token-btn:hover {
-    background: rgba(60, 60, 60, 0.9);
-    transform: scale(1.05);
-  }
-
-  .token-btn.selected {
-    background: #d4af37;
-    box-shadow: 0 0 20px #d4af37;
-    transform: scale(1.1);
-  }
-
-  .btn {
-    width: 100%;
-    padding: 16px;
-    background: linear-gradient(135deg, #d4af37, #a0860d);
-    color: #1a1a1a;
-    border: none;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-    margin-top: 15px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .btn:hover {
-    transform: scale(1.02);
-    box-shadow: 0 0 25px rgba(212, 175, 55, 0.6);
-  }
-
-  .btn:active { transform: scale(0.98); }
-
-  .error {
-    color: #ff6b6b;
-    text-align: center;
-    margin-top: 15px;
-    font-size: 14px;
-    min-height: 20px;
-  }
-
-  .room-code {
-    font-size: 48px;
-    color: #d4af37;
-    font-weight: bold;
-    margin: 30px 0;
-    letter-spacing: 3px;
-    text-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
-    text-align: center;
-  }
-
-  .players-list {
-    background: rgba(10, 10, 10, 0.8);
-    border: 1px solid #d4af37;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 20px 0;
-    max-height: 200px;
-    overflow-y: auto;
-    min-height: 100px;
-  }
-
-  .player-item {
-    padding: 10px;
-    color: #f5e6d3;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
-    font-size: 14px;
-  }
-
+  h1 { font-size: 64px; font-weight: bold; color: #d4af37; text-shadow: 0 0 30px rgba(212,175,55,0.8); margin-bottom: 40px; letter-spacing: 6px; }
+  .card { background: rgba(26,26,26,0.98); border: 3px solid #d4af37; border-radius: 20px; padding: 50px; max-width: 500px; width: 100%; box-shadow: 0 0 50px rgba(212,175,55,0.4); }
+  .label { display: block; color: #d4af37; font-weight: bold; margin-top: 20px; margin-bottom: 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+  .input { width: 100%; padding: 16px; background: #0a0a0a; border: 2px solid #d4af37; color: #f5e6d3; border-radius: 10px; font-size: 16px; margin-bottom: 5px; }
+  .input:focus { outline: none; box-shadow: 0 0 20px rgba(212,175,55,0.6); }
+  .token-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 20px 0; }
+  .token-btn { aspect-ratio: 1; padding: 15px; background: rgba(40,40,40,0.8); border: 2px solid #d4af37; color: #f5e6d3; cursor: pointer; border-radius: 12px; font-size: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+  .token-btn:hover { background: rgba(60,60,60,0.9); transform: scale(1.05); }
+  .token-btn.selected { background: #d4af37; box-shadow: 0 0 20px #d4af37; transform: scale(1.1); }
+  .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #d4af37, #a0860d); color: #1a1a1a; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: all 0.3s; margin-top: 15px; letter-spacing: 2px; text-transform: uppercase; }
+  .btn:hover { transform: scale(1.02); box-shadow: 0 0 25px rgba(212,175,55,0.6); }
+  .error { color: #ff6b6b; text-align: center; margin-top: 15px; font-size: 14px; min-height: 20px; }
+  .room-code { font-size: 48px; color: #d4af37; font-weight: bold; margin: 30px 0; letter-spacing: 3px; text-shadow: 0 0 20px rgba(212,175,55,0.6); text-align: center; }
+  .players-list { background: rgba(10,10,10,0.8); border: 1px solid #d4af37; border-radius: 10px; padding: 15px; margin: 20px 0; max-height: 200px; overflow-y: auto; min-height: 100px; }
+  .player-item { padding: 10px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 14px; }
   .player-item:last-child { border-bottom: none; }
-
-  #gameScreen {
-    background: #0a0a0a;
-    padding: 30px;
-    overflow-y: auto;
+  #gameScreen { background: #0a0a0a; padding: 30px; overflow-y: auto; }
+  .game-container { display: flex; gap: 30px; justify-content: center; align-items: flex-start; width: 100%; max-width: 1400px; margin: 0 auto; }
+  .board { position: relative; width: 900px; height: 900px; border: 8px solid #d4af37; border-radius: 25px; background: linear-gradient(135deg, #0a0a0a, #1a1512); box-shadow: 0 0 70px rgba(212,175,55,0.8), inset 0 0 40px rgba(212,175,55,0.15); overflow: hidden; }
+  .board-inner { width: 100%; height: 100%; position: relative; background: #000; }
+  .board-title { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 80px; font-weight: bold; color: #d4af37; letter-spacing: 10px; text-shadow: 0 0 40px rgba(212,175,55,0.7); z-index: 5; }
+  .dices { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); display: flex; gap: 180px; perspective: 3000px; z-index: 15; margin-top: 80px; }
+  .dice-container { width: 200px; height: 200px; position: relative; transform-style: preserve-3d; }
+  .dice-3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.8s ease-out; }
+  .dice-3d.rolling { animation: spin 1.5s cubic-bezier(0.25,0.46,0.45,0.94); }
+  @keyframes spin {
+    0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+    25% { transform: rotateX(720deg) rotateY(720deg) rotateZ(360deg); }
+    50% { transform: rotateX(1440deg) rotateY(1440deg) rotateZ(720deg); }
+    75% { transform: rotateX(2160deg) rotateY(2160deg) rotateZ(1080deg); }
+    100% { transform: rotateX(0) rotateY(0) rotateZ(0); }
   }
-
-  .game-container {
-    display: flex;
-    gap: 30px;
-    justify-content: center;
-    align-items: flex-start;
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  .board {
-    position: relative;
-    width: 900px;
-    height: 900px;
-    border: 8px solid #d4af37;
-    border-radius: 25px;
-    background: linear-gradient(135deg, #0a0a0a, #1a1512);
-    box-shadow: 0 0 70px rgba(212, 175, 55, 0.8), inset 0 0 40px rgba(212, 175, 55, 0.15);
-    overflow: hidden;
-  }
-
-  .board-inner {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    background: #000;
-  }
-
-  .board-title {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 80px;
-    font-weight: bold;
-    color: #d4af37;
-    letter-spacing: 10px;
-    text-shadow: 0 0 40px rgba(212, 175, 55, 0.7);
-    z-index: 5;
-  }
-
-  .dices {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    gap: 140px;
-    perspective: 2200px;
-    z-index: 15;
-    margin-top: 60px;
-  }
-
-  .dice-box {
-    width: 160px;
-    height: 160px;
-    position: relative;
-    transform-style: preserve-3d;
-  }
-
-  .dice {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.7s ease-out;
-  }
-
-  .dice.rolling {
-    animation: rollDice 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  @keyframes rollDice {
-    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-    10% { transform: rotateX(200deg) rotateY(200deg) rotateZ(100deg); }
-    20% { transform: rotateX(400deg) rotateY(400deg) rotateZ(200deg); }
-    30% { transform: rotateX(600deg) rotateY(600deg) rotateZ(300deg); }
-    40% { transform: rotateX(800deg) rotateY(800deg) rotateZ(400deg); }
-    50% { transform: rotateX(1000deg) rotateY(1000deg) rotateZ(500deg); }
-    60% { transform: rotateX(1200deg) rotateY(1200deg) rotateZ(600deg); }
-    70% { transform: rotateX(1400deg) rotateY(1400deg) rotateZ(700deg); }
-    80% { transform: rotateX(1600deg) rotateY(1600deg) rotateZ(800deg); }
-    90% { transform: rotateX(1800deg) rotateY(1800deg) rotateZ(900deg); }
-    100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-  }
-
-  .face {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 20%, #daa520 50%, #b8860b 80%, #8b6914 100%);
-    border: 7px solid #8a7550;
-    border-radius: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 
-      inset 0 0 30px rgba(255, 255, 255, 0.6),
-      inset 0 0 50px rgba(0, 0, 0, 0.3),
-      0 0 50px rgba(212, 175, 55, 1),
-      0 30px 70px rgba(0, 0, 0, 0.95);
-    position: relative;
-  }
-
-  .face::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.7) 0%, transparent 60%);
-    border-radius: 25px;
-    z-index: 1;
-  }
-
-  .dot {
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    background: #1a1a1a;
-    border-radius: 50%;
-    box-shadow: inset 0 3px 6px rgba(0,0,0,0.9);
-    z-index: 2;
-  }
-
-  .f1 { transform: rotateY(0deg) translateZ(80px); }
-  .f2 { transform: rotateY(180deg) translateZ(80px); }
-  .f3 { transform: rotateY(90deg) translateZ(80px); }
-  .f4 { transform: rotateY(-90deg) translateZ(80px); }
-  .f5 { transform: rotateX(90deg) translateZ(80px); }
-  .f6 { transform: rotateX(-90deg) translateZ(80px); }
-
-  .tokens-layer {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
-    pointer-events: none;
-  }
-
-  .token {
-    position: absolute;
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 40px;
-    filter: drop-shadow(0 0 15px rgba(212, 175, 55, 1));
-    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform: translate(-50%, -50%);
-    z-index: 20;
-  }
-
-  .panel {
-    width: 320px;
-    background: rgba(26, 26, 26, 0.98);
-    border: 2px solid #d4af37;
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 0 40px rgba(212, 175, 55, 0.3);
-    max-height: 900px;
-    overflow-y: auto;
-  }
-
-  .panel-box {
-    background: rgba(10, 10, 10, 0.9);
-    border: 1px solid #d4af37;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-
-  .panel-title {
-    color: #d4af37;
-    font-weight: bold;
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #d4af37;
-  }
-
-  .roll-btn {
-    width: 100%;
-    padding: 14px;
-    background: linear-gradient(135deg, #2d7a56, #1f5a42) !important;
-    color: #fff !important;
-    border: 2px solid #3a9d6d;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.3s;
-    letter-spacing: 2px;
-  }
-
-  .roll-btn:hover {
-    box-shadow: 0 0 25px #3a9d6d;
-    transform: scale(1.02);
-  }
-
-  .roll-btn:disabled {
-    background: #555 !important;
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  .players-info {
-    font-size: 13px;
-    color: #f5e6d3;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .player-row {
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-    display: flex;
-    justify-content: space-between;
-  }
-
+  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, #ffd700 0%, #ffed4e 15%, #ffe680 30%, #daa520 50%, #b8860b 70%, #8b6914 100%); border: 8px solid #8a7550; border-radius: 30px; display: flex; align-items: center; justify-content: center; box-shadow: inset -10px -10px 30px rgba(0,0,0,0.5), inset 15px 15px 40px rgba(255,255,255,0.8), 0 25px 60px rgba(0,0,0,0.8), 0 0 80px rgba(212,175,55,1.2); }
+  .die-face::before { content: ''; position: absolute; width: 100%; height: 100%; background: radial-gradient(ellipse 60% 40% at 30% 30%, rgba(255,255,255,0.8), transparent 70%); border-radius: 25px; }
+  .pip-dot { position: absolute; width: 25px; height: 25px; background: radial-gradient(circle at 35% 35%, #2a2a2a, #000); border-radius: 50%; box-shadow: inset 0 3px 8px rgba(0,0,0,1), 0 2px 5px rgba(0,0,0,0.8); z-index: 2; }
+  .face-1 { transform: translateZ(100px); }
+  .face-2 { transform: rotateY(180deg) translateZ(100px); }
+  .face-3 { transform: rotateY(90deg) translateZ(100px); }
+  .face-4 { transform: rotateY(-90deg) translateZ(100px); }
+  .face-5 { transform: rotateX(90deg) translateZ(100px); }
+  .face-6 { transform: rotateX(-90deg) translateZ(100px); }
+  .tokens-layer { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+  .token { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 45px; filter: drop-shadow(0 0 20px rgba(212,175,55,1.2)); transition: all 0.35s cubic-bezier(0.25,0.46,0.45,0.94); transform: translate(-50%,-50%); z-index: 20; }
+  .panel { width: 320px; background: rgba(26,26,26,0.98); border: 2px solid #d4af37; border-radius: 20px; padding: 20px; box-shadow: 0 0 40px rgba(212,175,55,0.3); max-height: 900px; overflow-y: auto; }
+  .panel-box { background: rgba(10,10,10,0.9); border: 1px solid #d4af37; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+  .panel-title { color: #d4af37; font-weight: bold; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #d4af37; }
+  .roll-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #2d7a56, #1f5a42) !important; color: #fff !important; border: 2px solid #3a9d6d; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; transition: all 0.3s; letter-spacing: 2px; }
+  .roll-btn:hover { box-shadow: 0 0 25px #3a9d6d; transform: scale(1.02); }
+  .roll-btn:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; }
+  .players-info { font-size: 13px; color: #f5e6d3; max-height: 200px; overflow-y: auto; }
+  .player-row { padding: 8px 0; border-bottom: 1px solid rgba(212,175,55,0.2); display: flex; justify-content: space-between; }
   .player-row:last-child { border-bottom: none; }
-
-  .action-log {
-    color: #d4af37;
-    font-size: 12px;
-    line-height: 1.8;
-    min-height: 70px;
-    word-wrap: break-word;
-  }
-
-  .bottom-section {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-    padding: 30px 20px;
-    width: 900px;
-    margin: 0 auto;
-  }
-
-  .token-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .token-emoji {
-    font-size: 50px;
-  }
-
-  .token-name {
-    font-size: 11px;
-    color: #d4af37;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .eval-btn {
-    padding: 10px 18px;
-    border: 2px solid #d4af37;
-    background: rgba(0, 0, 0, 0.6);
-    color: #d4af37;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 11px;
-    transition: all 0.3s;
-    letter-spacing: 1px;
-  }
-
-  .eval-btn:hover {
-    background: #d4af37;
-    color: #000;
-    transform: scale(1.05);
-  }
-
+  .action-log { color: #d4af37; font-size: 12px; line-height: 1.8; min-height: 70px; word-wrap: break-word; }
+  .bottom-section { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; padding: 30px 20px; width: 900px; margin: 0 auto; }
+  .token-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .token-emoji { font-size: 50px; }
+  .token-name { font-size: 11px; color: #d4af37; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+  .eval-btn { padding: 10px 18px; border: 2px solid #d4af37; background: rgba(0,0,0,0.6); color: #d4af37; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; transition: all 0.3s; letter-spacing: 1px; }
+  .eval-btn:hover { background: #d4af37; color: #000; transform: scale(1.05); }
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: #0a0a0a; }
   ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
-
-  @media (max-width: 1400px) {
-    .game-container { flex-direction: column; align-items: center; }
-    .panel { width: 400px; }
-  }
+  @media (max-width: 1400px) { .game-container { flex-direction: column; align-items: center; } .panel { width: 400px; } }
 </style>
 </head>
 <body>
@@ -475,7 +82,6 @@
   <div class="card">
     <label class="label">🎮 Ton Pseudo</label>
     <input type="text" id="username" class="input" placeholder="Entrez votre nom">
-    
     <label class="label">🎯 Choisissez votre jeton</label>
     <div class="token-grid">
       <button class="token-btn" data-token="✈️">✈️</button>
@@ -485,7 +91,6 @@
       <button class="token-btn" data-token="🎩">🎩</button>
       <button class="token-btn" data-token="🐈">🐈</button>
     </div>
-    
     <button class="btn" id="createBtn">➕ Créer une salle</button>
     <label class="label">OU REJOIGNEZ</label>
     <input type="text" id="roomCode" class="input" placeholder="Code de la salle">
@@ -512,24 +117,24 @@
         <div class="board-title">METROPOLY</div>
         <div class="tokens-layer" id="tokensLayer"></div>
         <div class="dices">
-          <div class="dice-box">
-            <div class="dice" id="dice1">
-              <div class="face f1"><div class="dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div>
-              <div class="face f2"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f3"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f4"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 25%; right: 25%;"></div><div class="dot" style="bottom: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f5"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 25%; right: 25%;"></div><div class="dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="dot" style="bottom: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f6"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 25%; right: 25%;"></div><div class="dot" style="top: 50%; left: 25%;"></div><div class="dot" style="top: 50%; right: 25%;"></div><div class="dot" style="bottom: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
+          <div class="dice-container">
+            <div class="dice-3d" id="dice1">
+              <div class="die-face face-1"><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div>
+              <div class="die-face face-2"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-3"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-4"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-5"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-6"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 20%;"></div><div class="pip-dot" style="top: 50%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
             </div>
           </div>
-          <div class="dice-box">
-            <div class="dice" id="dice2">
-              <div class="face f1"><div class="dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div>
-              <div class="face f2"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f3"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f4"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 25%; right: 25%;"></div><div class="dot" style="bottom: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f5"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 25%; right: 25%;"></div><div class="dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="dot" style="bottom: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
-              <div class="face f6"><div class="dot" style="top: 25%; left: 25%;"></div><div class="dot" style="top: 25%; right: 25%;"></div><div class="dot" style="top: 50%; left: 25%;"></div><div class="dot" style="top: 50%; right: 25%;"></div><div class="dot" style="bottom: 25%; left: 25%;"></div><div class="dot" style="bottom: 25%; right: 25%;"></div></div>
+          <div class="dice-container">
+            <div class="dice-3d" id="dice2">
+              <div class="die-face face-1"><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div>
+              <div class="die-face face-2"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-3"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-4"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-5"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
+              <div class="die-face face-6"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 20%;"></div><div class="pip-dot" style="top: 50%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
             </div>
           </div>
         </div>
@@ -553,68 +158,23 @@
   </div>
 
   <div class="bottom-section">
-    <div class="token-item">
-      <div class="token-emoji">✈️</div>
-      <div class="token-name">Avion</div>
-      <button class="eval-btn" style="border-color: #ff9933; color: #ff9933;">EV AL</button>
-    </div>
-    <div class="token-item">
-      <div class="token-emoji">🎰</div>
-      <div class="token-name">Machine À Sous</div>
-      <button class="eval-btn" style="border-color: #3366ff; color: #3366ff;">EV AL</button>
-    </div>
-    <div class="token-item">
-      <div class="token-emoji">⛵</div>
-      <div class="token-name">Bateau</div>
-      <button class="eval-btn" style="border-color: #ff3333; color: #ff3333;">EV AL</button>
-    </div>
-    <div class="token-item">
-      <div class="token-emoji">🚗</div>
-      <div class="token-name">Voiture</div>
-      <button class="eval-btn" style="border-color: #33cc33; color: #33cc33;">EV AL</button>
-    </div>
-    <div class="token-item">
-      <div class="token-emoji">🎩</div>
-      <div class="token-name">Chapeau</div>
-      <button class="eval-btn" style="border-color: #cc7733; color: #cc7733;">EV AL</button>
-    </div>
-    <div class="token-item">
-      <div class="token-emoji">🐈</div>
-      <div class="token-name">Chat Noir</div>
-      <button class="eval-btn" style="border-color: #9933ff; color: #9933ff;">EV AL</button>
-    </div>
+    <div class="token-item"><div class="token-emoji">✈️</div><div class="token-name">Avion</div><button class="eval-btn" style="border-color: #ff9933; color: #ff9933;">EV AL</button></div>
+    <div class="token-item"><div class="token-emoji">🎰</div><div class="token-name">Machine À Sous</div><button class="eval-btn" style="border-color: #3366ff; color: #3366ff;">EV AL</button></div>
+    <div class="token-item"><div class="token-emoji">⛵</div><div class="token-name">Bateau</div><button class="eval-btn" style="border-color: #ff3333; color: #ff3333;">EV AL</button></div>
+    <div class="token-item"><div class="token-emoji">🚗</div><div class="token-name">Voiture</div><button class="eval-btn" style="border-color: #33cc33; color: #33cc33;">EV AL</button></div>
+    <div class="token-item"><div class="token-emoji">🎩</div><div class="token-name">Chapeau</div><button class="eval-btn" style="border-color: #cc7733; color: #cc7733;">EV AL</button></div>
+    <div class="token-item"><div class="token-emoji">🐈</div><div class="token-name">Chat Noir</div><button class="eval-btn" style="border-color: #9933ff; color: #9933ff;">EV AL</button></div>
   </div>
 </div>
 
 <script>
 const socket = io();
-let user = '';
-let token = '✈️';
-let room = '';
-let isRolling = false;
-let playerTokens = {};
-
-const POS = [
-  {x:450,y:850},{x:380,y:850},{x:310,y:850},{x:240,y:850},{x:170,y:850},
-  {x:100,y:850},{x:50,y:780},{x:50,y:710},{x:50,y:640},{x:50,y:570},
-  {x:50,y:500},{x:50,y:430},{x:50,y:360},{x:50,y:290},{x:50,y:220},
-  {x:50,y:150},{x:120,y:50},{x:190,y:50},{x:260,y:50},{x:330,y:50},
-  {x:400,y:50},{x:470,y:50},{x:540,y:50},{x:610,y:50},{x:680,y:50},
-  {x:750,y:50},{x:800,y:120},{x:800,y:190},{x:800,y:260},{x:800,y:330},
-  {x:800,y:400},{x:800,y:470},{x:800,y:540},{x:800,y:610},{x:800,y:680},
-  {x:800,y:750},{x:730,y:850},{x:660,y:850},{x:590,y:850},{x:520,y:850}
-];
+let user = '', token = '✈️', room = '', isRolling = false, playerTokens = {};
+const POS = [{x:450,y:850},{x:380,y:850},{x:310,y:850},{x:240,y:850},{x:170,y:850},{x:100,y:850},{x:50,y:780},{x:50,y:710},{x:50,y:640},{x:50,y:570},{x:50,y:500},{x:50,y:430},{x:50,y:360},{x:50,y:290},{x:50,y:220},{x:50,y:150},{x:120,y:50},{x:190,y:50},{x:260,y:50},{x:330,y:50},{x:400,y:50},{x:470,y:50},{x:540,y:50},{x:610,y:50},{x:680,y:50},{x:750,y:50},{x:800,y:120},{x:800,y:190},{x:800,y:260},{x:800,y:330},{x:800,y:400},{x:800,y:470},{x:800,y:540},{x:800,y:610},{x:800,y:680},{x:800,y:750},{x:730,y:850},{x:660,y:850},{x:590,y:850},{x:520,y:850}];
 
 function setDice(el, val) {
-  const rot = {
-    1: 'rotateX(0deg) rotateY(0deg)',
-    2: 'rotateX(0deg) rotateY(-90deg)',
-    3: 'rotateX(0deg) rotateY(90deg)',
-    4: 'rotateX(0deg) rotateY(180deg)',
-    5: 'rotateX(-90deg) rotateY(0deg)',
-    6: 'rotateX(90deg) rotateY(0deg)'
-  };
-  el.style.transform = rot[val] || 'rotateX(0deg) rotateY(0deg)';
+  const rot = {1: 'rotateX(0) rotateY(0)', 2: 'rotateX(0) rotateY(-90deg)', 3: 'rotateX(0) rotateY(90deg)', 4: 'rotateX(0) rotateY(180deg)', 5: 'rotateX(-90deg) rotateY(0)', 6: 'rotateX(90deg) rotateY(0)'};
+  el.style.transform = rot[val] || 'rotateX(0) rotateY(0)';
 }
 
 function show(s) {
@@ -631,8 +191,7 @@ function placeToken(u, p) {
     el.textContent = playerTokens[u] || '✈️';
     document.getElementById('tokensLayer').appendChild(el);
   }
-  const pos = p % 40;
-  const {x, y} = POS[pos];
+  const {x, y} = POS[p % 40];
   el.style.left = x + 'px';
   el.style.top = y + 'px';
 }
@@ -640,12 +199,7 @@ function placeToken(u, p) {
 function moveToken(u, f, t) {
   const steps = (t - f + 40) % 40 || 1;
   let s = 0;
-  const anim = () => {
-    const pos = (f + s) % 40;
-    placeToken(u, pos);
-    s++;
-    if (s <= steps) setTimeout(anim, 350);
-  };
+  const anim = () => { placeToken(u, f + s); s++; if (s <= steps) setTimeout(anim, 350); };
   anim();
 }
 
@@ -689,24 +243,18 @@ document.getElementById('rollBtn').addEventListener('click', () => {
 
 socket.on('monopoly_room_state', (state) => {
   room = state.code;
-  Object.keys(state.players).forEach(u => {
-    playerTokens[u] = state.players[u].token;
-  });
+  Object.keys(state.players).forEach(u => playerTokens[u] = state.players[u].token);
   
   if (!state.started) {
     show('lobbyScreen');
     document.getElementById('roomCodeDisplay').textContent = state.code;
-    document.getElementById('lobbyPlayersList').innerHTML = Object.keys(state.players)
-      .map(u => `<div class="player-item">${state.players[u].token} ${u}</div>`)
-      .join('');
+    document.getElementById('lobbyPlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-item">${state.players[u].token} ${u}</div>`).join('');
   } else {
     show('gameScreen');
     setDice(document.getElementById('dice1'), 1);
     setDice(document.getElementById('dice2'), 1);
     Object.keys(state.players).forEach(u => placeToken(u, 0));
-    document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players)
-      .map(u => `<div class="player-row"><span>${state.players[u].token} ${u}</span><span>💰 ${state.players[u].money}€</span></div>`)
-      .join('');
+    document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span>${state.players[u].token} ${u}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
   }
 });
 
