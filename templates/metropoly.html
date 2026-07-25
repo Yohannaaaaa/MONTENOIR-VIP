@@ -18,10 +18,11 @@
   *{box-sizing:border-box;}
   html,body{
     margin:0;
-    min-height:100%;
+    min-height:100vh;
     background:radial-gradient(ellipse at 50% 0%, #171b24 0%, #0b0d12 60%);
     color:var(--cream);
     font-family:'Georgia','Times New Roman',serif;
+    overflow-x: auto;
   }
   .screen{
     display:none;
@@ -96,14 +97,14 @@
     display:flex;align-items:center;gap:8px;padding:8px 10px;
     background:#181b23;border-radius:6px;margin-bottom:6px;font-size:14px;
   }
-  .player-chip .dot{width:8px;height:8px;border-radius:50%;}
 
   .game-wrap{
     width:100%;
-    max-width:1200px;
+    max-width:1400px;
     display:grid;
-    grid-template-columns:1fr 280px;
+    grid-template-columns:1fr 300px;
     gap:20px;
+    margin: 0 auto;
   }
 
   .board-section{
@@ -112,14 +113,15 @@
     border:2px solid var(--gold);
     border-radius:10px;
     padding:15px;
-    aspect-ratio:1;
-    overflow:hidden;
+    width: 100%;
+    height: 600px;
+    overflow: hidden;
   }
 
   .board-img{
     width:100%;
     height:100%;
-    background:url('/static/metroploy_plateau_lux.png.png') center/cover;
+    background:url('/static/metroploy_plateau_lux.png.png') center/contain no-repeat;
     position:relative;
   }
 
@@ -133,8 +135,9 @@
     position:absolute;
     font-size:28px;
     transform:translate(-50%,-50%);
-    transition:all 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+    transition:all 0.4s ease;
     filter:drop-shadow(0 0 8px rgba(201,168,106,0.6));
+    z-index: 10;
   }
 
   .dice-section{
@@ -146,17 +149,27 @@
 
   .dice-container{
     display:flex;
-    gap:15px;
+    gap:20px;
     perspective:1200px;
     justify-content:center;
+    height: 100px;
   }
 
   .die{
-    width:60px;
-    height:60px;
+    width:80px;
+    height:80px;
     position:relative;
     transform-style:preserve-3d;
-    animation:rollDice 0.6s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: bold;
+    color: #141414;
+    background: linear-gradient(135deg,#c9a86a,#a8875090);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    box-shadow: 0 0 12px var(--gold);
   }
 
   .die.rolling{
@@ -169,27 +182,6 @@
     100%{transform:rotateX(0deg) rotateY(0deg) rotateZ(0deg);}
   }
 
-  .face{
-    position:absolute;
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(135deg,#c9a86a,#a8875090);
-    border:2px solid var(--gold);
-    font-size:24px;
-    font-weight:bold;
-    color:#141414;
-  }
-
-  .face.face1{transform:translateZ(30px);}
-  .face.face2{transform:rotateY(180deg) translateZ(30px);}
-  .face.face3{transform:rotateY(90deg) translateZ(30px);}
-  .face.face4{transform:rotateY(-90deg) translateZ(30px);}
-  .face.face5{transform:rotateX(90deg) translateZ(30px);}
-  .face.face6{transform:rotateX(-90deg) translateZ(30px);}
-
   .roll-btn{width:100%;background:linear-gradient(180deg,#3a7d63,#2a5d50)!important;color:white;padding:14px;font-size:16px;}
   .roll-btn:disabled{background:#555!important;}
   .roll-btn:hover:not(:disabled){box-shadow:0 0 15px rgba(58,125,99,0.8);}
@@ -198,6 +190,7 @@
     display:flex;
     flex-direction:column;
     gap:15px;
+    height: fit-content;
   }
 
   .panel-box{
@@ -238,9 +231,16 @@
     min-height:40px;
   }
 
-  @media(max-width:900px){
+  @media(max-width:1200px){
     .game-wrap{grid-template-columns:1fr;}
-    .board-section{aspect-ratio:auto;min-height:300px;}
+    .board-section{height:500px;}
+  }
+  
+  @media(max-width:900px){
+    h1.brand {font-size: 20px;}
+    .board-section{height:400px;}
+    .dice-container {gap: 10px;}
+    .die {width: 60px; height: 60px; font-size: 30px;}
   }
 </style>
 </head>
@@ -304,22 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {const currentLang = localSt
     <div class="right-panel">
       <div class="dice-section">
         <div class="dice-container">
-          <div class="die" id="die1">
-            <div class="face face1">1</div>
-            <div class="face face2">6</div>
-            <div class="face face3">3</div>
-            <div class="face face4">4</div>
-            <div class="face face5">5</div>
-            <div class="face face6">2</div>
-          </div>
-          <div class="die" id="die2">
-            <div class="face face1">1</div>
-            <div class="face face2">6</div>
-            <div class="face face3">3</div>
-            <div class="face face4">4</div>
-            <div class="face face5">5</div>
-            <div class="face face6">2</div>
-          </div>
+          <div class="die" id="die1">1</div>
+          <div class="die" id="die2">1</div>
         </div>
         <button id="rollBtn" class="roll-btn">LANCER LES DÉS</button>
       </div>
@@ -340,45 +326,147 @@ const socket = io();
 let currentUser = '';
 let currentToken = '🎩';
 let currentRoom = '';
+
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
 function playDiceSound() {
   const osc = audioContext.createOscillator();
   const gain = audioContext.createGain();
-  osc.connect(gain);gain.connect(audioContext.destination);
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
   osc.frequency.setValueAtTime(400, audioContext.currentTime);
   osc.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
   gain.gain.setValueAtTime(0.3, audioContext.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-  osc.start(audioContext.currentTime);osc.stop(audioContext.currentTime + 0.3);
+  osc.start(audioContext.currentTime);
+  osc.stop(audioContext.currentTime + 0.3);
 }
-const GRID_POS = [[50, 95], [50, 85], [50, 75], [50, 65], [50, 55], [50, 45], [50, 35], [50, 25],
-[60, 5], [70, 5], [80, 5], [90, 5], [100, 5],
-[100, 15], [100, 25], [100, 35], [100, 45], [100, 55], [100, 65], [100, 75], [100, 85],
-[90, 95], [80, 95], [70, 95], [60, 95]];
+
+const GRID_POS = [
+  [50, 95], [50, 85], [50, 75], [50, 65], [50, 55], [50, 45], [50, 35], [50, 25],
+  [60, 5], [70, 5], [80, 5], [90, 5], [100, 5],
+  [100, 15], [100, 25], [100, 35], [100, 45], [100, 55], [100, 65], [100, 75], [100, 85],
+  [90, 95], [80, 95], [70, 95], [60, 95]
+];
+
 function animateTokenMove(username, fromPos, toPos) {
   const layer = document.getElementById('tokensLayer');
   let tokenEl = layer.querySelector(`[data-user="${username}"]`);
-  if (!tokenEl) {tokenEl = document.createElement('div');tokenEl.className = 'token';tokenEl.dataset.user = username;layer.appendChild(tokenEl);}
+  
+  if (!tokenEl) {
+    tokenEl = document.createElement('div');
+    tokenEl.className = 'token';
+    tokenEl.dataset.user = username;
+    layer.appendChild(tokenEl);
+  }
+  
   const totalSteps = Math.abs(toPos - fromPos) || (28 - fromPos + toPos);
   let currentStep = 0;
+  
   function moveStep() {
     const pos = (fromPos + currentStep) % 28;
     const [x, y] = GRID_POS[pos];
-    tokenEl.style.left = x + '%';tokenEl.style.top = y + '%';
+    
+    // Convertir les pourcentages en pixels
+    const boardWidth = layer.parentElement.offsetWidth;
+    const boardHeight = layer.parentElement.offsetHeight;
+    const pixelX = (x / 100) * boardWidth;
+    const pixelY = (y / 100) * boardHeight;
+    
+    tokenEl.style.left = pixelX + 'px';
+    tokenEl.style.top = pixelY + 'px';
+    
     currentStep++;
-    if (currentStep <= totalSteps) {setTimeout(moveStep, 150);}
+    if (currentStep <= totalSteps) {
+      setTimeout(moveStep, 200);
+    }
   }
+  
   moveStep();
 }
-function showScreen(screenId) {document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));document.getElementById(screenId).classList.add('active');}
-document.querySelectorAll('.token-btn').forEach(btn => {btn.addEventListener('click', () => {document.querySelectorAll('.token-btn').forEach(b => b.classList.remove('selected'));btn.classList.add('selected');currentToken = btn.dataset.token;});});
-document.getElementById('createRoomBtn').addEventListener('click', () => {currentUser = document.getElementById('username').value.trim();if (!currentUser) {document.getElementById('loginError').textContent = 'Pseudo requis';return;}socket.emit('monopoly_create_room', { username: currentUser, token: currentToken });});
-document.getElementById('joinRoomBtn').addEventListener('click', () => {currentUser = document.getElementById('username').value.trim();currentRoom = document.getElementById('roomCode').value.trim().toUpperCase();if (!currentUser || !currentRoom) {document.getElementById('loginError').textContent = 'Pseudo et code requis';return;}socket.emit('monopoly_join_room', { username: currentUser, token: currentToken, code: currentRoom });});
-document.getElementById('startGameBtn').addEventListener('click', () => {socket.emit('monopoly_start_game', { code: currentRoom });});
-document.getElementById('rollBtn').addEventListener('click', () => {playDiceSound();document.getElementById('die1').classList.add('rolling');document.getElementById('die2').classList.add('rolling');setTimeout(() => {socket.emit('monopoly_roll_dice', { code: currentRoom, username: currentUser });}, 800);});
-socket.on('monopoly_room_state', (state) => {currentRoom = state.code;if (!state.started) {showScreen('lobbyScreen');document.getElementById('lobbyCode').textContent = state.code;const playersHtml = Object.keys(state.players).map(u => `<div class="player-entry">${state.players[u].token} ${u} — ${state.players[u].money}€</div>`).join('');document.getElementById('lobbyPlayers').innerHTML = playersHtml;} else {showScreen('gameScreen');document.getElementById('lastLog').textContent = state.lastLog || 'En attente...';const playersHtml = Object.keys(state.players).map(u => `<div class="player-entry">${state.players[u].token} ${u}<br/>${state.players[u].money}€</div>`).join('');document.getElementById('playerList').innerHTML = playersHtml;}});
-socket.on('monopoly_animate_move', (data) => {const { username, from, to, dice1, dice2 } = data;document.getElementById('die1').textContent = dice1;document.getElementById('die2').textContent = dice2;document.getElementById('die1').classList.remove('rolling');document.getElementById('die2').classList.remove('rolling');animateTokenMove(username, from, to);});
-socket.on('monopoly_error', (data) => {document.getElementById('loginError').textContent = data.msg;});
+
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
+
+document.querySelectorAll('.token-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.token-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentToken = btn.dataset.token;
+  });
+});
+
+document.getElementById('createRoomBtn').addEventListener('click', () => {
+  currentUser = document.getElementById('username').value.trim();
+  if (!currentUser) {
+    document.getElementById('loginError').textContent = 'Pseudo requis';
+    return;
+  }
+  socket.emit('monopoly_create_room', { username: currentUser, token: currentToken });
+});
+
+document.getElementById('joinRoomBtn').addEventListener('click', () => {
+  currentUser = document.getElementById('username').value.trim();
+  currentRoom = document.getElementById('roomCode').value.trim().toUpperCase();
+  if (!currentUser || !currentRoom) {
+    document.getElementById('loginError').textContent = 'Pseudo et code requis';
+    return;
+  }
+  socket.emit('monopoly_join_room', { username: currentUser, token: currentToken, code: currentRoom });
+});
+
+document.getElementById('startGameBtn').addEventListener('click', () => {
+  socket.emit('monopoly_start_game', { code: currentRoom });
+});
+
+document.getElementById('rollBtn').addEventListener('click', () => {
+  playDiceSound();
+  document.getElementById('die1').classList.add('rolling');
+  document.getElementById('die2').classList.add('rolling');
+  setTimeout(() => {
+    socket.emit('monopoly_roll_dice', { code: currentRoom, username: currentUser });
+  }, 800);
+});
+
+socket.on('monopoly_room_state', (state) => {
+  currentRoom = state.code;
+  if (!state.started) {
+    showScreen('lobbyScreen');
+    document.getElementById('lobbyCode').textContent = state.code;
+    const playersHtml = Object.keys(state.players).map(u => 
+      `<div class="player-chip">${state.players[u].token} ${u} — ${state.players[u].money}€</div>`
+    ).join('');
+    document.getElementById('lobbyPlayers').innerHTML = playersHtml;
+  } else {
+    showScreen('gameScreen');
+    document.getElementById('lastLog').textContent = state.lastLog || 'En attente...';
+    const playersHtml = Object.keys(state.players).map(u => 
+      `<div class="player-entry">${state.players[u].token} ${u}<br/>${state.players[u].money}€</div>`
+    ).join('');
+    document.getElementById('playerList').innerHTML = playersHtml;
+  }
+});
+
+socket.on('monopoly_animate_move', (data) => {
+  const { username, from, to, dice1, dice2 } = data;
+  
+  // Afficher les dés
+  document.getElementById('die1').textContent = dice1;
+  document.getElementById('die2').textContent = dice2;
+  document.getElementById('die1').classList.remove('rolling');
+  document.getElementById('die2').classList.remove('rolling');
+  
+  // Animer le token
+  animateTokenMove(username, from, to);
+  
+  document.getElementById('lastLog').textContent = `${username} a lancé ${dice1 + dice2}`;
+});
+
+socket.on('monopoly_error', (data) => {
+  document.getElementById('loginError').textContent = data.msg;
+});
 </script>
 
 </body>
