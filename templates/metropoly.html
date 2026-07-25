@@ -3,124 +3,227 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monopoly Luxe</title>
+<title>Monopoly VIP</title>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <style>
-  * { box-sizing: border-box; }
-  body { 
-    margin: 0; 
-    background: linear-gradient(135deg, #2a2520, #1a1512); 
-    color: #f5e6d3; 
-    font-family: Arial, sans-serif; 
-    min-height: 100vh; 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: linear-gradient(135deg, #2a2520 0%, #1a1512 100%);
+    color: #f5e6d3;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
   }
-  
-  .screen { 
-    display: none; 
-    min-height: 100vh; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    padding: 20px; 
-  }
-  .screen.active { display: flex; }
-  
-  h1 { color: #d4af37; font-size: 40px; letter-spacing: 4px; text-align: center; text-shadow: 0 0 10px #d4af37; }
-  .card { background: #1a1a1a; border: 3px solid #d4af37; border-radius: 10px; padding: 30px; max-width: 420px; width: 100%; }
-  label { display: block; color: #d4af37; font-weight: bold; margin-top: 15px; margin-bottom: 5px; }
-  input { width: 100%; padding: 12px; background: #0a0a0a; border: 2px solid #d4af37; color: #f5e6d3; border-radius: 5px; font-size: 14px; }
-  button { width: 100%; padding: 14px; background: linear-gradient(135deg, #d4af37, #a0860d); color: #1a1a1a; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 14px; transition: 0.3s; }
-  button:hover { transform: scale(1.02); }
-  
-  .tokens { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  .token-btn { padding: 10px 14px; background: #333; border: 2px solid #d4af37; color: #f5e6d3; cursor: pointer; border-radius: 5px; font-size: 20px; }
-  .token-btn.selected { background: #d4af37; box-shadow: 0 0 10px #d4af37; transform: scale(1.1); }
-  
-  .room-code { text-align: center; font-size: 32px; color: #d4af37; font-weight: bold; margin: 20px 0; text-shadow: 0 0 5px #d4af37; }
-  .player-info { font-size: 12px; margin: 5px 0; padding: 8px; background: #0a0a0a; border-radius: 3px; border-left: 3px solid #d4af37; }
-  
-  .game-wrap { 
-    display: flex; 
-    gap: 30px; 
-    max-width: 1500px; 
-    margin: 20px auto; 
+
+  .screen {
+    display: none;
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     padding: 20px;
   }
-  
-  .plateau-wrapper {
+
+  .screen.active {
+    display: flex;
+  }
+
+  h1 {
+    color: #d4af37;
+    font-size: 48px;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+    margin-bottom: 30px;
+  }
+
+  .card {
+    background: rgba(26, 26, 26, 0.95);
+    border: 3px solid #d4af37;
+    border-radius: 15px;
+    padding: 40px;
+    max-width: 450px;
+    width: 100%;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+  }
+
+  label {
+    display: block;
+    color: #d4af37;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  input {
+    width: 100%;
+    padding: 14px;
+    background: #0a0a0a;
+    border: 2px solid #d4af37;
+    color: #f5e6d3;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+
+  input:focus {
+    outline: none;
+    box-shadow: 0 0 10px #d4af37;
+  }
+
+  button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #d4af37, #a0860d);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+    font-size: 15px;
+    transition: all 0.3s;
+  }
+
+  button:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  .tokens {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .token-btn {
+    flex: 1;
+    min-width: 50px;
+    padding: 12px;
+    background: rgba(51, 51, 51, 0.8);
+    border: 2px solid #d4af37;
+    color: #f5e6d3;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 24px;
+    transition: all 0.3s;
+  }
+
+  .token-btn:hover {
+    background: rgba(80, 80, 80, 0.9);
+  }
+
+  .token-btn.selected {
+    background: #d4af37;
+    color: #1a1a1a;
+    box-shadow: 0 0 15px #d4af37;
+    transform: scale(1.1);
+  }
+
+  .room-code {
+    text-align: center;
+    font-size: 36px;
+    color: #d4af37;
+    font-weight: bold;
+    margin: 20px 0;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px #d4af37;
+  }
+
+  .player-info {
+    font-size: 13px;
+    margin: 8px 0;
+    padding: 10px;
+    background: rgba(10, 10, 10, 0.8);
+    border-left: 3px solid #d4af37;
+    border-radius: 4px;
+  }
+
+  .game-wrap {
+    display: flex;
+    gap: 25px;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    width: 100%;
+  }
+
+  .plateau {
     position: relative;
-    width: 850px;
-    height: 850px;
-    background: url('/static/metroploy_plateau_lux.png.png') center/contain no-repeat #0a0a0a;
-    border: 5px solid #d4af37;
-    border-radius: 10px;
-    box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
+    width: 800px;
+    height: 800px;
+    border: 6px solid #d4af37;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2a2520, #1a1512);
+    box-shadow: 0 0 50px rgba(212, 175, 55, 0.7);
     overflow: hidden;
   }
-  
-  .tokens-layer { 
-    position: absolute; 
-    width: 100%; 
-    height: 100%; 
+
+  .tokens-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
   }
-  
+
   .player-token {
     position: absolute;
-    font-size: 40px;
-    transform: translate(-50%, -50%);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
     z-index: 20;
-    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.9));
-    transition: left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), top 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  
-  .building {
-    position: absolute;
-    font-size: 18px;
+    filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.9));
+    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     transform: translate(-50%, -50%);
-    z-index: 15;
-    filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.7));
   }
-  
-  .dices-container {
+
+  .dices-center {
     position: absolute;
-    bottom: 80px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     display: flex;
     gap: 80px;
     perspective: 1500px;
     z-index: 15;
   }
-  
+
   .dice-wrapper {
-    width: 120px;
-    height: 120px;
+    width: 110px;
+    height: 110px;
     position: relative;
     transform-style: preserve-3d;
   }
-  
+
   .dice {
     width: 100%;
     height: 100%;
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 0.6s;
+    transition: transform 0.7s ease-out;
   }
-  
+
   .dice.rolling {
-    animation: rollDice 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: rollDice 1.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  
+
   @keyframes rollDice {
     0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-    20% { transform: rotateX(720deg) rotateY(360deg) rotateZ(90deg); }
-    40% { transform: rotateX(1440deg) rotateY(720deg) rotateZ(180deg); }
-    60% { transform: rotateX(2160deg) rotateY(1080deg) rotateZ(270deg); }
-    80% { transform: rotateX(2880deg) rotateY(1440deg) rotateZ(360deg); }
+    25% { transform: rotateX(720deg) rotateY(540deg) rotateZ(360deg); }
+    50% { transform: rotateX(1440deg) rotateY(1080deg) rotateZ(720deg); }
+    75% { transform: rotateX(2160deg) rotateY(1620deg) rotateZ(1080deg); }
     100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
   }
-  
+
   .dice-face {
     position: absolute;
     width: 100%;
@@ -131,34 +234,100 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 68px;
+    font-size: 64px;
     font-weight: bold;
     color: #141414;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.6), 0 0 20px rgba(212,175,55,0.8), 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.8), 0 15px 35px rgba(0, 0, 0, 0.6);
   }
-  
-  .face1 { transform: rotateY(0deg) translateZ(60px); }
-  .face2 { transform: rotateY(180deg) translateZ(60px); }
-  .face3 { transform: rotateY(90deg) translateZ(60px); }
-  .face4 { transform: rotateY(-90deg) translateZ(60px); }
-  .face5 { transform: rotateX(90deg) translateZ(60px); }
-  .face6 { transform: rotateX(-90deg) translateZ(60px); }
-  
-  .right-panel { width: 300px; display: flex; flex-direction: column; gap: 15px; }
-  .panel-box { background: #1a1a1a; border: 2px solid #d4af37; border-radius: 8px; padding: 15px; box-shadow: 0 0 15px rgba(212,175,55,0.2); }
-  .panel-title { color: #d4af37; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #d4af37; padding-bottom: 8px; font-size: 12px; letter-spacing: 1px; }
-  .last-action { color: #d4af37; font-size: 12px; line-height: 1.8; min-height: 60px; }
-  
-  #rollBtn { background: linear-gradient(135deg, #3a7d63, #2a5d50) !important; color: white !important; font-size: 16px; font-weight: bold; }
+
+  .face1 { transform: rotateY(0deg) translateZ(55px); }
+  .face2 { transform: rotateY(180deg) translateZ(55px); }
+  .face3 { transform: rotateY(90deg) translateZ(55px); }
+  .face4 { transform: rotateY(-90deg) translateZ(55px); }
+  .face5 { transform: rotateX(90deg) translateZ(55px); }
+  .face6 { transform: rotateX(-90deg) translateZ(55px); }
+
+  .right-panel {
+    width: 290px;
+    background: rgba(26, 26, 26, 0.95);
+    border: 2px solid #d4af37;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .panel-box {
+    background: rgba(10, 10, 10, 0.8);
+    border: 1px solid #d4af37;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+
+  .panel-title {
+    color: #d4af37;
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #d4af37;
+    padding-bottom: 6px;
+  }
+
+  .player-list {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .last-action {
+    color: #d4af37;
+    font-size: 12px;
+    line-height: 1.9;
+    min-height: 60px;
+    word-break: break-word;
+  }
+
+  #rollBtn {
+    background: linear-gradient(135deg, #3a7d63, #2a5d50) !important;
+    color: white !important;
+    font-weight: bold;
+    border: 2px solid #3a7d63;
+    font-size: 16px;
+  }
+
+  #rollBtn:hover {
+    box-shadow: 0 0 20px #3a7d63 !important;
+  }
+
+  #rollBtn:disabled {
+    background: #555 !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .error {
+    color: #ff6b6b;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="loginScreen" class="screen active">
   <h1>♠️ MONOPOLY ♦️</h1>
   <div class="card">
     <label>🎮 TON PSEUDO</label>
-    <input type="text" id="username" placeholder="Joueur">
+    <input type="text" id="username" placeholder="Ton nom">
     
     <label>🎯 CHOISIS TON JETON</label>
     <div class="tokens">
@@ -174,25 +343,29 @@
     <label>OU REJOINDRE</label>
     <input type="text" id="roomCode" placeholder="Code du salon">
     <button id="joinBtn">🔗 REJOINDRE</button>
+    <div class="error" id="errorMsg"></div>
   </div>
 </div>
 
+<!-- LOBBY -->
 <div id="lobbyScreen" class="screen">
   <h1>MONOPOLY</h1>
   <div class="card">
+    <p style="text-align: center; color: #d4af37; margin-bottom: 10px;">CODE DE LA SALLE</p>
     <div class="room-code" id="roomDisplay">MON-XXXX</div>
     <label>👥 JOUEURS</label>
-    <div id="playersList"></div>
-    <button id="startBtn">🚀 DÉMARRER LA PARTIE</button>
+    <div id="playersList" class="player-list"></div>
+    <button id="startBtn">🚀 DÉMARRER</button>
   </div>
 </div>
 
+<!-- GAME -->
 <div id="gameScreen" class="screen">
   <h1>MONOPOLY</h1>
   <div class="game-wrap">
-    <div class="plateau-wrapper">
+    <div class="plateau">
       <div class="tokens-layer" id="tokensLayer"></div>
-      <div class="dices-container">
+      <div class="dices-center">
         <div class="dice-wrapper">
           <div class="dice" id="dice1">
             <div class="dice-face face1">1</div>
@@ -215,21 +388,19 @@
         </div>
       </div>
     </div>
-    
+
     <div class="right-panel">
       <div class="panel-box">
-        <div class="panel-title">🎲 LANCER LES DÉS</div>
+        <div class="panel-title">🎲 LANCER</div>
         <button id="rollBtn">LANCER</button>
       </div>
-      
       <div class="panel-box">
         <div class="panel-title">👥 JOUEURS</div>
-        <div id="gamePlayersList"></div>
+        <div id="gamePlayersList" class="player-list"></div>
       </div>
-      
       <div class="panel-box">
-        <div class="panel-title">📊 DERNIER COUP</div>
-        <div class="last-action" id="lastAction">⏳ En attente...</div>
+        <div class="panel-title">📊 COUP</div>
+        <div class="last-action" id="lastAction">⏳ Prêt...</div>
       </div>
     </div>
   </div>
@@ -239,16 +410,17 @@
 const socket = io();
 let user = '', token = '✈️', room = '', isRolling = false;
 let playerTokens = {};
-let playerPositions = {};
 
+// 40 POSITIONS
 const GRID_POS = [
-  {x: 425, y: 825}, {x: 355, y: 825}, {x: 285, y: 825}, {x: 215, y: 825}, {x: 145, y: 825}, {x: 75, y: 825},
-  {x: 25, y: 770}, {x: 25, y: 700}, {x: 25, y: 630}, {x: 25, y: 560}, {x: 25, y: 490}, {x: 25, y: 420},
-  {x: 25, y: 350}, {x: 25, y: 280}, {x: 25, y: 210}, {x: 25, y: 140}, {x: 25, y: 70}, {x: 75, y: 25},
-  {x: 145, y: 25}, {x: 215, y: 25}, {x: 285, y: 25}, {x: 355, y: 25}, {x: 425, y: 25}, {x: 495, y: 25},
-  {x: 565, y: 25}, {x: 635, y: 25}, {x: 705, y: 25}, {x: 775, y: 25}, {x: 825, y: 70}, {x: 825, y: 140},
-  {x: 825, y: 210}, {x: 825, y: 280}, {x: 825, y: 350}, {x: 825, y: 420}, {x: 825, y: 490}, {x: 825, y: 560},
-  {x: 825, y: 630}, {x: 825, y: 700}, {x: 825, y: 770}, {x: 775, y: 825}, {x: 705, y: 825}, {x: 635, y: 825}
+  {x: 400, y: 760}, {x: 330, y: 760}, {x: 260, y: 760}, {x: 190, y: 760}, {x: 120, y: 760},
+  {x: 50, y: 760}, {x: 40, y: 690}, {x: 40, y: 620}, {x: 40, y: 550}, {x: 40, y: 480},
+  {x: 40, y: 410}, {x: 40, y: 340}, {x: 40, y: 270}, {x: 40, y: 200}, {x: 40, y: 130},
+  {x: 40, y: 60}, {x: 110, y: 40}, {x: 180, y: 40}, {x: 250, y: 40}, {x: 320, y: 40},
+  {x: 390, y: 40}, {x: 460, y: 40}, {x: 530, y: 40}, {x: 600, y: 40}, {x: 670, y: 40},
+  {x: 740, y: 40}, {x: 760, y: 110}, {x: 760, y: 180}, {x: 760, y: 250}, {x: 760, y: 320},
+  {x: 760, y: 390}, {x: 760, y: 460}, {x: 760, y: 530}, {x: 760, y: 600}, {x: 760, y: 670},
+  {x: 760, y: 760}, {x: 690, y: 760}, {x: 620, y: 760}, {x: 550, y: 760}, {x: 480, y: 760}
 ];
 
 function setDiceValue(diceEl, value) {
@@ -256,50 +428,54 @@ function setDiceValue(diceEl, value) {
     1: 'rotateX(0deg) rotateY(0deg)',
     2: 'rotateX(0deg) rotateY(-90deg)',
     3: 'rotateX(0deg) rotateY(90deg)',
-    4: 'rotateX(0deg) rotateY(-180deg)',
-    5: 'rotateX(90deg) rotateY(0deg)',
-    6: 'rotateX(-90deg) rotateY(0deg)'
+    4: 'rotateX(0deg) rotateY(180deg)',
+    5: 'rotateX(-90deg) rotateY(0deg)',
+    6: 'rotateX(90deg) rotateY(0deg)'
   };
   diceEl.style.transform = rotations[value] || 'rotateX(0deg) rotateY(0deg)';
 }
 
-document.querySelectorAll('.token-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.token-btn').forEach(x => x.classList.remove('selected'));
-    b.classList.add('selected');
-    token = b.dataset.token;
+// SÉLECTION JETON
+document.querySelectorAll('.token-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.token-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    token = btn.dataset.token;
   });
 });
 
+// CRÉER SALLE
 document.getElementById('createBtn').addEventListener('click', () => {
   user = document.getElementById('username').value.trim();
-  if (!user) return alert('Pseudo requis');
+  if (!user) return document.getElementById('errorMsg').textContent = '❌ Pseudo requis';
   playerTokens[user] = token;
   socket.emit('monopoly_create_room', {username: user, token});
 });
 
+// REJOINDRE
 document.getElementById('joinBtn').addEventListener('click', () => {
   user = document.getElementById('username').value.trim();
   room = document.getElementById('roomCode').value.trim().toUpperCase();
-  if (!user || !room) return alert('Données requises');
+  if (!user || !room) return document.getElementById('errorMsg').textContent = '❌ Données requises';
   playerTokens[user] = token;
   socket.emit('monopoly_join_room', {username: user, token, code: room});
 });
 
+// DÉMARRER
 document.getElementById('startBtn').addEventListener('click', () => {
   socket.emit('monopoly_start_game', {code: room});
 });
 
+// LANCER DÉS
 document.getElementById('rollBtn').addEventListener('click', () => {
   if (isRolling) return;
   isRolling = true;
-  
   document.getElementById('dice1').classList.add('rolling');
   document.getElementById('dice2').classList.add('rolling');
-  
+  document.getElementById('rollBtn').disabled = true;
   setTimeout(() => {
     socket.emit('monopoly_roll_dice', {code: room, username: user});
-  }, 1200);
+  }, 1300);
 });
 
 function showScreen(s) {
@@ -307,9 +483,8 @@ function showScreen(s) {
   document.getElementById(s).classList.add('active');
 }
 
-function moveToken(username, fromPos, toPos) {
+function placeToken(username, pos) {
   let el = document.querySelector(`[data-user="${username}"]`);
-  
   if (!el) {
     el = document.createElement('div');
     el.className = 'player-token';
@@ -317,57 +492,29 @@ function moveToken(username, fromPos, toPos) {
     el.textContent = playerTokens[username] || '✈️';
     document.getElementById('tokensLayer').appendChild(el);
   }
-  
+  const p = pos % 40;
+  const {x, y} = GRID_POS[p];
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+}
+
+function moveToken(username, fromPos, toPos) {
   const totalSteps = (toPos - fromPos + 40) % 40 || 1;
   let step = 0;
-  
   function animate() {
     const pos = (fromPos + step) % 40;
-    const {x, y} = GRID_POS[pos];
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    
+    placeToken(username, pos);
     step++;
-    if (step <= totalSteps) {
-      setTimeout(animate, 350);
-    } else {
-      playerPositions[username] = toPos;
-    }
+    if (step <= totalSteps) setTimeout(animate, 350);
   }
-  
   animate();
 }
 
-function updateBuildings(state) {
-  document.querySelectorAll('.building').forEach(b => b.remove());
-  
-  if (!state.properties) return;
-  
-  Object.keys(state.properties).forEach(propId => {
-    const prop = state.properties[propId];
-    if (prop.owner && (prop.houses > 0 || prop.hotels > 0)) {
-      const pos = GRID_POS[propId];
-      if (!pos) return;
-      
-      let html = '';
-      for (let i = 0; i < prop.houses; i++) html += '🏠';
-      for (let i = 0; i < prop.hotels; i++) html += '🏨';
-      
-      const div = document.createElement('div');
-      div.className = 'building';
-      div.textContent = html;
-      div.style.left = pos.x + 'px';
-      div.style.top = pos.y + 'px';
-      document.getElementById('tokensLayer').appendChild(div);
-    }
-  });
-}
-
+// ÉVÉNEMENTS
 socket.on('monopoly_room_state', (state) => {
   room = state.code;
   Object.keys(state.players).forEach(u => {
     playerTokens[u] = state.players[u].token;
-    playerPositions[u] = state.players[u].position || 0;
   });
   
   if (!state.started) {
@@ -380,32 +527,29 @@ socket.on('monopoly_room_state', (state) => {
     showScreen('gameScreen');
     setDiceValue(document.getElementById('dice1'), 1);
     setDiceValue(document.getElementById('dice2'), 1);
+    Object.keys(state.players).forEach(u => placeToken(u, 0));
     document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players)
       .map(u => `<div class="player-info">${state.players[u].token} ${u} 💰 ${state.players[u].money}€</div>`)
       .join('');
-    updateBuildings(state);
   }
 });
 
 socket.on('monopoly_animate_move', (data) => {
   const {username, from, to, dice1, dice2} = data;
-  
   setDiceValue(document.getElementById('dice1'), dice1);
   setDiceValue(document.getElementById('dice2'), dice2);
   document.getElementById('dice1').classList.remove('rolling');
   document.getElementById('dice2').classList.remove('rolling');
-  
-  setTimeout(() => {
-    moveToken(username, from, to);
-  }, 600);
-  
-  document.getElementById('lastAction').textContent = `🎲 ${username} a lancé ${dice1}+${dice2}=${dice1+dice2}\n🚀 Déplacement vers la case ${to}`;
+  document.getElementById('rollBtn').disabled = false;
+  setTimeout(() => moveToken(username, from, to), 700);
+  document.getElementById('lastAction').textContent = `🎲 ${username}\n${dice1} + ${dice2} = ${dice1+dice2}\n↪ Case ${to}`;
   isRolling = false;
 });
 
 socket.on('monopoly_error', (d) => {
-  alert(d.msg || 'Erreur');
+  alert('❌ ' + (d.msg || 'Erreur'));
   isRolling = false;
+  document.getElementById('rollBtn').disabled = false;
 });
 </script>
 
