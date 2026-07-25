@@ -183,14 +183,14 @@
     left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
-    gap: 100px;
+    gap: 120px;
     perspective: 2000px;
     z-index: 15;
   }
 
   .dice-wrapper {
-    width: 130px;
-    height: 130px;
+    width: 140px;
+    height: 140px;
     position: relative;
     transform-style: preserve-3d;
   }
@@ -231,15 +231,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 72px;
-    font-weight: bold;
-    color: #1a1a1a;
     box-shadow: 
       inset 0 0 20px rgba(255, 255, 255, 0.4),
       inset 0 0 30px rgba(0, 0, 0, 0.3),
       0 0 30px rgba(212, 175, 55, 1),
       0 20px 50px rgba(0, 0, 0, 0.8);
     position: relative;
+    overflow: hidden;
   }
 
   .dice-face::before {
@@ -253,12 +251,22 @@
     border-radius: 15px;
   }
 
-  .face1 { transform: rotateY(0deg) translateZ(65px); }
-  .face2 { transform: rotateY(180deg) translateZ(65px); }
-  .face3 { transform: rotateY(90deg) translateZ(65px); }
-  .face4 { transform: rotateY(-90deg) translateZ(65px); }
-  .face5 { transform: rotateX(90deg) translateZ(65px); }
-  .face6 { transform: rotateX(-90deg) translateZ(65px); }
+  .pip {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #1a1a1a;
+    border-radius: 50%;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+    z-index: 2;
+  }
+
+  .face1 { transform: rotateY(0deg) translateZ(70px); }
+  .face2 { transform: rotateY(180deg) translateZ(70px); }
+  .face3 { transform: rotateY(90deg) translateZ(70px); }
+  .face4 { transform: rotateY(-90deg) translateZ(70px); }
+  .face5 { transform: rotateX(90deg) translateZ(70px); }
+  .face6 { transform: rotateX(-90deg) translateZ(70px); }
 
   .right-panel {
     width: 290px;
@@ -376,22 +384,76 @@
       <div class="dices-center">
         <div class="dice-wrapper">
           <div class="dice" id="dice1">
-            <div class="dice-face face1">1</div>
-            <div class="dice-face face2">2</div>
-            <div class="dice-face face3">3</div>
-            <div class="dice-face face4">4</div>
-            <div class="dice-face face5">5</div>
-            <div class="dice-face face6">6</div>
+            <div class="dice-face face1">
+              <div class="pip" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+            </div>
+            <div class="dice-face face2">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face3">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face4">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 25%; right: 25%;"></div>
+              <div class="pip" style="bottom: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face5">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 25%; right: 25%;"></div>
+              <div class="pip" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+              <div class="pip" style="bottom: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face6">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 25%; right: 25%;"></div>
+              <div class="pip" style="top: 50%; left: 25%;"></div>
+              <div class="pip" style="top: 50%; right: 25%;"></div>
+              <div class="pip" style="bottom: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
           </div>
         </div>
         <div class="dice-wrapper">
           <div class="dice" id="dice2">
-            <div class="dice-face face1">1</div>
-            <div class="dice-face face2">2</div>
-            <div class="dice-face face3">3</div>
-            <div class="dice-face face4">4</div>
-            <div class="dice-face face5">5</div>
-            <div class="dice-face face6">6</div>
+            <div class="dice-face face1">
+              <div class="pip" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+            </div>
+            <div class="dice-face face2">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face3">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face4">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 25%; right: 25%;"></div>
+              <div class="pip" style="bottom: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face5">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 25%; right: 25%;"></div>
+              <div class="pip" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+              <div class="pip" style="bottom: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
+            <div class="dice-face face6">
+              <div class="pip" style="top: 25%; left: 25%;"></div>
+              <div class="pip" style="top: 25%; right: 25%;"></div>
+              <div class="pip" style="top: 50%; left: 25%;"></div>
+              <div class="pip" style="top: 50%; right: 25%;"></div>
+              <div class="pip" style="bottom: 25%; left: 25%;"></div>
+              <div class="pip" style="bottom: 25%; right: 25%;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -442,17 +504,6 @@ function setDiceValue(diceEl, value) {
   diceEl.style.transform = rotations[value] || 'rotateX(0deg) rotateY(0deg)';
 }
 
-function randomizeDiceDisplay() {
-  const nums = [1, 2, 3, 4, 5, 6];
-  document.querySelectorAll('.dice').forEach(dice => {
-    nums.sort(() => Math.random() - 0.5);
-    const faces = dice.querySelectorAll('.dice-face');
-    faces.forEach((face, i) => {
-      face.textContent = nums[i];
-    });
-  });
-}
-
 document.querySelectorAll('.token-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.token-btn').forEach(b => b.classList.remove('selected'));
@@ -483,15 +534,11 @@ document.getElementById('startBtn').addEventListener('click', () => {
 document.getElementById('rollBtn').addEventListener('click', () => {
   if (isRolling) return;
   isRolling = true;
-  randomizeDiceDisplay();
   document.getElementById('dice1').classList.add('rolling');
   document.getElementById('dice2').classList.add('rolling');
   document.getElementById('rollBtn').disabled = true;
   
-  const interval = setInterval(() => randomizeDiceDisplay(), 50);
-  
   setTimeout(() => {
-    clearInterval(interval);
     socket.emit('monopoly_roll_dice', {code: room, username: user});
   }, 1500);
 });
