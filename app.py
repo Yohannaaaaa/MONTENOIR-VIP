@@ -6063,7 +6063,8 @@ def poker_code():
 def poker_new_room(code,owner,buyIn,sb,bb):
     return {"code":code,"owner":owner,"buyIn":buyIn,"smallBlind":sb,"bigBlind":bb,"started":False,
             "players":{},"seatOrder":[],"order":[],"actIdx":None,"toAct":set(),"dealerIndex":0,"handNo":0,
-            "stage":"waiting","community":[],"deck":[],"pot":0,"currentBet":0,"minRaise":bb,"log":"Table prête."}
+            "stage":"waiting","community":[],"deck":[],"pot":0,"currentBet":0,"minRaise":bb,"log":"Table prête.",
+            "botCount":0}
 
 def poker_active_seated(r):
     return [u for u in r["seatOrder"] if r["players"][u]["stack"]>0]
@@ -6246,6 +6247,19 @@ def poker_join_room(data):
     r["log"]=u+" a rejoint la table."
     poker_broadcast(r)
 
+@socketio.on("poker_add_bot")
+def poker_add_bot(data):
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=POKER_ROOMS.get(code)
+    if not r or r["started"]: emit("poker_error",{"code":"cannot_add_bot"}); return
+    if len(r["seatOrder"])>=8: emit("poker_error",{"code":"table_full"}); return
+    r["botCount"]=r.get("botCount",0)+1
+    name=f"Bot {r['botCount']}"
+    r["players"][name]={"name":name,"token":"🤖","sid":None,"stack":r["buyIn"],"hole":[],"bet":0,"totalBet":0,"folded":False,"allIn":False,"isBot":True}
+    r["seatOrder"].append(name)
+    r["log"]=name+" a rejoint la table."
+    poker_broadcast(r)
+
 @socketio.on("poker_leave_room")
 def poker_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
@@ -6275,6 +6289,8 @@ def poker_leave_room(data):
     r["log"]=u+" a quitté la table."
     if not r["players"]:
         del POKER_ROOMS[code]; return
+    if mid_hand:
+        poker_run_bots(r)
     poker_broadcast(r)
 
 @socketio.on("poker_start_game")
@@ -6283,6 +6299,7 @@ def poker_start_game(data):
     if not r or len(r["seatOrder"])<2: emit("poker_error",{"code":"need_players"}); return
     r["started"]=True
     poker_start_new_hand(r)
+    poker_run_bots(r)
     poker_broadcast(r)
 
 @socketio.on("poker_next_hand")
@@ -6291,17 +6308,10 @@ def poker_next_hand(data):
     if not r or not r["started"]: return
     if r["stage"] not in ("showdown","waiting"): return
     poker_start_new_hand(r)
+    poker_run_bots(r)
     poker_broadcast(r)
 
-@socketio.on("poker_action")
-def poker_action(data):
-    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
-    action=(data or {}).get("action",""); amount=int((data or {}).get("amount",0) or 0)
-    r=POKER_ROOMS.get(code)
-    if not r or not r.get("order") or u not in r["players"]: return
-    if r["stage"] in ("waiting","showdown"): return
-    n=len(r["order"])
-    if r["order"][r["actIdx"]]!=u: emit("poker_error",{"code":"not_your_turn"}); return
+def poker_apply_action(r,u,action,amount):
     p=r["players"][u]
     if action=="fold":
         p["folded"]=True; r["toAct"].discard(u)
@@ -6345,9 +6355,48 @@ def poker_action(data):
         r["actIdx"]=poker_next_actor(r,r["actIdx"])
         if r["actIdx"] is None:
             poker_advance_stage(r,handOrder)
+
+def poker_bot_decide(r,u):
+    p=r["players"][u]
+    toCall=r["currentBet"]-p["bet"]
+    canRaise=(p["stack"]-max(toCall,0))>=r["minRaise"]
+    if toCall<=0:
+        if canRaise and random.random()<0.15:
+            return ("raise",r["currentBet"]+r["minRaise"])
+        return ("check",0)
+    if canRaise and random.random()<0.08:
+        return ("raise",r["currentBet"]+r["minRaise"])
+    ratio=toCall/max(p["stack"]+p["bet"],1)
+    roll=random.random()
+    if ratio>0.5:
+        return ("call",0) if roll<0.4 else ("fold",0)
+    if roll<0.15:
+        return ("fold",0)
+    return ("call",0)
+
+def poker_run_bots(r):
+    for _ in range(200):
+        if r["stage"] in ("waiting","showdown"): break
+        if not r.get("order") or r["actIdx"] is None: break
+        u=r["order"][r["actIdx"]]
+        p=r["players"].get(u)
+        if not p or not p.get("isBot"): break
+        action,amount=poker_bot_decide(r,u)
+        poker_apply_action(r,u,action,amount)
+        poker_broadcast(r)
+        time.sleep(0.8)
+
+@socketio.on("poker_action")
+def poker_action(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    action=(data or {}).get("action",""); amount=int((data or {}).get("amount",0) or 0)
+    r=POKER_ROOMS.get(code)
+    if not r or not r.get("order") or u not in r["players"]: return
+    if r["stage"] in ("waiting","showdown"): return
+    if r["order"][r["actIdx"]]!=u: emit("poker_error",{"code":"not_your_turn"}); return
+    poker_apply_action(r,u,action,amount)
+    poker_run_bots(r)
     poker_broadcast(r)
-
-
 
 
 

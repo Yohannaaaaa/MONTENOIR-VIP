@@ -116,6 +116,7 @@
     <label class="label" data-i18n="label_players">👥 Joueurs</label>
     <div class="players-list" id="lobbyPlayersList"></div>
     <button class="btn green" id="startBtn" data-i18n="btn_start">🚀 Démarrer la partie</button>
+    <button class="btn grey" id="addBotBtn" data-i18n="btn_add_bot">🤖 Ajouter un bot IA</button>
     <button class="btn grey" id="leaveLobbyBtn" data-i18n="btn_leave">🚪 Quitter</button>
   </div>
 </div>
@@ -159,7 +160,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Créer une table',
     label_or_join:'OU REJOIGNEZ', placeholder_room_code:'Code de la table', btn_join:'🔗 Rejoindre',
     title_lobby:'POKER', label_room_code:'CODE DE LA TABLE', label_players:'👥 Joueurs',
-    btn_start:'🚀 Démarrer la partie', btn_leave:'🚪 Quitter', btn_fold:'✋ Se coucher', btn_check:'✅ Check',
+    btn_start:'🚀 Démarrer la partie', btn_add_bot:'🤖 Ajouter un bot IA', btn_leave:'🚪 Quitter', btn_fold:'✋ Se coucher', btn_check:'✅ Check',
     btn_call:'📞 Suivre ({amount})', btn_raise:'⬆️ Relancer', btn_allin:'🔥 Tapis', btn_next_hand:'▶️ Main suivante',
     pot:'Pot : {amount}', stage_waiting:'En attente', stage_preflop:'Pré-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Abattage', turn_mine:'✅ À toi de jouer !', turn_other:"⏳ Tour de {name}",
@@ -172,7 +173,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Create a table',
     label_or_join:'OR JOIN', placeholder_room_code:'Table code', btn_join:'🔗 Join',
     title_lobby:'POKER', label_room_code:'TABLE CODE', label_players:'👥 Players',
-    btn_start:'🚀 Start game', btn_leave:'🚪 Leave', btn_fold:'✋ Fold', btn_check:'✅ Check',
+    btn_start:'🚀 Start game', btn_add_bot:'🤖 Add AI bot', btn_leave:'🚪 Leave', btn_fold:'✋ Fold', btn_check:'✅ Check',
     btn_call:'📞 Call ({amount})', btn_raise:'⬆️ Raise', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Next hand',
     pot:'Pot: {amount}', stage_waiting:'Waiting', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Your turn!', turn_other:"⏳ {name}'s turn",
@@ -185,7 +186,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Ciega pequeña', btn_create:'➕ Crear una mesa',
     label_or_join:'O ÚNETE', placeholder_room_code:'Código de la mesa', btn_join:'🔗 Unirse',
     title_lobby:'POKER', label_room_code:'CÓDIGO DE LA MESA', label_players:'👥 Jugadores',
-    btn_start:'🚀 Empezar partida', btn_leave:'🚪 Salir', btn_fold:'✋ Retirarse', btn_check:'✅ Pasar',
+    btn_start:'🚀 Empezar partida', btn_add_bot:'🤖 Añadir un bot IA', btn_leave:'🚪 Salir', btn_fold:'✋ Retirarse', btn_check:'✅ Pasar',
     btn_call:'📞 Igualar ({amount})', btn_raise:'⬆️ Subir', btn_allin:'🔥 Ir all-in', btn_next_hand:'▶️ Siguiente mano',
     pot:'Bote: {amount}', stage_waiting:'Esperando', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Muestra de cartas', turn_mine:'✅ ¡Es tu turno!', turn_other:"⏳ Turno de {name}",
@@ -198,7 +199,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Tisch erstellen',
     label_or_join:'ODER BEITRETEN', placeholder_room_code:'Tischcode', btn_join:'🔗 Beitreten',
     title_lobby:'POKER', label_room_code:'TISCHCODE', label_players:'👥 Spieler',
-    btn_start:'🚀 Spiel starten', btn_leave:'🚪 Verlassen', btn_fold:'✋ Aussteigen', btn_check:'✅ Checken',
+    btn_start:'🚀 Spiel starten', btn_add_bot:'🤖 KI-Bot hinzufügen', btn_leave:'🚪 Verlassen', btn_fold:'✋ Aussteigen', btn_check:'✅ Checken',
     btn_call:'📞 Mitgehen ({amount})', btn_raise:'⬆️ Erhöhen', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Nächste Hand',
     pot:'Pot: {amount}', stage_waiting:'Warten', stage_preflop:'Pre-Flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Du bist dran!', turn_other:'⏳ {name} ist dran',
@@ -211,7 +212,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Crea un tavolo',
     label_or_join:'O UNISCITI', placeholder_room_code:'Codice del tavolo', btn_join:'🔗 Unisciti',
     title_lobby:'POKER', label_room_code:'CODICE DEL TAVOLO', label_players:'👥 Giocatori',
-    btn_start:'🚀 Inizia partita', btn_leave:'🚪 Esci', btn_fold:'✋ Passa', btn_check:'✅ Check',
+    btn_start:'🚀 Inizia partita', btn_add_bot:'🤖 Aggiungi un bot IA', btn_leave:'🚪 Esci', btn_fold:'✋ Passa', btn_check:'✅ Check',
     btn_call:'📞 Paga ({amount})', btn_raise:'⬆️ Rilancia', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Mano successiva',
     pot:'Piatto: {amount}', stage_waiting:'In attesa', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Tocca a te!', turn_other:'⏳ Turno di {name}',
@@ -224,7 +225,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Tafel aanmaken',
     label_or_join:'OF DOE MEE', placeholder_room_code:'Tafelcode', btn_join:'🔗 Meedoen',
     title_lobby:'POKER', label_room_code:'TAFELCODE', label_players:'👥 Spelers',
-    btn_start:'🚀 Spel starten', btn_leave:'🚪 Verlaten', btn_fold:'✋ Passen', btn_check:'✅ Checken',
+    btn_start:'🚀 Spel starten', btn_add_bot:'🤖 AI-bot toevoegen', btn_leave:'🚪 Verlaten', btn_fold:'✋ Passen', btn_check:'✅ Checken',
     btn_call:'📞 Meegaan ({amount})', btn_raise:'⬆️ Verhogen', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Volgende hand',
     pot:'Pot: {amount}', stage_waiting:'Wachten', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Jij bent aan de beurt!', turn_other:'⏳ Beurt van {name}',
@@ -237,7 +238,7 @@ const I18N = {
     label_buyin:'💵 Бай-ин', label_smallblind:'🔹 Малый блайнд', btn_create:'➕ Создать стол',
     label_or_join:'ИЛИ ПРИСОЕДИНИТЬСЯ', placeholder_room_code:'Код стола', btn_join:'🔗 Присоединиться',
     title_lobby:'ПОКЕР', label_room_code:'КОД СТОЛА', label_players:'👥 Игроки',
-    btn_start:'🚀 Начать игру', btn_leave:'🚪 Выйти', btn_fold:'✋ Сбросить', btn_check:'✅ Чек',
+    btn_start:'🚀 Начать игру', btn_add_bot:'🤖 Добавить ИИ-бота', btn_leave:'🚪 Выйти', btn_fold:'✋ Сбросить', btn_check:'✅ Чек',
     btn_call:'📞 Уравнять ({amount})', btn_raise:'⬆️ Повысить', btn_allin:'🔥 Ва-банк', btn_next_hand:'▶️ Следующая раздача',
     pot:'Банк: {amount}', stage_waiting:'Ожидание', stage_preflop:'Префлоп', stage_flop:'Флоп', stage_turn:'Тёрн',
     stage_river:'Ривер', stage_showdown:'Вскрытие', turn_mine:'✅ Твой ход!', turn_other:'⏳ Ход игрока {name}',
@@ -250,7 +251,7 @@ const I18N = {
     label_buyin:'💵 مبلغ الدخول', label_smallblind:'🔹 الرهان الصغير', btn_create:'➕ إنشاء طاولة',
     label_or_join:'أو انضم', placeholder_room_code:'رمز الطاولة', btn_join:'🔗 انضمام',
     title_lobby:'بوكر', label_room_code:'رمز الطاولة', label_players:'👥 اللاعبون',
-    btn_start:'🚀 ابدأ اللعبة', btn_leave:'🚪 مغادرة', btn_fold:'✋ الانسحاب', btn_check:'✅ تمرير',
+    btn_start:'🚀 ابدأ اللعبة', btn_add_bot:'🤖 إضافة بوت ذكاء اصطناعي', btn_leave:'🚪 مغادرة', btn_fold:'✋ الانسحاب', btn_check:'✅ تمرير',
     btn_call:'📞 مجاراة ({amount})', btn_raise:'⬆️ رفع', btn_allin:'🔥 كل الرقائق', btn_next_hand:'▶️ الجولة التالية',
     pot:'الوعاء: {amount}', stage_waiting:'انتظار', stage_preflop:'قبل الفلوب', stage_flop:'فلوب', stage_turn:'تيرن',
     stage_river:'ريفر', stage_showdown:'كشف الأوراق', turn_mine:'✅ دورك الآن!', turn_other:'⏳ دور {name}',
@@ -263,7 +264,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Criar uma mesa',
     label_or_join:'OU ENTRAR', placeholder_room_code:'Código da mesa', btn_join:'🔗 Entrar',
     title_lobby:'POKER', label_room_code:'CÓDIGO DA MESA', label_players:'👥 Jogadores',
-    btn_start:'🚀 Iniciar jogo', btn_leave:'🚪 Sair', btn_fold:'✋ Desistir', btn_check:'✅ Passar',
+    btn_start:'🚀 Iniciar jogo', btn_add_bot:'🤖 Adicionar bot de IA', btn_leave:'🚪 Sair', btn_fold:'✋ Desistir', btn_check:'✅ Passar',
     btn_call:'📞 Pagar ({amount})', btn_raise:'⬆️ Aumentar', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Próxima mão',
     pot:'Pote: {amount}', stage_waiting:'Aguardando', stage_preflop:'Pré-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ É a sua vez!', turn_other:'⏳ Vez de {name}',
@@ -276,7 +277,7 @@ const I18N = {
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Mały blind', btn_create:'➕ Utwórz stół',
     label_or_join:'LUB DOŁĄCZ', placeholder_room_code:'Kod stołu', btn_join:'🔗 Dołącz',
     title_lobby:'POKER', label_room_code:'KOD STOŁU', label_players:'👥 Gracze',
-    btn_start:'🚀 Rozpocznij grę', btn_leave:'🚪 Opuść', btn_fold:'✋ Spasuj', btn_check:'✅ Czekaj',
+    btn_start:'🚀 Rozpocznij grę', btn_add_bot:'🤖 Dodaj bota AI', btn_leave:'🚪 Opuść', btn_fold:'✋ Spasuj', btn_check:'✅ Czekaj',
     btn_call:'📞 Sprawdź ({amount})', btn_raise:'⬆️ Podbij', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Następna ręka',
     pot:'Pula: {amount}', stage_waiting:'Oczekiwanie', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Twoja kolej!', turn_other:'⏳ Kolej gracza {name}',
@@ -289,7 +290,7 @@ const I18N = {
     label_buyin:'💵 Giriş miktarı', label_smallblind:'🔹 Küçük Blind', btn_create:'➕ Masa kur',
     label_or_join:'YA DA KATIL', placeholder_room_code:'Masa kodu', btn_join:'🔗 Katıl',
     title_lobby:'POKER', label_room_code:'MASA KODU', label_players:'👥 Oyuncular',
-    btn_start:'🚀 Oyunu başlat', btn_leave:'🚪 Ayrıl', btn_fold:'✋ Fold', btn_check:'✅ Check',
+    btn_start:'🚀 Oyunu başlat', btn_add_bot:'🤖 Yapay zeka botu ekle', btn_leave:'🚪 Ayrıl', btn_fold:'✋ Fold', btn_check:'✅ Check',
     btn_call:'📞 Gör ({amount})', btn_raise:'⬆️ Yükselt', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Sonraki el',
     pot:'Pot: {amount}', stage_waiting:'Bekleniyor', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
     stage_river:'River', stage_showdown:'Kartları açma', turn_mine:'✅ Sıra sende!', turn_other:'⏳ Sıra: {name}',
@@ -302,7 +303,7 @@ const I18N = {
     label_buyin:'💵 バイイン', label_smallblind:'🔹 スモールブラインド', btn_create:'➕ テーブルを作成',
     label_or_join:'または参加', placeholder_room_code:'テーブルコード', btn_join:'🔗 参加',
     title_lobby:'ポーカー', label_room_code:'テーブルコード', label_players:'👥 プレイヤー',
-    btn_start:'🚀 ゲーム開始', btn_leave:'🚪 退出', btn_fold:'✋ フォールド', btn_check:'✅ チェック',
+    btn_start:'🚀 ゲーム開始', btn_add_bot:'🤖 AIボットを追加', btn_leave:'🚪 退出', btn_fold:'✋ フォールド', btn_check:'✅ チェック',
     btn_call:'📞 コール ({amount})', btn_raise:'⬆️ レイズ', btn_allin:'🔥 オールイン', btn_next_hand:'▶️ 次のハンド',
     pot:'ポット: {amount}', stage_waiting:'待機中', stage_preflop:'プリフロップ', stage_flop:'フロップ', stage_turn:'ターン',
     stage_river:'リバー', stage_showdown:'ショーダウン', turn_mine:'✅ あなたの番です！', turn_other:'⏳ {name}の番',
@@ -315,7 +316,7 @@ const I18N = {
     label_buyin:'💵 买入金额', label_smallblind:'🔹 小盲注', btn_create:'➕ 创建牌桌',
     label_or_join:'或加入', placeholder_room_code:'牌桌代码', btn_join:'🔗 加入',
     title_lobby:'扑克', label_room_code:'牌桌代码', label_players:'👥 玩家',
-    btn_start:'🚀 开始游戏', btn_leave:'🚪 离开', btn_fold:'✋ 弃牌', btn_check:'✅ 让牌',
+    btn_start:'🚀 开始游戏', btn_add_bot:'🤖 添加AI机器人', btn_leave:'🚪 离开', btn_fold:'✋ 弃牌', btn_check:'✅ 让牌',
     btn_call:'📞 跟注 ({amount})', btn_raise:'⬆️ 加注', btn_allin:'🔥 全下', btn_next_hand:'▶️ 下一局',
     pot:'底池：{amount}', stage_waiting:'等待中', stage_preflop:'翻牌前', stage_flop:'翻牌', stage_turn:'转牌',
     stage_river:'河牌', stage_showdown:'摊牌', turn_mine:'✅ 轮到你了！', turn_other:'⏳ 轮到 {name}',
@@ -328,7 +329,7 @@ const I18N = {
     label_buyin:'💵 바이인', label_smallblind:'🔹 스몰 블라인드', btn_create:'➕ 테이블 만들기',
     label_or_join:'또는 참가하기', placeholder_room_code:'테이블 코드', btn_join:'🔗 참가',
     title_lobby:'포커', label_room_code:'테이블 코드', label_players:'👥 플레이어',
-    btn_start:'🚀 게임 시작', btn_leave:'🚪 나가기', btn_fold:'✋ 폴드', btn_check:'✅ 체크',
+    btn_start:'🚀 게임 시작', btn_add_bot:'🤖 AI 봇 추가', btn_leave:'🚪 나가기', btn_fold:'✋ 폴드', btn_check:'✅ 체크',
     btn_call:'📞 콜 ({amount})', btn_raise:'⬆️ 레이즈', btn_allin:'🔥 올인', btn_next_hand:'▶️ 다음 핸드',
     pot:'팟: {amount}', stage_waiting:'대기 중', stage_preflop:'프리플랍', stage_flop:'플랍', stage_turn:'턴',
     stage_river:'리버', stage_showdown:'쇼다운', turn_mine:'✅ 당신의 차례입니다!', turn_other:'⏳ {name}의 차례',
@@ -386,6 +387,10 @@ document.getElementById('joinBtn').addEventListener('click', () => {
 
 document.getElementById('startBtn').addEventListener('click', () => {
   socket.emit('poker_start_game', {code: room});
+});
+
+document.getElementById('addBotBtn').addEventListener('click', () => {
+  socket.emit('poker_add_bot', {code: room});
 });
 
 document.getElementById('leaveLobbyBtn').addEventListener('click', leaveTable);
@@ -447,6 +452,7 @@ function render(state) {
     document.getElementById('lobbyInfo').textContent = t('waiting_players');
     document.getElementById('lobbyPlayersList').innerHTML = state.players.map(p => `<div class="player-item"><span>${p.token || '🎩'} ${p.name}</span><span>💰 ${p.stack}</span></div>`).join('');
     document.getElementById('startBtn').style.display = isOwner ? 'block' : 'none';
+    document.getElementById('addBotBtn').style.display = (isOwner && state.players.length < 8) ? 'block' : 'none';
     return;
   }
   show('gameScreen');
