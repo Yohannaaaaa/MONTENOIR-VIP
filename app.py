@@ -17,7 +17,76 @@ OWNER_USERNAME = "yohanna"
 
 
 # Safe global translation script placeholder/fixer
-Londres_I18N_SCRIPT = ""
+# Traductions des libellés data-i18n partagés par /codenames, /features, /menu (menu, réglages, panneau jeux...).
+LONDRES_I18N = {
+  "fr": {"active":"TOURNOI ACTIF","activeText":"Tournoi Codenames Hebdomadaire","ai":"IA TAROT PREMIUM","cashier":"CAISSE Montenoir","chests":"SYSTÈME DE COFFRES","custom":"PERSONNALISATION DU PROFIL","daily":"RÉCOMPENSE QUOTIDIENNE","dailyText":"N'oublie pas de récupérer ton cadeau !","details":"DÉTAILS","friends":"AMIS","games":"JEUX","help":"❓ Aide","helpText":"Règles du jeu et section d'assistance bientôt disponibles.","join":"REJOINDRE","language":"🌍 Langue","login":"👤 INSCRIPTION / CONNEXION","menu":"☰ MENU","notifications":"🔔 Notifications","notificationsText":"Notifications de tournoi, coffre, message privé et invitation bientôt disponibles.","premium":"♛ ADHÉSION PREMIUM","privacy":"🔐 Confidentialité","privacyText":"L'email n'est pas visible par les autres joueurs.","profile":"PROFIL / XP","rules":"RÈGLES DU JEU","rulesText":"Jeu respectueux, triche interdite, comportement inapproprié interdit.","rulesTitle":"📜 Règles","settings":"PARAMÈTRES","tarot":"TAROT & RITUEL","theme":"🎨 Thème","themeText":"Thème noir & or Montenoir actif.","tournaments":"TOURNOIS","vipPoints":"TES POINTS VIP","tarot_trust_label":"Système de confiance :","tarot_trust_desc":"la demande est d'abord envoyée, elle arrive au panneau du propriétaire, Yohanna valide, puis un rendez-vous / une consultation vocale est planifié. La réponse peut aussi être envoyée par email.","tarot_menu_readings":"🔮 Services de Consultation Tarot","tarot_menu_rituals":"✨ Rituels","tarot_menu_instant":"🤖 Interprétation Tarot Instantanée","tarot_menu_coins":"🪙 Packs de Jetons","tarot_th_service":"Service","tarot_th_duration":"Durée","tarot_th_price":"Prix","tarot_th_ritual":"Rituel","tarot_instant_desc":"Tirage de carte aléatoire","tarot_instant_btn":"🤖 Obtenir une interprétation IA","tarot_form_title":"✍️ Écris ta question","tarot_field_name":"Nom","tarot_field_mother":"Nom de la mère","tarot_field_email":"E-mail","tarot_field_question":"Écris ta question","tarot_opt_mail":"Je veux une réponse par email","tarot_opt_voice":"Je veux un rendez-vous avec micro / vocal","tarot_opt_pdf":"Je veux une réponse PDF","tarot_submit":"🪙 Recharger des jetons / Envoyer la demande"},
+  "en": {"active":"ACTIVE TOURNAMENT","activeText":"Weekly Codenames Tournament","ai":"AI TAROT PREMIUM","cashier":"Montenoir CASHIER","chests":"CHEST SYSTEM","custom":"PROFILE CUSTOMIZATION","daily":"DAILY REWARD","dailyText":"Don't forget to claim your gift!","details":"DETAILS","friends":"FRIENDS","games":"GAMES","help":"❓ Help","helpText":"Game rules and support section coming soon.","join":"JOIN","language":"🌍 Language","login":"👤 SIGN UP / LOGIN","menu":"☰ MENU","notifications":"🔔 Notifications","notificationsText":"Tournament, chest, private message and invite notifications coming soon.","premium":"♛ PREMIUM MEMBERSHIP","privacy":"🔐 Privacy","privacyText":"Your email is not shown to other players.","profile":"PROFILE / XP","rules":"GAME RULES","rulesText":"Respectful play, cheating forbidden, inappropriate behavior forbidden.","rulesTitle":"📜 Rules","settings":"SETTINGS","tarot":"TAROT & RITUAL","theme":"🎨 Theme","themeText":"Black & gold Montenoir theme active.","tournaments":"TOURNAMENTS","vipPoints":"YOUR VIP POINTS","tarot_trust_label":"Trust system:","tarot_trust_desc":"the request is sent first, it reaches the owner's panel, Yohanna approves it, then an appointment / voice consultation is scheduled. The answer can also be sent by email.","tarot_menu_readings":"🔮 Tarot Reading Services","tarot_menu_rituals":"✨ Rituals","tarot_menu_instant":"🤖 Instant Tarot Reading","tarot_menu_coins":"🪙 Chip Packs","tarot_th_service":"Service","tarot_th_duration":"Duration","tarot_th_price":"Price","tarot_th_ritual":"Ritual","tarot_instant_desc":"Random Card Draw","tarot_instant_btn":"🤖 Get AI reading","tarot_form_title":"✍️ Write Your Question","tarot_field_name":"Name","tarot_field_mother":"Mother's name","tarot_field_email":"Email","tarot_field_question":"Write your question","tarot_opt_mail":"I want an email reply","tarot_opt_voice":"I want a voice / mic appointment","tarot_opt_pdf":"I want a PDF reply","tarot_submit":"🪙 Top Up Chips / Send Request"},
+  "es": {"active":"TORNEO ACTIVO","activeText":"Torneo Semanal de Codenames","ai":"IA TAROT PREMIUM","cashier":"CAJA Montenoir","chests":"SISTEMA DE COFRES","custom":"PERSONALIZACIÓN DE PERFIL","daily":"RECOMPENSA DIARIA","dailyText":"¡No olvides reclamar tu regalo!","details":"DETALLES","friends":"AMIGOS","games":"JUEGOS","help":"❓ Ayuda","helpText":"Reglas del juego y sección de soporte próximamente.","join":"UNIRSE","language":"🌍 Idioma","login":"👤 REGISTRO / INICIO DE SESIÓN","menu":"☰ MENÚ","notifications":"🔔 Notificaciones","notificationsText":"Notificaciones de torneos, cofres, mensajes privados e invitaciones próximamente.","premium":"♛ MEMBRESÍA PREMIUM","privacy":"🔐 Privacidad","privacyText":"Tu correo no se muestra a otros jugadores.","profile":"PERFIL / XP","rules":"REGLAS DEL JUEGO","rulesText":"Juego respetuoso, trampas prohibidas, comportamiento inapropiado prohibido.","rulesTitle":"📜 Reglas","settings":"AJUSTES","tarot":"TAROT Y RITUAL","theme":"🎨 Tema","themeText":"Tema negro y dorado Montenoir activo.","tournaments":"TORNEOS","vipPoints":"TUS PUNTOS VIP","tarot_trust_label":"Sistema de confianza:","tarot_trust_desc":"la solicitud se envía primero, llega al panel del propietario, Yohanna la aprueba y luego se programa una cita / consulta por voz. La respuesta también se puede enviar por correo.","tarot_menu_readings":"🔮 Servicios de Lectura de Tarot","tarot_menu_rituals":"✨ Rituales","tarot_menu_instant":"🤖 Lectura de Tarot Instantánea","tarot_menu_coins":"🪙 Paquetes de Fichas","tarot_th_service":"Servicio","tarot_th_duration":"Duración","tarot_th_price":"Precio","tarot_th_ritual":"Ritual","tarot_instant_desc":"Tirada de Carta Aleatoria","tarot_instant_btn":"🤖 Obtener lectura de IA","tarot_form_title":"✍️ Escribe tu pregunta","tarot_field_name":"Nombre","tarot_field_mother":"Nombre de la madre","tarot_field_email":"Correo electrónico","tarot_field_question":"Escribe tu pregunta","tarot_opt_mail":"Quiero una respuesta por correo","tarot_opt_voice":"Quiero una cita con micrófono / voz","tarot_opt_pdf":"Quiero una respuesta en PDF","tarot_submit":"🪙 Recargar fichas / Enviar solicitud"},
+  "de": {"active":"AKTIVES TURNIER","activeText":"Wöchentliches Codenames-Turnier","ai":"KI TAROT PREMIUM","cashier":"Montenoir KASSE","chests":"TRUHENSYSTEM","custom":"PROFILANPASSUNG","daily":"TÄGLICHE BELOHNUNG","dailyText":"Vergiss nicht, dein Geschenk abzuholen!","details":"DETAILS","friends":"FREUNDE","games":"SPIELE","help":"❓ Hilfe","helpText":"Spielregeln und Support-Bereich demnächst verfügbar.","join":"BEITRETEN","language":"🌍 Sprache","login":"👤 REGISTRIEREN / ANMELDEN","menu":"☰ MENÜ","notifications":"🔔 Benachrichtigungen","notificationsText":"Turnier-, Truhen-, Nachrichten- und Einladungsbenachrichtigungen demnächst.","premium":"♛ PREMIUM-MITGLIEDSCHAFT","privacy":"🔐 Datenschutz","privacyText":"Deine E-Mail wird anderen Spielern nicht angezeigt.","profile":"PROFIL / XP","rules":"SPIELREGELN","rulesText":"Respektvolles Spiel, Betrug verboten, unangemessenes Verhalten verboten.","rulesTitle":"📜 Regeln","settings":"EINSTELLUNGEN","tarot":"TAROT & RITUAL","theme":"🎨 Design","themeText":"Schwarz-Gold Montenoir-Design aktiv.","tournaments":"TURNIERE","vipPoints":"DEINE VIP-PUNKTE","tarot_trust_label":"Vertrauenssystem:","tarot_trust_desc":"die Anfrage wird zuerst gesendet, erreicht das Owner-Panel, Yohanna genehmigt sie, dann wird ein Termin / eine Sprachberatung geplant. Die Antwort kann auch per E-Mail gesendet werden.","tarot_menu_readings":"🔮 Tarot-Beratungsdienste","tarot_menu_rituals":"✨ Rituale","tarot_menu_instant":"🤖 Sofortige Tarot-Deutung","tarot_menu_coins":"🪙 Chip-Pakete","tarot_th_service":"Dienst","tarot_th_duration":"Dauer","tarot_th_price":"Preis","tarot_th_ritual":"Ritual","tarot_instant_desc":"Zufällige Kartenziehung","tarot_instant_btn":"🤖 KI-Deutung erhalten","tarot_form_title":"✍️ Schreib deine Frage","tarot_field_name":"Name","tarot_field_mother":"Name der Mutter","tarot_field_email":"E-Mail","tarot_field_question":"Schreib deine Frage","tarot_opt_mail":"Ich möchte eine Antwort per E-Mail","tarot_opt_voice":"Ich möchte einen Termin mit Mikrofon / Sprache","tarot_opt_pdf":"Ich möchte eine PDF-Antwort","tarot_submit":"🪙 Chips aufladen / Anfrage senden"},
+  "it": {"active":"TORNEO ATTIVO","activeText":"Torneo Settimanale di Codenames","ai":"IA TAROT PREMIUM","cashier":"CASSA Montenoir","chests":"SISTEMA DI FORZIERI","custom":"PERSONALIZZAZIONE PROFILO","daily":"RICOMPENSA GIORNALIERA","dailyText":"Non dimenticare di ritirare il tuo regalo!","details":"DETTAGLI","friends":"AMICI","games":"GIOCHI","help":"❓ Aiuto","helpText":"Regole del gioco e sezione supporto in arrivo.","join":"UNISCITI","language":"🌍 Lingua","login":"👤 REGISTRAZIONE / ACCESSO","menu":"☰ MENU","notifications":"🔔 Notifiche","notificationsText":"Notifiche di tornei, forzieri, messaggi privati e inviti in arrivo.","premium":"♛ ABBONAMENTO PREMIUM","privacy":"🔐 Privacy","privacyText":"La tua email non è visibile agli altri giocatori.","profile":"PROFILO / XP","rules":"REGOLE DEL GIOCO","rulesText":"Gioco rispettoso, imbrogli vietati, comportamento inappropriato vietato.","rulesTitle":"📜 Regole","settings":"IMPOSTAZIONI","tarot":"TAROCCHI E RITUALE","theme":"🎨 Tema","themeText":"Tema nero e oro Montenoir attivo.","tournaments":"TORNEI","vipPoints":"I TUOI PUNTI VIP","tarot_trust_label":"Sistema di fiducia:","tarot_trust_desc":"la richiesta viene prima inviata, arriva al pannello del proprietario, Yohanna la approva, poi viene programmato un appuntamento / consulto vocale. La risposta può essere inviata anche via email.","tarot_menu_readings":"🔮 Servizi di Lettura dei Tarocchi","tarot_menu_rituals":"✨ Rituali","tarot_menu_instant":"🤖 Lettura Tarocchi Istantanea","tarot_menu_coins":"🪙 Pacchetti di Fiches","tarot_th_service":"Servizio","tarot_th_duration":"Durata","tarot_th_price":"Prezzo","tarot_th_ritual":"Rituale","tarot_instant_desc":"Estrazione Carta Casuale","tarot_instant_btn":"🤖 Ottieni lettura IA","tarot_form_title":"✍️ Scrivi la tua domanda","tarot_field_name":"Nome","tarot_field_mother":"Nome della madre","tarot_field_email":"Email","tarot_field_question":"Scrivi la tua domanda","tarot_opt_mail":"Voglio una risposta via email","tarot_opt_voice":"Voglio un appuntamento vocale / con microfono","tarot_opt_pdf":"Voglio una risposta PDF","tarot_submit":"🪙 Ricarica fiches / Invia richiesta"},
+  "nl": {"active":"ACTIEF TOERNOOI","activeText":"Wekelijks Codenames Toernooi","ai":"AI TAROT PREMIUM","cashier":"Montenoir KASSA","chests":"KISTSYSTEEM","custom":"PROFIELAANPASSING","daily":"DAGELIJKSE BELONING","dailyText":"Vergeet niet je cadeau op te halen!","details":"DETAILS","friends":"VRIENDEN","games":"SPELLEN","help":"❓ Hulp","helpText":"Spelregels en ondersteuningssectie binnenkort beschikbaar.","join":"DEELNEMEN","language":"🌍 Taal","login":"👤 REGISTREREN / INLOGGEN","menu":"☰ MENU","notifications":"🔔 Meldingen","notificationsText":"Toernooi-, kist-, privébericht- en uitnodigingsmeldingen binnenkort.","premium":"♛ PREMIUM LIDMAATSCHAP","privacy":"🔐 Privacy","privacyText":"Je e-mail wordt niet getoond aan andere spelers.","profile":"PROFIEL / XP","rules":"SPELREGELS","rulesText":"Respectvol spel, valsspelen verboden, ongepast gedrag verboden.","rulesTitle":"📜 Regels","settings":"INSTELLINGEN","tarot":"TAROT & RITUEEL","theme":"🎨 Thema","themeText":"Zwart & goud Montenoir-thema actief.","tournaments":"TOERNOOIEN","vipPoints":"JOUW VIP-PUNTEN","tarot_trust_label":"Vertrouwenssysteem:","tarot_trust_desc":"het verzoek wordt eerst verzonden, komt aan in het ownerpaneel, Yohanna keurt het goed, waarna een afspraak / spraakconsult wordt gepland. Het antwoord kan ook per e-mail worden verzonden.","tarot_menu_readings":"🔮 Tarotlezing Diensten","tarot_menu_rituals":"✨ Rituelen","tarot_menu_instant":"🤖 Directe Tarotlezing","tarot_menu_coins":"🪙 Chippakketten","tarot_th_service":"Dienst","tarot_th_duration":"Duur","tarot_th_price":"Prijs","tarot_th_ritual":"Ritueel","tarot_instant_desc":"Willekeurige Kaarttrekking","tarot_instant_btn":"🤖 AI-lezing ontvangen","tarot_form_title":"✍️ Schrijf je vraag","tarot_field_name":"Naam","tarot_field_mother":"Naam van moeder","tarot_field_email":"E-mail","tarot_field_question":"Schrijf je vraag","tarot_opt_mail":"Ik wil een antwoord per e-mail","tarot_opt_voice":"Ik wil een afspraak met microfoon / spraak","tarot_opt_pdf":"Ik wil een PDF-antwoord","tarot_submit":"🪙 Chips opladen / Verzoek verzenden"},
+  "ru": {"active":"АКТИВНЫЙ ТУРНИР","activeText":"Еженедельный турнир Codenames","ai":"ИИ ТАРО PREMIUM","cashier":"КАССА Montenoir","chests":"СИСТЕМА СУНДУКОВ","custom":"НАСТРОЙКА ПРОФИЛЯ","daily":"ЕЖЕДНЕВНАЯ НАГРАДА","dailyText":"Не забудь забрать свой подарок!","details":"ПОДРОБНОСТИ","friends":"ДРУЗЬЯ","games":"ИГРЫ","help":"❓ Помощь","helpText":"Правила игры и раздел поддержки скоро появятся.","join":"ПРИСОЕДИНИТЬСЯ","language":"🌍 Язык","login":"👤 РЕГИСТРАЦИЯ / ВХОД","menu":"☰ МЕНЮ","notifications":"🔔 Уведомления","notificationsText":"Уведомления о турнирах, сундуках, личных сообщениях и приглашениях скоро.","premium":"♛ ПРЕМИУМ-ЧЛЕНСТВО","privacy":"🔐 Конфиденциальность","privacyText":"Ваш email не виден другим игрокам.","profile":"ПРОФИЛЬ / XP","rules":"ПРАВИЛА ИГРЫ","rulesText":"Уважительная игра, читерство запрещено, неподобающее поведение запрещено.","rulesTitle":"📜 Правила","settings":"НАСТРОЙКИ","tarot":"ТАРО И РИТУАЛ","theme":"🎨 Тема","themeText":"Чёрно-золотая тема Montenoir активна.","tournaments":"ТУРНИРЫ","vipPoints":"ТВОИ VIP-ОЧКИ","tarot_trust_label":"Система доверия:","tarot_trust_desc":"запрос сначала отправляется, попадает в панель владельца, Yohanna одобряет его, затем назначается встреча / голосовая консультация. Ответ также можно отправить по email.","tarot_menu_readings":"🔮 Услуги гадания на Таро","tarot_menu_rituals":"✨ Ритуалы","tarot_menu_instant":"🤖 Мгновенное толкование Таро","tarot_menu_coins":"🪙 Наборы фишек","tarot_th_service":"Услуга","tarot_th_duration":"Длительность","tarot_th_price":"Цена","tarot_th_ritual":"Ритуал","tarot_instant_desc":"Случайная карта","tarot_instant_btn":"🤖 Получить толкование ИИ","tarot_form_title":"✍️ Напиши свой вопрос","tarot_field_name":"Имя","tarot_field_mother":"Имя матери","tarot_field_email":"Email","tarot_field_question":"Напиши свой вопрос","tarot_opt_mail":"Хочу ответ по email","tarot_opt_voice":"Хочу голосовую встречу / с микрофоном","tarot_opt_pdf":"Хочу ответ в PDF","tarot_submit":"🪙 Пополнить фишки / Отправить запрос"},
+  "ar": {"active":"بطولة نشطة","activeText":"بطولة Codenames الأسبوعية","ai":"تارو الذكاء الاصطناعي المميز","cashier":"خزينة Montenoir","chests":"نظام الصناديق","custom":"تخصيص الملف الشخصي","daily":"المكافأة اليومية","dailyText":"لا تنسَ استلام هديتك!","details":"التفاصيل","friends":"الأصدقاء","games":"الألعاب","help":"❓ مساعدة","helpText":"قواعد اللعبة وقسم الدعم قريبًا.","join":"انضمام","language":"🌍 اللغة","login":"👤 تسجيل / دخول","menu":"☰ القائمة","notifications":"🔔 الإشعارات","notificationsText":"إشعارات البطولات والصناديق والرسائل الخاصة والدعوات قريبًا.","premium":"♛ عضوية بريميوم","privacy":"🔐 الخصوصية","privacyText":"بريدك الإلكتروني غير مرئي للاعبين الآخرين.","profile":"الملف الشخصي / XP","rules":"قواعد اللعبة","rulesText":"لعب محترم، الغش ممنوع، السلوك غير اللائق ممنوع.","rulesTitle":"📜 القواعد","settings":"الإعدادات","tarot":"التارو والطقوس","theme":"🎨 السمة","themeText":"سمة Montenoir السوداء والذهبية مفعّلة.","tournaments":"البطولات","vipPoints":"نقاطك VIP","tarot_trust_label":"نظام الثقة:","tarot_trust_desc":"يتم إرسال الطلب أولاً، ويصل إلى لوحة المالك، وتوافق عليه Yohanna، ثم يتم تحديد موعد / استشارة صوتية. يمكن أيضًا إرسال الرد عبر البريد الإلكتروني.","tarot_menu_readings":"🔮 خدمات قراءة التارو","tarot_menu_rituals":"✨ الطقوس","tarot_menu_instant":"🤖 قراءة تارو فورية","tarot_menu_coins":"🪙 حزم الرقاقات","tarot_th_service":"الخدمة","tarot_th_duration":"المدة","tarot_th_price":"السعر","tarot_th_ritual":"الطقس","tarot_instant_desc":"سحب بطاقة عشوائية","tarot_instant_btn":"🤖 احصل على قراءة الذكاء الاصطناعي","tarot_form_title":"✍️ اكتب سؤالك","tarot_field_name":"الاسم","tarot_field_mother":"اسم الأم","tarot_field_email":"البريد الإلكتروني","tarot_field_question":"اكتب سؤالك","tarot_opt_mail":"أريد ردًا عبر البريد الإلكتروني","tarot_opt_voice":"أريد موعدًا صوتيًا / بالميكروفون","tarot_opt_pdf":"أريد ردًا بصيغة PDF","tarot_submit":"🪙 إعادة شحن الرقاقات / إرسال الطلب"},
+  "pt": {"active":"TORNEIO ATIVO","activeText":"Torneio Semanal de Codenames","ai":"IA TARÔ PREMIUM","cashier":"CAIXA Montenoir","chests":"SISTEMA DE BAÚS","custom":"PERSONALIZAÇÃO DE PERFIL","daily":"RECOMPENSA DIÁRIA","dailyText":"Não esqueça de resgatar seu presente!","details":"DETALHES","friends":"AMIGOS","games":"JOGOS","help":"❓ Ajuda","helpText":"Regras do jogo e seção de suporte em breve.","join":"ENTRAR","language":"🌍 Idioma","login":"👤 CADASTRO / ENTRAR","menu":"☰ MENU","notifications":"🔔 Notificações","notificationsText":"Notificações de torneios, baús, mensagens privadas e convites em breve.","premium":"♛ ASSINATURA PREMIUM","privacy":"🔐 Privacidade","privacyText":"Seu email não é mostrado a outros jogadores.","profile":"PERFIL / XP","rules":"REGRAS DO JOGO","rulesText":"Jogo respeitoso, trapaça proibida, comportamento inadequado proibido.","rulesTitle":"📜 Regras","settings":"CONFIGURAÇÕES","tarot":"TARÔ E RITUAL","theme":"🎨 Tema","themeText":"Tema preto e dourado Montenoir ativo.","tournaments":"TORNEIOS","vipPoints":"SEUS PONTOS VIP","tarot_trust_label":"Sistema de confiança:","tarot_trust_desc":"o pedido é enviado primeiro, chega ao painel do proprietário, Yohanna aprova, depois um horário / consulta por voz é agendado. A resposta também pode ser enviada por email.","tarot_menu_readings":"🔮 Serviços de Leitura de Tarô","tarot_menu_rituals":"✨ Rituais","tarot_menu_instant":"🤖 Leitura de Tarô Instantânea","tarot_menu_coins":"🪙 Pacotes de Fichas","tarot_th_service":"Serviço","tarot_th_duration":"Duração","tarot_th_price":"Preço","tarot_th_ritual":"Ritual","tarot_instant_desc":"Sorteio de Carta Aleatória","tarot_instant_btn":"🤖 Obter leitura de IA","tarot_form_title":"✍️ Escreva sua pergunta","tarot_field_name":"Nome","tarot_field_mother":"Nome da mãe","tarot_field_email":"Email","tarot_field_question":"Escreva sua pergunta","tarot_opt_mail":"Quero uma resposta por email","tarot_opt_voice":"Quero um horário com microfone / voz","tarot_opt_pdf":"Quero uma resposta em PDF","tarot_submit":"🪙 Recarregar fichas / Enviar pedido"},
+  "pl": {"active":"AKTYWNY TURNIEJ","activeText":"Cotygodniowy Turniej Codenames","ai":"AI TAROT PREMIUM","cashier":"KASA Montenoir","chests":"SYSTEM SKRZYNEK","custom":"PERSONALIZACJA PROFILU","daily":"CODZIENNA NAGRODA","dailyText":"Nie zapomnij odebrać swojego prezentu!","details":"SZCZEGÓŁY","friends":"ZNAJOMI","games":"GRY","help":"❓ Pomoc","helpText":"Zasady gry i sekcja wsparcia wkrótce.","join":"DOŁĄCZ","language":"🌍 Język","login":"👤 REJESTRACJA / LOGOWANIE","menu":"☰ MENU","notifications":"🔔 Powiadomienia","notificationsText":"Powiadomienia o turniejach, skrzynkach, wiadomościach i zaproszeniach wkrótce.","premium":"♛ CZŁONKOSTWO PREMIUM","privacy":"🔐 Prywatność","privacyText":"Twój email nie jest widoczny dla innych graczy.","profile":"PROFIL / XP","rules":"ZASADY GRY","rulesText":"Gra fair play, oszustwa zabronione, niewłaściwe zachowanie zabronione.","rulesTitle":"📜 Zasady","settings":"USTAWIENIA","tarot":"TAROT I RYTUAŁ","theme":"🎨 Motyw","themeText":"Aktywny czarno-złoty motyw Montenoir.","tournaments":"TURNIEJE","vipPoints":"TWOJE PUNKTY VIP","tarot_trust_label":"System zaufania:","tarot_trust_desc":"prośba jest najpierw wysyłana, trafia do panelu właściciela, Yohanna ją zatwierdza, a następnie planowana jest wizyta / konsultacja głosowa. Odpowiedź można również wysłać e-mailem.","tarot_menu_readings":"🔮 Usługi Odczytu Tarota","tarot_menu_rituals":"✨ Rytuały","tarot_menu_instant":"🤖 Natychmiastowy Odczyt Tarota","tarot_menu_coins":"🪙 Pakiety Żetonów","tarot_th_service":"Usługa","tarot_th_duration":"Czas trwania","tarot_th_price":"Cena","tarot_th_ritual":"Rytuał","tarot_instant_desc":"Losowe Losowanie Karty","tarot_instant_btn":"🤖 Uzyskaj odczyt AI","tarot_form_title":"✍️ Napisz swoje pytanie","tarot_field_name":"Imię","tarot_field_mother":"Imię matki","tarot_field_email":"Email","tarot_field_question":"Napisz swoje pytanie","tarot_opt_mail":"Chcę odpowiedzi mailem","tarot_opt_voice":"Chcę wizytę głosową / z mikrofonem","tarot_opt_pdf":"Chcę odpowiedzi w PDF","tarot_submit":"🪙 Doładuj żetony / Wyślij prośbę"},
+  "tr": {"active":"AKTİF TURNUVA","activeText":"Haftalık Codenames Turnuvası","ai":"AI TAROT PREMIUM","cashier":"Montenoir KASASI","chests":"SANDIK SİSTEMİ","custom":"PROFİL ÖZELLEŞTİRME","daily":"GÜNLÜK ÖDÜL","dailyText":"Hediyeni almayı unutma!","details":"DETAYLAR","friends":"ARKADAŞLAR","games":"OYUNLAR","help":"❓ Yardım","helpText":"Oyun kuralları ve destek bölümü yakında.","join":"KATIL","language":"🌍 Dil","login":"👤 ÜYELİK / GİRİŞ","menu":"☰ MENU","notifications":"🔔 Bildirimler","notificationsText":"Turnuva, sandık, özel mesaj ve davet bildirimleri yakında.","premium":"♛ PREMIUM ÜYELİK","privacy":"🔐 Gizlilik","privacyText":"Email diğer oyunculara gösterilmez.","profile":"PROFİL / XP","rules":"OYUN KURALLARI","rulesText":"Saygılı oyun, hile yasak, uygunsuz davranış yasak.","rulesTitle":"📜 Kurallar","settings":"AYARLAR","tarot":"TAROT & RİTÜEL","theme":"🎨 Tema","themeText":"Siyah & altın Montenoir teması aktif.","tournaments":"TURNUVALAR","vipPoints":"VIP PUANIN","tarot_trust_label":"Güven sistemi:","tarot_trust_desc":"önce talep gönderilir, owner paneline düşer, Yohanna onaylar, randevu/sesli bakım planlanır. İstersen cevap mail ile de gönderilir.","tarot_menu_readings":"🔮 Tarot Bakımları Hizmet","tarot_menu_rituals":"✨ Ritüeller","tarot_menu_instant":"🤖 Anında Tarot Yorumu","tarot_menu_coins":"🪙 Jeton Paketleri","tarot_th_service":"Hizmet","tarot_th_duration":"Süre","tarot_th_price":"Fiyat","tarot_th_ritual":"Ritüel","tarot_instant_desc":"Rastgele Kart Açılımı","tarot_instant_btn":"🤖 AI yorum al","tarot_form_title":"✍️ Sorunu Yaz","tarot_field_name":"İsim","tarot_field_mother":"Anne adı","tarot_field_email":"E-posta","tarot_field_question":"Sorunu yaz","tarot_opt_mail":"Mail ile cevap istiyorum","tarot_opt_voice":"Mikrofonlu / sesli randevu istiyorum","tarot_opt_pdf":"PDF cevap istiyorum","tarot_submit":"🪙 Jeton Yükle / Talep Gönder"},
+  "ja": {"active":"開催中のトーナメント","activeText":"週間コードネームトーナメント","ai":"AIタロットプレミアム","cashier":"Montenoirキャッシャー","chests":"チェストシステム","custom":"プロフィールカスタマイズ","daily":"デイリー報酬","dailyText":"ギフトの受け取りを忘れずに！","details":"詳細","friends":"フレンド","games":"ゲーム","help":"❓ ヘルプ","helpText":"ゲームルールとサポートセクションは近日公開。","join":"参加","language":"🌍 言語","login":"👤 登録 / ログイン","menu":"☰ メニュー","notifications":"🔔 通知","notificationsText":"トーナメント、チェスト、メッセージ、招待の通知は近日公開。","premium":"♛ プレミアム会員","privacy":"🔐 プライバシー","privacyText":"メールアドレスは他のプレイヤーに表示されません。","profile":"プロフィール / XP","rules":"ゲームルール","rulesText":"敬意ある対戦、不正行為禁止、不適切な行動禁止。","rulesTitle":"📜 ルール","settings":"設定","tarot":"タロット＆儀式","theme":"🎨 テーマ","themeText":"黒と金のMontenoirテーマが有効。","tournaments":"トーナメント","vipPoints":"あなたのVIPポイント","tarot_trust_label":"信頼システム：","tarot_trust_desc":"まずリクエストが送信され、オーナーパネルに届き、Yohannaが承認した後、予約／音声相談がスケジュールされます。回答はメールで送ることもできます。","tarot_menu_readings":"🔮 タロット鑑定サービス","tarot_menu_rituals":"✨ 儀式","tarot_menu_instant":"🤖 即時タロット鑑定","tarot_menu_coins":"🪙 チップパック","tarot_th_service":"サービス","tarot_th_duration":"時間","tarot_th_price":"価格","tarot_th_ritual":"儀式","tarot_instant_desc":"ランダムカード占い","tarot_instant_btn":"🤖 AI鑑定を受ける","tarot_form_title":"✍️ 質問を書く","tarot_field_name":"名前","tarot_field_mother":"母親の名前","tarot_field_email":"メール","tarot_field_question":"質問を書いてください","tarot_opt_mail":"メールで返信を希望します","tarot_opt_voice":"マイク／音声での予約を希望します","tarot_opt_pdf":"PDFでの返信を希望します","tarot_submit":"🪙 チップをチャージ／リクエストを送信"},
+  "zh": {"active":"进行中的锦标赛","activeText":"每周codenames锦标赛","ai":"AI塔罗高级版","cashier":"Montenoir收银台","chests":"宝箱系统","custom":"个人资料自定义","daily":"每日奖励","dailyText":"别忘了领取你的礼物！","details":"详情","friends":"好友","games":"游戏","help":"❓ 帮助","helpText":"游戏规则和支持板块即将推出。","join":"加入","language":"🌍 语言","login":"👤 注册 / 登录","menu":"☰ 菜单","notifications":"🔔 通知","notificationsText":"锦标赛、宝箱、私信和邀请通知即将推出。","premium":"♛ 高级会员","privacy":"🔐 隐私","privacyText":"您的邮箱不会显示给其他玩家。","profile":"个人资料 / XP","rules":"游戏规则","rulesText":"尊重比赛，禁止作弊，禁止不当行为。","rulesTitle":"📜 规则","settings":"设置","tarot":"塔罗与仪式","theme":"🎨 主题","themeText":"黑金Montenoir主题已启用。","tournaments":"锦标赛","vipPoints":"您的VIP积分","tarot_trust_label":"信任系统：","tarot_trust_desc":"请求首先被发送，进入所有者面板，Yohanna 批准后，会安排预约/语音咨询。回复也可以通过邮件发送。","tarot_menu_readings":"🔮 塔罗解读服务","tarot_menu_rituals":"✨ 仪式","tarot_menu_instant":"🤖 即时塔罗解读","tarot_menu_coins":"🪙 筹码套餐","tarot_th_service":"服务","tarot_th_duration":"时长","tarot_th_price":"价格","tarot_th_ritual":"仪式","tarot_instant_desc":"随机抽卡","tarot_instant_btn":"🤖 获取AI解读","tarot_form_title":"✍️ 写下你的问题","tarot_field_name":"姓名","tarot_field_mother":"母亲姓名","tarot_field_email":"邮箱","tarot_field_question":"写下你的问题","tarot_opt_mail":"我想要邮件回复","tarot_opt_voice":"我想要麦克风/语音预约","tarot_opt_pdf":"我想要PDF回复","tarot_submit":"🪙 充值筹码/发送请求"},
+  "ko": {"active":"진행 중인 토너먼트","activeText":"주간 코드네임 토너먼트","ai":"AI 타로 프리미엄","cashier":"Montenoir 캐셔","chests":"상자 시스템","custom":"프로필 커스터마이징","daily":"일일 보상","dailyText":"선물 받는 것을 잊지 마세요!","details":"세부정보","friends":"친구","games":"게임","help":"❓ 도움말","helpText":"게임 규칙 및 지원 섹션이 곧 제공됩니다.","join":"참가","language":"🌍 언어","login":"👤 가입 / 로그인","menu":"☰ 메뉴","notifications":"🔔 알림","notificationsText":"토너먼트, 상자, 개인 메시지 및 초대 알림이 곧 제공됩니다.","premium":"♛ 프리미엄 멤버십","privacy":"🔐 개인정보","privacyText":"이메일은 다른 플레이어에게 표시되지 않습니다.","profile":"프로필 / XP","rules":"게임 규칙","rulesText":"존중하는 플레이, 부정행위 금지, 부적절한 행동 금지.","rulesTitle":"📜 규칙","settings":"설정","tarot":"타로 & 의식","theme":"🎨 테마","themeText":"블랙 앤 골드 Montenoir 테마 활성화.","tournaments":"토너먼트","vipPoints":"당신의 VIP 포인트","tarot_trust_label":"신뢰 시스템:","tarot_trust_desc":"요청이 먼저 전송되어 소유자 패널에 도착하면 Yohanna가 승인하고, 예약/음성 상담이 예정됩니다. 답변은 이메일로도 보낼 수 있습니다.","tarot_menu_readings":"🔮 타로 리딩 서비스","tarot_menu_rituals":"✨ 의식","tarot_menu_instant":"🤖 즉석 타로 리딩","tarot_menu_coins":"🪙 칩 패키지","tarot_th_service":"서비스","tarot_th_duration":"소요 시간","tarot_th_price":"가격","tarot_th_ritual":"의식","tarot_instant_desc":"랜덤 카드 뽑기","tarot_instant_btn":"🤖 AI 리딩 받기","tarot_form_title":"✍️ 질문을 작성하세요","tarot_field_name":"이름","tarot_field_mother":"어머니 성함","tarot_field_email":"이메일","tarot_field_question":"질문을 입력하세요","tarot_opt_mail":"이메일 답변을 원합니다","tarot_opt_voice":"마이크/음성 예약을 원합니다","tarot_opt_pdf":"PDF 답변을 원합니다","tarot_submit":"🪙 칩 충전 / 요청 보내기"}
+}
+
+Londres_I18N_SCRIPT = """
+<script src="/static/js/site_lang.js"></script>
+<style>
+#langSelector .lang-btn { width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0; }
+#langSelector .lang-btn.selected { background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9); }
+</style>
+<script>
+(function(){
+  var LONDRES_I18N = """ + json.dumps(LONDRES_I18N, ensure_ascii=False) + """;
+  function londresT(key, lng) {
+    var dict = LONDRES_I18N[lng || getSiteLang()] || LONDRES_I18N.en;
+    return dict[key] !== undefined ? dict[key] : (LONDRES_I18N.en[key] || key);
+  }
+  var i18nSeen = new WeakSet();
+  window.applyLondresI18n = function(lng) {
+    document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = londresT(el.dataset.i18n, lng); i18nSeen.add(el); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){ el.placeholder = londresT(el.dataset.i18nPlaceholder, lng); });
+  };
+  // Les panneaux (réglages, menu...) sont souvent injectés dans le DOM après coup (innerHTML dynamique) :
+  // on retraduit automatiquement tout NOUVEL élément data-i18n qui apparaît, sans retoucher ceux déjà
+  // traduits (évite de redéclencher l'observer en boucle à chaque écriture de textContent).
+  new MutationObserver(function(){
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){ el.placeholder = londresT(el.dataset.i18nPlaceholder); });
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      if (!i18nSeen.has(el)) { el.textContent = londresT(el.dataset.i18n); i18nSeen.add(el); }
+    });
+  }).observe(document.documentElement, {childList:true, subtree:true});
+  document.addEventListener('DOMContentLoaded', function(){
+    var container = document.getElementById('langSelector');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'langSelector';
+      container.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:999999;display:flex;gap:4px;flex-wrap:wrap;max-width:280px;background:rgba(0,0,0,.55);padding:6px;border-radius:14px;';
+      document.body.appendChild(container);
+    }
+    buildLangSelector(container, window.applyLondresI18n);
+    window.applyLondresI18n();
+  });
+  if (document.readyState !== 'loading') {
+    var container2 = document.getElementById('langSelector');
+    if (!container2) {
+      container2 = document.createElement('div');
+      container2.id = 'langSelector';
+      container2.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:999999;display:flex;gap:4px;flex-wrap:wrap;max-width:280px;background:rgba(0,0,0,.55);padding:6px;border-radius:14px;';
+      document.body.appendChild(container2);
+    }
+    buildLangSelector(container2, window.applyLondresI18n);
+    window.applyLondresI18n();
+  }
+})();
+</script>
+"""
 
 USERS_FILE = os.path.join(os.environ.get("DATA_DIR", "."), "users.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
@@ -2164,11 +2233,19 @@ function uploadAvatar(){const u=currentMontenoirUser();if(!u){avatarStatus.inner
 
 
 COMING_SOON_HTML = r'''
-<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Yakında</title><style>body{margin:0;min-height:100vh;background:radial-gradient(circle,#2c2108,#000 65%);color:#f6d777;font-family:Arial;text-align:center;display:flex;align-items:center;justify-content:center}.box{border:2px solid #d4af37;border-radius:28px;padding:45px;max-width:620px;background:rgba(0,0,0,.72);box-shadow:0 0 45px rgba(212,175,55,.45)}h1{font-family:Georgia,serif;font-size:48px}a{display:inline-block;margin-top:18px;padding:14px 20px;border-radius:14px;background:#111;border:1px solid #d4af37;color:#f6d777;text-decoration:none;font-weight:bold}
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Yakında</title><style>body{margin:0;min-height:100vh;background:radial-gradient(circle,#2c2108,#000 65%);color:#f6d777;font-family:Arial;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.box{border:2px solid #d4af37;border-radius:28px;padding:45px;max-width:620px;background:rgba(0,0,0,.72);box-shadow:0 0 45px rgba(212,175,55,.45)}h1{font-family:Georgia,serif;font-size:48px}a{display:inline-block;margin-top:18px;padding:14px 20px;border-radius:14px;background:#111;border:1px solid #d4af37;color:#f6d777;text-decoration:none;font-weight:bold}
+.lang-selector{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:520px;margin-bottom:20px;}
+.lang-btn{width:30px;height:30px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:14px;cursor:pointer;}
+.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}
 /* Londres VIP: oyun içinde üyelik/tarot/shop yok; sadece profil + XP */
 #tarotTopBtn,#menuAuthBtn,#menuShopBtn{display:none!important;}
 .vipProfileChip .xpMini{color:#9fffbf;font-weight:900;margin-left:6px;}
-</style></head><body><div class="box"><h1>👑 {{ game }}</h1><h2>Yakında geliyor</h2><p>Bu oyun daha sonra kurallarına göre ayrı ayrı kodlanacak.</p><a href="/">⬅ Ana sayfaya dön</a></div></body></html>
+</style></head><body>
+<div class="lang-selector" id="langSelector"></div>
+<div class="box"><h1>👑 {{ game }}</h1><h2 data-common-i18n="coming_soon">Bientôt disponible.</h2><p data-common-i18n="coming_soon_game_desc">Ce jeu sera codé séparément plus tard selon ses propres règles.</p><a href="/" data-common-i18n="back_home">← Retour accueil</a></div>
+<script src="/static/js/site_lang.js"></script>
+<script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script>
+</body></html>
 '''
 
 HTML = r'''
@@ -3957,7 +4034,7 @@ def home():
 
 @app.route('/codenames')
 def index():
-    return render_template_string(HTML)
+    return render_template_string(HTML + Londres_I18N_SCRIPT)
 
 @app.route('/coming-soon/<game>')
 def coming_soon(game):
@@ -4595,7 +4672,7 @@ FEATURES_HTML = r"""
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏛️ Londres VIP MENU</title>
+<title>🏛️ Montenoir VIP MENU</title>
 <style>
 body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#30220a,#050505 55%,#000);color:#f6d777;font-family:Arial,Helvetica,sans-serif;text-align:center}
 .wrap{max-width:1050px;margin:auto;padding:35px 18px}
@@ -4612,7 +4689,7 @@ h1{font-family:Georgia,serif;font-size:46px;text-shadow:0 0 18px #d4af37;margin-
 <body>
 <div class="wrap">
 <a class="back" href="/">← Ana sayfa</a>
-<h1>☰ Londres VIP MENU</h1>
+<h1>☰ Montenoir VIP MENU</h1>
 <div class="sub">Tüm ek sistemler tek yerde.</div>
 <div class="grid">
 <div class="card"><h2>🎟️ Turnuvalar</h2><p>Turnuvalar ve ödüller.</p><a class="btn" href="/turnuvalar">Aç</a></div>
@@ -4705,21 +4782,7 @@ def settings_page():
     content = """
     <h2 data-i18n='settings'>⚙️ Ayarlar</h2>
     <div class='grid'>
-      <div class='item'><h3><span data-i18n="language">🌍 Dil</span></h3><p>Seçim tarayıcıda kaydedilir.</p>
-        <select id="montenoirLangSelect" onchange="setMontenoirLang(this.value);alert('Dil değiştirildi.')">
-          <option value='fr'>🇫🇷 Français</option>
-          <option value='tr'>🇹🇷 Türkçe</option>
-          <option value='en'>🇬🇧 English</option>
-          <option value='es'>🇪🇸 Español</option>
-          <option value='de'>🇩🇪 Deutsch</option>
-          <option value='it'>🇮🇹 Italiano</option>
-          <option value='pt'>🇵🇹 Português</option>
-          <option value='nl'>🇳🇱 Nederlands</option>
-          <option value='ro'>🇷🇴 Română</option>
-          <option value='ar'>🇸🇦 العربية</option>
-          <option value='ru'>🇷🇺 Русский</option>
-        </select>
-      </div>
+      <div class='item'><h3><span data-i18n="language">🌍 Dil</span></h3><p>Utilise les drapeaux en bas de l'écran pour changer de langue.</p></div>
       <div class='item'><h3 data-i18n='rules'><span data-i18n="rulesTitle">📜 Kurallar</span></h3><p><span data-i18n="rulesText">Saygılı oyun, hile yasak, uygunsuz davranış yasak.</span></p></div>
       <div class='item'><h3><span data-i18n="theme">🎨 Tema</span></h3><p><span data-i18n="themeText">Siyah & altın Londres teması aktif.</span></p></div>
       <div class='item'><h3><span data-i18n="notifications">🔔 Bildirimler</span></h3><p>Turnuva, sandık ve özel mesaj bildirimleri yakında.</p></div>
@@ -4727,52 +4790,11 @@ def settings_page():
       <div class='item'><h3><span data-i18n="help">❓ Yardım</span></h3><p><span data-i18n="helpText">Oyun kuralları ve destek bölümü yakında.</span></p></div>
     </div>
     """
-    return montenoir_page("⚙️ Ayarlar", content)
+    return montenoir_page("⚙️ Ayarlar", content) + Londres_I18N_SCRIPT
 
 
 
 
-r"""
-<script>
-(function(){
-const D={
-tr:["🎮 <span data-i18n="games">OYUNLAR</span>","🔮 <span data-i18n="tarot">TAROT & RİTÜEL</span>","<span data-i18n="login">👤 ÜYELİK / GİRİŞ</span>","🏆 <span data-i18n="profile">PROFİL / XP</span>","🪙 <span data-i18n="cashier">Londres KASASI</span>","☰ MENU","⚙️ <span data-i18n="settings">AYARLAR</span>","🎟️ Turnuvalar","🎨 Profil Özelleştirme","🎁 Sandık Sistemi","🏆 Başarımlar","👥 Arkadaş Sistemi","🤖 AI Tarot Premium","📜 Oyun Kuralları","Satın Al","Aç","← Ana sayfa"],
-fr:["🎮 JEUX","🔮 TAROT & RITUEL","👤 ABONNEMENT / CONNEXION","🏆 PROFIL / XP","🪙 CAISSE Londres","☰ MENU","⚙️ PARAMÈTRES","🎟️ Tournois","🎨 Personnalisation profil","🎁 Coffres","🏆 Succès","👥 Amis","🤖 Tarot IA Premium","📜 Règles des jeux","Acheter","Ouvrir","🚪 LOCA"],
-en:["🎮 GAMES","🔮 TAROT & RITUAL","👤 MEMBERSHIP / LOGIN","🏆 PROFILE / XP","🪙 Londres CASHIER","☰ MENU","⚙️ SETTINGS","🎟️ Tournaments","🎨 Profile customization","🎁 Chests","🏆 Achievements","👥 Friends","🤖 Premium AI Tarot","📜 Game rules","Buy","Open","← Home"],
-es:["🎮 JUEGOS","🔮 TAROT Y RITUAL","👤 MEMBRESÍA / ENTRAR","🏆 PERFIL / XP","🪙 CAJA Londres","☰ MENU","⚙️ AJUSTES","🎟️ Torneos","🎨 Personalización perfil","🎁 Cofres","🏆 Logros","👥 Amigos","🤖 Tarot IA Premium","📜 Reglas de juego","Comprar","Abrir","← Inicio"],
-de:["🎮 SPIELE","🔮 TAROT & RITUAL","👤 MITGLIEDSCHAFT / LOGIN","🏆 PROFIL / XP","🪙 Londres KASSE","☰ MENU","⚙️ EINSTELLUNGEN","🎟️ Turniere","🎨 Profil anpassen","🎁 Truhen","🏆 Erfolge","👥 Freunde","🤖 Premium KI-Tarot","📜 Spielregeln","Kaufen","Öffnen","← Startseite"],
-it:["🎮 GIOCHI","🔮 TAROCCHI & RITUALE","👤 ABBONAMENTO / LOGIN","🏆 PROFILO / XP","🪙 CASSA Londres","☰ MENU","⚙️ IMPOSTAZIONI","🎟️ Tornei","🎨 Personalizza profilo","🎁 Forzieri","🏆 Obiettivi","👥 Amici","🤖 Tarocchi IA Premium","📜 Regole dei giochi","Acquista","Apri","← Home"],
-pt:["🎮 JOGOS","🔮 TAROT & RITUAL","👤 ADESÃO / LOGIN","🏆 PERFIL / XP","🪙 CAIXA Londres","☰ MENU","⚙️ DEFINIÇÕES","🎟️ Torneios","🎨 Personalizar perfil","🎁 Baús","🏆 Conquistas","👥 Amigos","🤖 Tarot IA Premium","📜 Regras dos jogos","Comprar","Abrir","← Início"],
-nl:["🎮 SPELLEN","🔮 TAROT & RITUEEL","👤 LIDMAATSCHAP / LOGIN","🏆 PROFIEL / XP","🪙 Londres KASSA","☰ MENU","⚙️ INSTELLINGEN","🎟️ Toernooien","🎨 Profiel aanpassen","🎁 Kisten","🏆 Prestaties","👥 Vrienden","🤖 Premium AI Tarot","📜 Spelregels","Kopen","Openen","← Home"],
-ro:["🎮 JOCURI","🔮 TAROT & RITUAL","👤 ABONAMENT / LOGIN","🏆 PROFIL / XP","🪙 CASIERIA Londres","☰ MENU","⚙️ SETĂRI","🎟️ Turnee","🎨 Personalizare profil","🎁 Cufere","🏆 Realizări","👥 Prieteni","🤖 Tarot AI Premium","📜 Regulile jocurilor","Cumpără","Deschide","← Acasă"],
-ar:["🎮 الألعاب","🔮 التاروت والطقوس","👤 العضوية / الدخول","🏆 الملف / XP","🪙 خزينة مونتينوار","☰ القائمة","⚙️ الإعدادات","🎟️ البطولات","🎨 تخصيص الملف","🎁 الصناديق","🏆 الإنجازات","👥 الأصدقاء","🤖 تاروت AI بريميوم","📜 قواعد الألعاب","شراء","فتح","← الرئيسية"],
-ru:["🎮 ИГРЫ","🔮 ТАРО И РИТУАЛ","👤 ПОДПИСКА / ВХОД","🏆 ПРОФИЛЬ / XP","🪙 КАССА Londres","☰ МЕНЮ","⚙️ НАСТРОЙКИ","🎟️ Турниры","🎨 Настройка профиля","🎁 Сундуки","🏆 Достижения","👥 Друзья","🤖 Премиум AI Таро","📜 Правила игр","Купить","Открыть","← Главная"]
-};
-const base=D.tr;
-function getLang(){return localStorage.getItem("montenoirLang")||"tr";}
-function applyLang(){
- const l=getLang(), arr=D[l]||D.tr;
- document.documentElement.lang=l;
- document.documentElement.dir=(l==="ar")?"rtl":"ltr";
- document.querySelectorAll("button,a,h1,h2,h3,p,div,span").forEach(el=>{
-   if(el.children.length>0 && !el.classList.contains("royalBtn") && !el.classList.contains("btn") && !el.classList.contains("gameItem")) return;
-   let t=(el.textContent||"").trim();
-   for(let i=0;i<base.length;i++){
-     if(t===base[i] || Object.values(D).some(v=>v[i]===t)){
-       el.textContent=arr[i]; break;
-     }
-   }
- });
- const s=document.getElementById("montenoirLangSelect");
- if(s) s.value=l;
-}
-window.setMontenoirLang=function(v){localStorage.setItem("montenoirLang",v);applyLang();};
-document.addEventListener("DOMContentLoaded",applyLang);
-setTimeout(applyLang,200);
-setTimeout(applyLang,700);
-})();
-</script>
-"""
 
 
 
@@ -5153,14 +5175,14 @@ def owner_panel():
     key=request.args.get("key","")
     if not owner_ok(key):
         return """<!doctype html><html><head><meta charset='utf-8'><style>body{background:#050505;color:#d4af37;font-family:Arial;display:grid;place-items:center;height:100vh}input,button{padding:12px;border:1px solid #d4af37;background:#111;color:#fff;border-radius:10px;margin:5px}</style></head><body><form><h2>🔐 Owner Panel</h2><input name='key' type='password' placeholder='Owner şifresi'><button>Giriş</button></form></body></html>"""
-    return """<!doctype html><html><head><meta charset='utf-8'><title>Owner Panel</title><style>body{background:#050505;color:#fff;font-family:Arial;margin:0}header{padding:18px 24px;color:#d4af37;border-bottom:1px solid #d4af37;background:#090909;font-weight:900}.card{border:1px solid rgba(212,175,55,.5);border-radius:14px;background:#0d0d0d;margin:16px;padding:16px}.row{display:grid;grid-template-columns:150px 1fr;gap:8px;margin:5px 0}.l{color:#d4af37;font-weight:bold}a{color:#00ff66}.mail{display:inline-block;margin-top:10px;border:1px solid #d4af37;border-radius:10px;padding:9px 12px;color:#d4af37;text-decoration:none}</style></head><body><header>👑 Londres VIP — OWNER PANEL</header><main id='list'>Yükleniyor...</main><script>
+    return """<!doctype html><html><head><meta charset='utf-8'><title>Owner Panel</title><style>body{background:#050505;color:#fff;font-family:Arial;margin:0}header{padding:18px 24px;color:#d4af37;border-bottom:1px solid #d4af37;background:#090909;font-weight:900}.card{border:1px solid rgba(212,175,55,.5);border-radius:14px;background:#0d0d0d;margin:16px;padding:16px}.row{display:grid;grid-template-columns:150px 1fr;gap:8px;margin:5px 0}.l{color:#d4af37;font-weight:bold}a{color:#00ff66}.mail{display:inline-block;margin-top:10px;border:1px solid #d4af37;border-radius:10px;padding:9px 12px;color:#d4af37;text-decoration:none}</style></head><body><header>👑 Montenoir VIP — OWNER PANEL</header><main id='list'>Yükleniyor...</main><script>
 const key=new URLSearchParams(location.search).get('key')||'';
 fetch('/api/owner/requests?key='+encodeURIComponent(key)).then(r=>r.json()).then(d=>{
  const box=document.getElementById('list');
  if(!d.ok){box.innerHTML='Yetkisiz erişim';return}
  if(!d.requests.length){box.innerHTML='<div class=card>Henüz talep yok.</div>';return}
  box.innerHTML=d.requests.map(x=>{
-  const subj=encodeURIComponent('Londres VIP - Tarot / Ritüel Cevabı');
+  const subj=encodeURIComponent('Montenoir VIP - Tarot / Ritüel Cevabı');
   const body=encodeURIComponent('Merhaba '+(x.name||'')+',\\n\\nTalebinle ilgili cevabım:\\n\\n');
   return `<div class="card"><h3>🆔 ${x.id} — ${x.category||''} / ${x.service||''}</h3>
   <div class=row><div class=l>Tarih</div><div>${x.createdAt||''}</div></div>
@@ -5410,20 +5432,20 @@ textarea{min-height:100px;grid-column:1/-1}
 <div class='wrap'>
 
 <div class='trustBox'>
-<b>Güven sistemi:</b> önce talep gönderilir, owner paneline düşer, Yohanna onaylar, randevu/sesli bakım planlanır. İstersen cevap mail ile de gönderilir.
+<b data-i18n='tarot_trust_label'>Güven sistemi:</b> <span data-i18n='tarot_trust_desc'>önce talep gönderilir, owner paneline düşer, Yohanna onaylar, randevu/sesli bakım planlanır. İstersen cevap mail ile de gönderilir.</span>
 </div>
 
 <div class='menuButtons'>
-<button class='bigBtn' onclick="openPanel('tarotReadings')">🔮 Tarot Bakımları Hizmet</button>
-<button class='bigBtn' onclick="openPanel('rituals')">✨ Ritüeller</button>
-<button class='bigBtn' onclick="openPanel('instantAi')">🤖 Anında Tarot Yorumu</button>
-<button class='bigBtn' onclick="openPanel('coinPacks')">🪙 Jeton Paketleri Paket Fiyat</button>
+<button class='bigBtn' onclick="openPanel('tarotReadings')"><span data-i18n='tarot_menu_readings'>🔮 Tarot Bakımları Hizmet</span></button>
+<button class='bigBtn' onclick="openPanel('rituals')"><span data-i18n='tarot_menu_rituals'>✨ Ritüeller</span></button>
+<button class='bigBtn' onclick="openPanel('instantAi')"><span data-i18n='tarot_menu_instant'>🤖 Anında Tarot Yorumu</span></button>
+<button class='bigBtn' onclick="openPanel('coinPacks')"><span data-i18n='tarot_menu_coins'>🪙 Jeton Paketleri</span></button>
 </div>
 
 <div id='tarotReadings' class='panel'>
-<h2>🔮 Tarot Bakımları Hizmet</h2>
+<h2><span data-i18n='tarot_menu_readings'>🔮 Tarot Bakımları Hizmet</span></h2>
 <table>
-<tr><th>Hizmet</th><th>Süre</th><th>Fiyat</th><th></th></tr>
+<tr><th data-i18n='tarot_th_service'>Hizmet</th><th data-i18n='tarot_th_duration'>Süre</th><th data-i18n='tarot_th_price'>Fiyat</th><th></th></tr>
 <tr><td>Tek Soru Bakımı</td><td>5 dk</td><td>🪙 300 jeton</td><td><button onclick="fillService('Tarot Bakımı','Tek Soru Bakımı','5 dk','300 jeton')">Randevu / Jeton Yükle</button></td></tr>
 <tr><td>3 Soru Bakımı</td><td>10 dk</td><td>🪙 700 jeton</td><td><button onclick="fillService('Tarot Bakımı','3 Soru Bakımı','10 dk','700 jeton')">Randevu / Jeton Yükle</button></td></tr>
 <tr><td>Aşk Açılımı</td><td>20 dk</td><td>🪙 1000 jeton</td><td><button onclick="fillService('Tarot Bakımı','Aşk Açılımı','20 dk','1000 jeton')">Randevu / Jeton Yükle</button></td></tr>
@@ -5432,9 +5454,9 @@ textarea{min-height:100px;grid-column:1/-1}
 </div>
 
 <div id='rituals' class='panel'>
-<h2>✨ Ritüeller Ritüel Fiyat</h2>
+<h2><span data-i18n='tarot_menu_rituals'>✨ Ritüeller</span></h2>
 <table>
-<tr><th>Ritüel</th><th>Fiyat</th><th></th></tr>
+<tr><th data-i18n='tarot_th_ritual'>Ritüel</th><th data-i18n='tarot_th_price'>Fiyat</th><th></th></tr>
 <tr><td>❤️ Aşk ve İlişki</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Aşk ve İlişki','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
 <tr><td>💖 Öz Güven ve Çekim Gücü</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Öz Güven ve Çekim Gücü','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
 <tr><td>🍀 Şans ve Bolluk</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Şans ve Bolluk','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
@@ -5445,14 +5467,14 @@ textarea{min-height:100px;grid-column:1/-1}
 </div>
 
 <div id='instantAi' class='panel'>
-<h2>🤖 Anında Tarot Yorumu</h2>
-<p>Rastgele Kart Açılımı — 🪙 100 jeton</p>
-<button onclick='instantTarot()'>🤖 AI yorum al</button>
+<h2><span data-i18n='tarot_menu_instant'>🤖 Anında Tarot Yorumu</span></h2>
+<p><span data-i18n='tarot_instant_desc'>Rastgele Kart Açılımı</span> — 🪙 100</p>
+<button onclick='instantTarot()'><span data-i18n='tarot_instant_btn'>🤖 AI yorum al</span></button>
 <div id='aiResult' class='status'></div>
 </div>
 
 <div id='coinPacks' class='panel'>
-<h2>🪙 Jeton Paketleri Paket Fiyat</h2>
+<h2><span data-i18n='tarot_menu_coins'>🪙 Jeton Paketleri</span></h2>
 <table>
 <tr><td>200 jeton</td><td>£4.99</td></tr>
 <tr><td>500 jeton</td><td>£9.99</td></tr>
@@ -5463,30 +5485,32 @@ textarea{min-height:100px;grid-column:1/-1}
 </div>
 
 <div class='panel formPanel'>
-<h2>✍️ Sorunu Yaz</h2>
+<h2><span data-i18n='tarot_form_title'>✍️ Sorunu Yaz</span></h2>
 <form id='tarotForm' enctype='multipart/form-data'>
 <input type='hidden' name='category' id='category' value='Serbest Soru'>
 <input type='hidden' name='service' id='service' value='Sorunu Yaz'>
 <input type='hidden' name='price' id='price'>
 <input type='hidden' name='duration' id='duration'>
 <div class='formGrid'>
-<input name='name' placeholder='İsim' required>
-<input name='motherName' placeholder='Anne adı'>
+<input name='name' placeholder='İsim' data-i18n-placeholder='tarot_field_name' required>
+<input name='motherName' placeholder='Anne adı' data-i18n-placeholder='tarot_field_mother'>
 <input name='birthDate' type='date'>
-<input name='email' type='email' placeholder='E-posta' required>
+<input name='email' type='email' placeholder='E-posta' data-i18n-placeholder='tarot_field_email' required>
 <select name='appointmentType'>
-<option value='mail'>Mail ile cevap istiyorum</option>
-<option value='voice'>Mikrofonlu / sesli randevu istiyorum</option>
-<option value='pdf'>PDF cevap istiyorum</option>
+<option value='mail' data-i18n='tarot_opt_mail'>Mail ile cevap istiyorum</option>
+<option value='voice' data-i18n='tarot_opt_voice'>Mikrofonlu / sesli randevu istiyorum</option>
+<option value='pdf' data-i18n='tarot_opt_pdf'>PDF cevap istiyorum</option>
 </select>
 <input name='appointmentDate' type='datetime-local' title='Randevu tarihi'>
-<textarea name='question' placeholder='Sorunu yaz' required></textarea>
+<textarea name='question' placeholder='Sorunu yaz' data-i18n-placeholder='tarot_field_question' required></textarea>
 <input class='full' name='file' type='file' accept='.pdf,.jpg,.jpeg,.png'>
-<button class='full'>🪙 Jeton Yükle / Talep Gönder</button>
+<button class='full'><span data-i18n='tarot_submit'>🪙 Jeton Yükle / Talep Gönder</span></button>
 </div>
 <div id='formStatus' class='status'></div>
 </form>
 </div>
+
+<div class='lang-selector' id='langSelector' style='display:flex;gap:6px;flex-wrap:wrap;margin-top:20px;'></div>
 
 </div></div>
 <script>
@@ -5515,7 +5539,7 @@ tarotForm.addEventListener('submit',e=>{
  }).catch(()=>formStatus.textContent='Gönderim hatası.');
 });
 </script>
-</body></html>"""
+</body></html>""" + Londres_I18N_SCRIPT
 
 
 
@@ -5619,35 +5643,35 @@ def api_daily_reward():
 
 @app.route("/premium")
 def premium_page_dup2():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>💎 Premium Üyelik</h1><p>Premium üyelik sistemi yakında aktif olacak.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='premium_title'>💎 Premium Üyelik</h1><p data-common-i18n='premium_desc'>Premium üyelik sistemi yakında aktif olacak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/kasa")
 def kasa_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🪙 Londres Kasası</h1><p>Jeton paketleri ve ödeme sistemi burada olacak.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='kasa_title'>🪙 Londres Kasası</h1><p data-common-i18n='kasa_desc'>Jeton paketleri ve ödeme sistemi burada olacak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/turnuvalar")
 def turnuvalar_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🏆 Turnuvalar</h1><p>Haftalık Codenames Turnuvası — Giriş: 100 jeton — Ödül: 5000 jeton.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='tournaments_title'>🏆 Turnuvalar</h1><p data-common-i18n='tournaments_desc'>Haftalık Codenames Turnuvası — Giriş: 100 jeton — Ödül: 5000 jeton.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/arkadaslar")
 def arkadaslar_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>👥 Arkadaşlar</h1><p>Arkadaş ekleme, özel mesaj ve çevrimiçi durumu yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='friends_title'>👥 Arkadaşlar</h1><p data-common-i18n='friends_desc'>Arkadaş ekleme, özel mesaj ve çevrimiçi durumu yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/oyun-kurallari")
 def oyun_kurallari_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>📜 Oyun Kuralları</h1><p>Saygılı oyun, hile yasak, uygunsuz davranış yasak.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='rules_title'>📜 Oyun Kuralları</h1><p data-common-i18n='rules_desc'>Saygılı oyun, hile yasak, uygunsuz davranış yasak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/sandiklar")
 def sandiklar_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🎁 Sandık Sistemi</h1><p>Bronz, Gümüş, Altın ve Elmas sandıklar yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='chests_title'>🎁 Sandık Sistemi</h1><p data-common-i18n='chests_desc'>Bronz, Gümüş, Altın ve Elmas sandıklar yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/profil-magazasi")
 def profil_magazasi_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🎨 Profil Özelleştirme</h1><p>Altın çerçeve, elmas çerçeve, barok çerçeve, isim renkleri ve animasyonlu profil yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='profile_shop_title'>🎨 Profil Özelleştirme</h1><p data-common-i18n='profile_shop_desc'>Altın çerçeve, elmas çerçeve, barok çerçeve, isim renkleri ve animasyonlu profil yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/ai-tarot-premium")
 def ai_tarot_premium_page_dup2():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🤖 AI Tarot Premium</h1><p>Doğum tarihi, soru ve fotoğraf ile kişiselleştirilmiş yorum yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='ai_tarot_title'>🤖 AI Tarot Premium</h1><p data-common-i18n='ai_tarot_desc2'>Doğum tarihi, soru ve fotoğraf ile kişiselleştirilmiş yorum yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 
 
@@ -5975,7 +5999,50 @@ def force_accueil_couverture_luxe():
 @app.route("/oyunlar", endpoint="force_oyunlar_to_metropoly")
 @app.route("/jeux")
 def jeux():
-    return render_template_string('<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Jeux Montenoir VIP</title>\n<style>\nhtml,body{margin:0;min-height:100%;background:#050505;color:#d4af37;font-family:Georgia,serif;}\nbody{background:radial-gradient(circle at top,#2b1a05,#050505 55%,#000);}\n.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;}\nh1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:35px;}\n.grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:22px;width:min(900px,92vw);}\n.card{text-decoration:none;color:#120800;font-weight:900;text-align:center;padding:24px 18px;border-radius:24px;background:linear-gradient(145deg,#fff4b0,#d4af37 48%,#704000);border:2px solid #fff0a8;box-shadow:0 0 22px rgba(212,175,55,.65),inset 0 0 14px rgba(255,255,255,.45);transition:.25s;}\n.card:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 0 38px rgba(212,175,55,1);}\n.back{margin-top:35px;color:#d4af37;text-decoration:none;border:1px solid #d4af37;padding:12px 24px;border-radius:18px;background:#0009;}\n@media(max-width:800px){.grid{grid-template-columns:1fr;}h1{font-size:34px;}}\n</style>\n</head>\n<body>\n<div class="wrap">\n<h1>🎮 JEUX MONTENOIR</h1>\n<div class="grid">\n<a class="card" href="/codenames">🎯 Codenames VIP</a>\n<a class="card" href="/metropoly">🏛️ Metropoly Luxe</a>\n<a class="card" href="/coming-soon/poker">♠ Poker</a>\n<a class="card" href="/coming-soon/tavla">🎲 Tavla</a>\n<a class="card" href="/coming-soon/okey">🀄 Okey</a>\n<a class="card" href="/coming-soon/101">💯 101</a>\n<a class="card" href="/coming-soon/ludo">🎮 Ludo</a>\n<a class="card" href="/coming-soon/bowling">🎳 Bowling</a>\n</div>\n<a class="back" href="/">← Retour accueil</a>\n</div>\n</body>\n</html>')
+    return render_template_string("""<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeux Montenoir VIP</title>
+<style>
+html,body{margin:0;min-height:100%;background:#050505;color:#d4af37;font-family:Georgia,serif;}
+body{background:radial-gradient(circle at top,#2b1a05,#050505 55%,#000);}
+.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;}
+h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:35px;text-align:center;}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:22px;width:min(900px,92vw);}
+.card{text-decoration:none;color:#120800;font-weight:900;text-align:center;padding:24px 18px;border-radius:24px;background:linear-gradient(145deg,#fff4b0,#d4af37 48%,#704000);border:2px solid #fff0a8;box-shadow:0 0 22px rgba(212,175,55,.65),inset 0 0 14px rgba(255,255,255,.45);transition:.25s;}
+.card:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 0 38px rgba(212,175,55,1);}
+.back{margin-top:35px;color:#d4af37;text-decoration:none;border:1px solid #d4af37;padding:12px 24px;border-radius:18px;background:#0009;}
+.lang-selector{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:520px;margin-bottom:25px;}
+.lang-btn{width:32px;height:32px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.lang-btn.selected{background:#d4af37;box-shadow:0 0 12px rgba(212,175,55,.9);}
+@media(max-width:800px){.grid{grid-template-columns:1fr;}h1{font-size:34px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="lang-selector" id="langSelector"></div>
+<h1 data-common-i18n="games_title">🎮 JEUX MONTENOIR</h1>
+<div class="grid">
+<a class="card" href="/codenames">🎯 Codenames VIP</a>
+<a class="card" href="/metropoly">🏛️ Metropoly Luxe</a>
+<a class="card" href="/coming-soon/poker">♠ Poker</a>
+<a class="card" href="/coming-soon/tavla">🎲 Tavla</a>
+<a class="card" href="/coming-soon/okey">🀄 Okey</a>
+<a class="card" href="/coming-soon/101">💯 101</a>
+<a class="card" href="/coming-soon/ludo">🎮 Ludo</a>
+<a class="card" href="/coming-soon/bowling">🎳 Bowling</a>
+</div>
+<a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+</div>
+<script src="/static/js/site_lang.js"></script>
+<script>
+buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+applyCommonI18n();
+</script>
+</body>
+</html>""")
 
 @app.route("/metropoly", endpoint="force_metropoly_3d")
 @app.route("/monopoly", endpoint="force_monopoly_alias_to_metropoly")
@@ -5986,36 +6053,151 @@ def force_metropoly_3d():
 # =========================
 # HOME AUTH BUTTON ROUTES
 # =========================
+AUTH_PAGE_STYLE = """
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:linear-gradient(135deg,#0a0a0a 0%,#1a1512 100%);color:#f5e6d3;font-family:Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}
+  .lang-selector{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:560px;margin-bottom:25px;}
+  .lang-btn{width:32px;height:32px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:16px;cursor:pointer;}
+  .lang-btn.selected{background:#d4af37;box-shadow:0 0 12px rgba(212,175,55,.9);}
+  h1{color:#d4af37;text-shadow:0 0 20px rgba(212,175,55,.7);letter-spacing:2px;margin-bottom:4px;text-align:center;}
+  .card{background:rgba(26,26,26,0.98);border:2px solid #d4af37;border-radius:18px;padding:36px;max-width:420px;width:100%;box-shadow:0 0 40px rgba(212,175,55,.3);margin-top:20px;}
+  label{display:block;color:#d4af37;font-weight:bold;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin:14px 0 6px;}
+  input,select{width:100%;padding:12px;background:#0a0a0a;border:2px solid #d4af37;color:#f5e6d3;border-radius:8px;font-size:14px;}
+  input:focus,select:focus{outline:none;box-shadow:0 0 12px rgba(212,175,55,.6);}
+  button.submit{width:100%;padding:14px;background:linear-gradient(135deg,#d4af37,#a0860d);color:#1a1a1a;border:none;border-radius:8px;font-weight:bold;font-size:14px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:20px;}
+  button.submit:hover{box-shadow:0 0 20px rgba(212,175,55,.6);}
+  .switch-link{display:block;text-align:center;margin-top:16px;color:#d4af37;text-decoration:none;font-size:13px;}
+  .switch-link:hover{text-decoration:underline;}
+  .back{display:block;text-align:center;margin-top:20px;color:#8a7550;text-decoration:none;font-size:12px;}
+  .msg{margin-top:14px;text-align:center;font-size:13px;min-height:18px;}
+  .msg.error{color:#ff6b6b;}
+  .msg.success{color:#3adb76;}
+</style>
+"""
+
 @app.route("/register")
 @app.route("/uyelik")
 def register_page():
-    return render_template_string("""
-    <html>
-    <head><meta charset="UTF-8"><title>Üyelik</title></head>
-    <body style="margin:0;background:#050505;color:#d4af37;font-family:Arial,sans-serif;text-align:center;padding-top:120px;">
-        <h1>📝 Üyelik</h1>
-        <h2>MONTENOIR VIP</h2>
-        <p>Inscription bientôt disponible.</p>
-        <br>
-        <a href="/" style="color:white;text-decoration:none;">← Retour accueil</a>
-    </body>
-    </html>
+    return render_template_string(AUTH_PAGE_STYLE + """
+    <div class="lang-selector" id="langSelector"></div>
+    <h1 data-common-i18n="register_title">📝 Inscription</h1>
+    <div class="card">
+      <form id="registerForm">
+        <label data-common-i18n="field_username">Nom d'utilisateur</label>
+        <input type="text" id="regUsername" required minlength="3">
+        <label data-common-i18n="field_email">Email</label>
+        <input type="email" id="regEmail" required>
+        <label data-common-i18n="field_password">Mot de passe</label>
+        <input type="password" id="regPassword" required minlength="4">
+        <label data-common-i18n="field_confirm_password">Confirmer le mot de passe</label>
+        <input type="password" id="regPassword2" required minlength="4">
+        <label data-common-i18n="field_gender">Genre</label>
+        <select id="regGender">
+          <option value="male" data-common-i18n="gender_male">Homme</option>
+          <option value="female" data-common-i18n="gender_female">Femme</option>
+          <option value="other" data-common-i18n="gender_other">Autre</option>
+          <option value="" data-common-i18n="gender_prefer_not" selected>Je préfère ne pas dire</option>
+        </select>
+        <button type="submit" class="submit" data-common-i18n="btn_submit_register">S'inscrire</button>
+        <div class="msg" id="authMsg"></div>
+      </form>
+      <a class="switch-link" href="/login" data-common-i18n="link_have_account">Déjà un compte ? Se connecter</a>
+    </div>
+    <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+    <script src="/static/js/site_lang.js"></script>
+    <script>
+    buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+    applyCommonI18n();
+    document.getElementById('registerForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const msgEl = document.getElementById('authMsg');
+      const password = document.getElementById('regPassword').value;
+      const password2 = document.getElementById('regPassword2').value;
+      if (password !== password2) {
+        msgEl.className = 'msg error';
+        msgEl.textContent = ct('auth_passwords_mismatch');
+        return;
+      }
+      fetch('/api/auth/register', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: document.getElementById('regUsername').value,
+          email: document.getElementById('regEmail').value,
+          password: password, password2: password2,
+          gender: document.getElementById('regGender').value
+        })
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          const p = d.profile;
+          localStorage.setItem('montenoirUser', p.username);
+          localStorage.setItem('codenamesAccount', p.username);
+          localStorage.setItem('loggedUser', p.username);
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('montenoirProfile', JSON.stringify(p));
+          localStorage.setItem('codenamesProfile', JSON.stringify(p));
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('auth_success_register');
+          setTimeout(() => { window.location.href = '/'; }, 900);
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = translateAuthMsg(d.msg);
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
+    });
+    </script>
     """)
 
 @app.route("/login")
 @app.route("/connexion")
 def login_page():
-    return render_template_string("""
-    <html>
-    <head><meta charset="UTF-8"><title>Connexion</title></head>
-    <body style="margin:0;background:#050505;color:#d4af37;font-family:Arial,sans-serif;text-align:center;padding-top:120px;">
-        <h1>👤 Connexion</h1>
-        <h2>MONTENOIR VIP</h2>
-        <p>Connexion bientôt disponible.</p>
-        <br>
-        <a href="/" style="color:white;text-decoration:none;">← Retour accueil</a>
-    </body>
-    </html>
+    return render_template_string(AUTH_PAGE_STYLE + """
+    <div class="lang-selector" id="langSelector"></div>
+    <h1 data-common-i18n="login_title">👤 Connexion</h1>
+    <div class="card">
+      <form id="loginForm">
+        <label data-common-i18n="field_username">Nom d'utilisateur</label>
+        <input type="text" id="loginUsername" required>
+        <label data-common-i18n="field_password">Mot de passe</label>
+        <input type="password" id="loginPassword" required>
+        <button type="submit" class="submit" data-common-i18n="btn_submit_login">Se connecter</button>
+        <div class="msg" id="authMsg"></div>
+      </form>
+      <a class="switch-link" href="/register" data-common-i18n="link_no_account">Pas de compte ? S'inscrire</a>
+    </div>
+    <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+    <script src="/static/js/site_lang.js"></script>
+    <script>
+    buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+    applyCommonI18n();
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const msgEl = document.getElementById('authMsg');
+      fetch('/api/auth/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: document.getElementById('loginUsername').value,
+          password: document.getElementById('loginPassword').value
+        })
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          const p = d.profile;
+          localStorage.setItem('montenoirUser', p.username);
+          localStorage.setItem('codenamesAccount', p.username);
+          localStorage.setItem('loggedUser', p.username);
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('montenoirProfile', JSON.stringify(p));
+          localStorage.setItem('codenamesProfile', JSON.stringify(p));
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('auth_success_login');
+          setTimeout(() => { window.location.href = '/'; }, 900);
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = translateAuthMsg(d.msg);
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
+    });
+    </script>
     """)
 
 if __name__ == "__main__":
@@ -6030,7 +6212,7 @@ if __name__ == "__main__":
     except Exception:
         traceback.print_exc()
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Londres VIP starting on port {port}", flush=True)
+    print(f"🚀 Montenoir VIP starting on port {port}", flush=True)
     try:
         socketio.run(app, host="0.0.0.0", port=port, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
     except Exception:
