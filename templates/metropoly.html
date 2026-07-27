@@ -73,13 +73,22 @@
   .player-row { padding: 8px 0; border-bottom: 1px solid rgba(212,175,55,0.2); display: flex; justify-content: space-between; }
   .player-row:last-child { border-bottom: none; }
   .action-log { color: #d4af37; font-size: 12px; line-height: 1.8; min-height: 70px; word-wrap: break-word; }
-  .bottom-section { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; padding: 30px 20px; width: 1200px; max-width: 100%; margin: 0 auto; }
-  .token-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-  .token-icon { width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.7)); }
-  .token-name { font-size: 11px; color: #d4af37; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-  .eval-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border: 2px solid #d4af37; background: rgba(0,0,0,0.6); color: #d4af37; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; transition: all 0.3s; letter-spacing: 1px; }
-  .eval-btn:hover { background: #d4af37; color: #000; transform: scale(1.05); }
-  .eval-icon { width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+  .bottom-section { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; padding: 20px; width: 1200px; max-width: 100%; margin: 0 auto; }
+  .buy-info { font-size: 14px; color: #f5e6d3; margin-bottom: 10px; line-height: 1.5; }
+  .buy-actions { display: flex; gap: 10px; }
+  .buy-actions button { flex: 1; }
+  .skip-btn { background: #444 !important; color: #f5e6d3 !important; border-color: #666 !important; }
+  .dice-total-badge { position: absolute; top: -58px; left: 50%; transform: translateX(-50%); width: 72px; height: 72px; border-radius: 50%; background: radial-gradient(circle, #1a1512, #000); border: 3px solid #d4af37; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; color: #d4af37; box-shadow: 0 0 25px rgba(212,175,55,0.7), inset 0 0 15px rgba(212,175,55,0.3); z-index: 4; }
+  .build-toolbar { width: 1200px; max-width: 100%; margin: 0 auto; padding: 10px 20px 25px; }
+  .build-toolbar-title { color: #d4af37; font-weight: bold; text-align: center; margin-bottom: 14px; letter-spacing: 1px; text-transform: uppercase; font-size: 14px; }
+  .build-levels { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .build-level-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(10,10,10,0.85); border: 2px solid #d4af37; border-radius: 14px; padding: 14px 18px; min-width: 100px; cursor: pointer; transition: all 0.25s; font-family: inherit; }
+  .build-level-btn img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7)); }
+  .build-level-label { font-size: 11px; color: #f5e6d3; font-weight: bold; letter-spacing: 0.5px; }
+  .build-level-price { font-size: 11px; color: #d4af37; }
+  .build-level-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .build-level-btn.done { opacity: 0.65; box-shadow: 0 0 0 2px #33cc33 inset; cursor: default; }
+  .build-level-btn:not(:disabled):hover { transform: translateY(-4px); box-shadow: 0 0 20px rgba(212,175,55,0.6); }
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: #0a0a0a; }
   ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
@@ -128,6 +137,7 @@
         <div class="board-title">METROPOLY</div>
         <div class="tokens-layer" id="tokensLayer"></div>
         <div class="dices">
+          <div class="dice-total-badge" id="diceTotalBadge" style="display:none;"></div>
           <div class="dice-container">
             <div class="dice-3d" id="dice1">
               <div class="die-face face-1"><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div>
@@ -158,6 +168,14 @@
         <div class="action-log" id="turnIndicator" style="margin-bottom:10px;"></div>
         <button class="roll-btn" id="rollBtn">LANCER</button>
       </div>
+      <div class="panel-box" id="buyBox" style="display:none;">
+        <div class="panel-title">🏠 Propriété Libre</div>
+        <div class="buy-info" id="buyInfo"></div>
+        <div class="buy-actions">
+          <button class="roll-btn" id="buyBtn" style="background:linear-gradient(135deg,#d4af37,#a0860d) !important; color:#1a1a1a !important;">ACHETER</button>
+          <button class="roll-btn skip-btn" id="skipBuyBtn">PASSER</button>
+        </div>
+      </div>
       <div class="panel-box">
         <div class="panel-title">👥 Joueurs</div>
         <div class="players-info" id="gamePlayersList"></div>
@@ -169,19 +187,21 @@
     </div>
   </div>
 
-  <div class="bottom-section">
-    <div class="token-item"><img class="token-icon" src="/static/pawn_car.png" alt="Voiture"><div class="token-name">Voiture</div><button class="eval-btn" style="border-color: #33cc33; color: #33cc33;"><img class="eval-icon" src="/static/house_green.png" alt="">EV AL</button></div>
-    <div class="token-item"><img class="token-icon" src="/static/pawn_jackpot.png" alt="Machine à sous"><div class="token-name">Machine À Sous</div><button class="eval-btn" style="border-color: #e0c040; color: #e0c040;"><img class="eval-icon" src="/static/house_yellow.png" alt="">EV AL</button></div>
-    <div class="token-item"><img class="token-icon" src="/static/pawn_boat.png" alt="Bateau"><div class="token-name">Bateau</div><button class="eval-btn" style="border-color: #ff3333; color: #ff3333;"><img class="eval-icon" src="/static/house_red.png" alt="">EV AL</button></div>
-    <div class="token-item"><img class="token-icon" src="/static/pawn_horse.png" alt="Cheval"><div class="token-name">Cheval</div><button class="eval-btn" style="border-color: #ff9933; color: #ff9933;"><img class="eval-icon" src="/static/house_orange.png" alt="">EV AL</button></div>
-    <div class="token-item"><img class="token-icon" src="/static/pawn_hat.png" alt="Chapeau"><div class="token-name">Chapeau</div><button class="eval-btn" style="border-color: #cc7733; color: #cc7733;"><img class="eval-icon" src="/static/house_brown.png" alt="">EV AL</button></div>
-    <div class="token-item"><img class="token-icon" src="/static/pawn_cat.png" alt="Chat noir"><div class="token-name">Chat Noir</div><button class="eval-btn" style="border-color: #9933ff; color: #9933ff;"><img class="eval-icon" src="/static/house_purple.png" alt="">EV AL</button></div>
+  <div class="build-toolbar" id="buildToolbar" style="display:none;">
+    <div class="build-toolbar-title" id="buildToolbarTitle"></div>
+    <div class="build-levels" id="buildLevels"></div>
   </div>
 </div>
 
 <script>
 const socket = io();
 let user = '', token = 'hat', room = '', isRolling = false, playerTokens = {};
+const CELLS = {{ cells|tojson }}; // [nom, type, prix, loyer, groupe] par case, indexé comme côté serveur
+const GROUP_COLORS = { green:'#33cc33', brown:'#cc7733', orange:'#ff9933', purple:'#9933ff', yellow:'#e0c040', blue:'#3366ff', red:'#ff3333' };
+const HOUSE_ICONS = { green:'/static/house_green.png', brown:'/static/house_brown.png', orange:'/static/house_orange.png', purple:'/static/house_purple.png', yellow:'/static/house_yellow.png', red:'/static/house_red.png' };
+function houseIcon(grp) { return HOUSE_ICONS[grp] || HOUSE_ICONS.green; }
+function houseFilterStyle(grp) { return grp === 'blue' ? 'filter:hue-rotate(150deg) saturate(1.4) drop-shadow(0 2px 3px rgba(0,0,0,0.6));' : ''; }
+const CELL_TYPE_LABELS = { property: 'propriété', transport: 'gare', utility: 'compagnie' };
 const TOKEN_ICONS = {
   car: '/static/pawn_car.png',
   jackpot: '/static/pawn_jackpot.png',
@@ -271,6 +291,7 @@ document.getElementById('rollBtn').addEventListener('click', () => {
   isRolling = true;
   document.getElementById('dice1').classList.add('rolling');
   document.getElementById('dice2').classList.add('rolling');
+  document.getElementById('diceTotalBadge').style.display = 'none';
   document.getElementById('rollBtn').disabled = true;
   setTimeout(() => {
     socket.emit('monopoly_roll_dice', {code: room, username: user});
@@ -282,9 +303,52 @@ function updateTurnUI(state) {
   if (!names.length) return;
   const current = names[state.turnIndex % names.length];
   const mine = current === user;
-  document.getElementById('rollBtn').disabled = !mine || isRolling;
-  document.getElementById('turnIndicator').textContent = mine ? '✅ À toi de jouer !' : `⏳ Tour de ${current}`;
+  const buyPending = document.getElementById('buyBox').style.display !== 'none';
+  document.getElementById('rollBtn').disabled = !mine || isRolling || buyPending;
+  document.getElementById('turnIndicator').textContent = mine ? (buyPending ? '🏠 Décide pour la propriété avant de relancer.' : '✅ À toi de jouer !') : `⏳ Tour de ${current}`;
 }
+
+const BUILD_COSTS = [50, 50, 50, 50, 100];
+
+function renderBuildToolbar(state) {
+  const toolbar = document.getElementById('buildToolbar');
+  const me = state.players[user];
+  if (!me) { toolbar.style.display = 'none'; return; }
+  const idx = me.position;
+  const cell = CELLS[idx];
+  const typ = cell[1], grp = cell[4], name = cell[0];
+  const owners = state.owners || {};
+  if (typ !== 'property' || owners[idx] !== user) { toolbar.style.display = 'none'; return; }
+  const houses = (state.houses && state.houses[idx]) || 0;
+  const hotel = state.hotels && state.hotels[idx];
+  const color = GROUP_COLORS[grp] || '#d4af37';
+  document.getElementById('buildToolbarTitle').textContent = `🏗️ Construire sur ${name}`;
+  const levelsHtml = [0, 1, 2, 3, 4].map(i => {
+    const isHotel = i === 4;
+    const done = isHotel ? !!hotel : houses > i;
+    const active = !hotel && (isHotel ? houses >= 4 : houses === i);
+    const icon = isHotel ? '/static/hotel_gold.png' : houseIcon(grp);
+    const filterStyle = isHotel ? '' : houseFilterStyle(grp);
+    const label = isHotel ? 'HÔTEL' : `${i + 1} MAISON${i > 0 ? 'S' : ''}`;
+    const attr = active ? (isHotel ? `data-hotel="${idx}"` : `data-house="${idx}"`) : 'disabled';
+    return `<button class="build-level-btn${done ? ' done' : ''}" ${attr} style="border-color:${color};"><img src="${icon}" alt="" style="${filterStyle}"><span class="build-level-label">${label}</span><span class="build-level-price">${BUILD_COSTS[i]}€</span></button>`;
+  }).join('');
+  const levelsBox = document.getElementById('buildLevels');
+  levelsBox.innerHTML = levelsHtml;
+  levelsBox.querySelectorAll('[data-house]').forEach(btn => btn.addEventListener('click', () => socket.emit('monopoly_add_house', {code: room, username: user, cell: btn.dataset.house})));
+  levelsBox.querySelectorAll('[data-hotel]').forEach(btn => btn.addEventListener('click', () => socket.emit('monopoly_add_hotel', {code: room, username: user, cell: btn.dataset.hotel})));
+  toolbar.style.display = 'block';
+}
+
+document.getElementById('buyBtn').addEventListener('click', () => {
+  socket.emit('monopoly_buy_property', {code: room, username: user});
+  document.getElementById('buyBox').style.display = 'none';
+});
+
+document.getElementById('skipBuyBtn').addEventListener('click', () => {
+  socket.emit('monopoly_skip_buy', {code: room, username: user});
+  document.getElementById('buyBox').style.display = 'none';
+});
 
 socket.on('monopoly_room_state', (state) => {
   room = state.code;
@@ -299,20 +363,33 @@ socket.on('monopoly_room_state', (state) => {
     setDice(document.getElementById('dice2'), 1);
     Object.keys(state.players).forEach(u => placeToken(u, state.players[u].position || 0));
     document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${u}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
+    document.getElementById('buyBox').style.display = 'none';
+    document.getElementById('diceTotalBadge').style.display = 'none';
+    renderBuildToolbar(state);
     updateTurnUI(state);
   }
 });
 
 socket.on('monopoly_animate_move', (data) => {
-  const {username, from, to, dice1, dice2, state} = data;
+  const {username, from, to, dice1, dice2, state, cellName, cellPrice, cellType, pendingBuy} = data;
   setDice(document.getElementById('dice1'), dice1);
   setDice(document.getElementById('dice2'), dice2);
   document.getElementById('dice1').classList.remove('rolling');
   document.getElementById('dice2').classList.remove('rolling');
+  const badge = document.getElementById('diceTotalBadge');
+  badge.textContent = dice1 + dice2;
+  badge.style.display = 'flex';
   setTimeout(() => moveToken(username, from, to), 700);
   document.getElementById('lastAction').textContent = `🎲 ${username}\n${dice1} + ${dice2} = ${dice1+dice2}\n↪ Case ${to}`;
   isRolling = false;
   document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${u}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
+  if (username === user && pendingBuy) {
+    document.getElementById('buyInfo').textContent = `${cellName} — ${cellPrice}€ (${CELL_TYPE_LABELS[cellType] || cellType}). Tu veux l'acheter ?`;
+    document.getElementById('buyBox').style.display = 'block';
+  } else {
+    document.getElementById('buyBox').style.display = 'none';
+  }
+  renderBuildToolbar(state);
   updateTurnUI(state);
 });
 
