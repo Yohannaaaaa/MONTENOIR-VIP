@@ -6721,7 +6721,8 @@ def ludo_code():
 def ludo_new_room(code,owner,teamMode):
     return {"code":code,"owner":owner,"started":False,"teamMode":bool(teamMode),
             "players":{},"seatOrder":[],"order":[],"turnIdx":0,"lastRoll":None,"sixCount":0,
-            "pendingMoves":[],"stage":"waiting","log":"Masa hazır.","winner":None,"botCount":0}
+            "pendingMoves":[],"stage":"waiting","log":"Masa hazır.","winner":None,"botCount":0,
+            "botTaskRunning":False}
 
 def ludo_ring_cell(color,distance):
     return (LUDO_START_OFFSET[color]+distance-1)%52
@@ -6787,7 +6788,7 @@ def ludo_public(r):
             "players":players,"log":r["log"],"owner":r["owner"],"winner":r.get("winner")}
 
 def ludo_broadcast(r):
-    emit("ludo_state",ludo_public(r),room=r["code"])
+    socketio.emit("ludo_state",ludo_public(r),room=r["code"])
 
 def ludo_move_captures(move,r):
     if not (1<=move["newDist"]<=51): return False
@@ -6808,35 +6809,59 @@ def ludo_bot_pick_move(moves,r):
     if out: return out[0]
     return max(moves,key=lambda m: m["newDist"])
 
-def ludo_run_bots(r):
-    for _ in range(100):
-        if r["stage"]!="playing" or not r.get("order"): break
-        u=r["order"][r["turnIdx"]]
-        p=r["players"].get(u)
-        if not p or not p.get("isBot"): break
-        roll=random.randint(1,6)
-        r["lastRoll"]=roll
-        r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
-        if r["sixCount"]>=3:
-            r["log"]=u+" üç kere 6 attı, sıra geçti."
-            ludo_advance_turn(r)
-            ludo_broadcast(r); time.sleep(0.8)
-            continue
-        moves=ludo_valid_moves_for(r,u,roll)
-        if not moves:
-            r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
-            ludo_broadcast(r); time.sleep(0.7)
-            if roll!=6:
+def ludo_next_is_bot(r):
+    if r["stage"]!="playing" or not r.get("order"): return False
+    p=r["players"].get(r["order"][r["turnIdx"]])
+    return bool(p and p.get("isBot"))
+
+def ludo_run_bot_turns(code):
+    try:
+        while True:
+            r=LUDO_ROOMS.get(code)
+            if not r or not ludo_next_is_bot(r): return
+            socketio.sleep(0.8)
+            r=LUDO_ROOMS.get(code)
+            if not r or not ludo_next_is_bot(r): return
+            u=r["order"][r["turnIdx"]]
+            roll=random.randint(1,6)
+            r["lastRoll"]=roll
+            r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
+            if r["sixCount"]>=3:
+                r["log"]=u+" üç kere 6 attı, sıra geçti."
                 ludo_advance_turn(r)
-                ludo_broadcast(r); time.sleep(0.4)
-            continue
-        move=ludo_bot_pick_move(moves,r)
-        won=ludo_apply_move(r,move)
-        ludo_broadcast(r); time.sleep(0.8)
-        if won: break
-        if roll!=6:
-            ludo_advance_turn(r)
-            ludo_broadcast(r); time.sleep(0.4)
+                ludo_broadcast(r)
+                continue
+            moves=ludo_valid_moves_for(r,u,roll)
+            if not moves:
+                r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
+                ludo_broadcast(r)
+                if roll!=6:
+                    socketio.sleep(0.4)
+                    r=LUDO_ROOMS.get(code)
+                    if not r: return
+                    ludo_advance_turn(r)
+                    ludo_broadcast(r)
+                continue
+            move=ludo_bot_pick_move(moves,r)
+            won=ludo_apply_move(r,move)
+            ludo_broadcast(r)
+            if won: return
+            if roll!=6:
+                socketio.sleep(0.4)
+                r=LUDO_ROOMS.get(code)
+                if not r: return
+                ludo_advance_turn(r)
+                ludo_broadcast(r)
+    finally:
+        r=LUDO_ROOMS.get(code)
+        if r: r["botTaskRunning"]=False
+
+def ludo_maybe_schedule_bots(code):
+    r=LUDO_ROOMS.get(code)
+    if not r or not ludo_next_is_bot(r): return
+    if r.get("botTaskRunning"): return
+    r["botTaskRunning"]=True
+    socketio.start_background_task(ludo_run_bot_turns,code)
 
 @socketio.on("ludo_create_room")
 def ludo_create_room(data):
@@ -6911,7 +6936,7 @@ def ludo_start_game(data):
     r["started"]=True; r["stage"]="playing"; r["order"]=list(r["seatOrder"]); r["turnIdx"]=0
     r["sixCount"]=0; r["pendingMoves"]=[]; r["winner"]=None; r["lastRoll"]=None
     r["log"]="Oyun başladı — "+r["order"][0]+" başlıyor."
-    ludo_run_bots(r)
+    ludo_maybe_schedule_bots(r["code"])
     ludo_broadcast(r)
 
 @socketio.on("ludo_roll_dice")
@@ -6927,7 +6952,7 @@ def ludo_roll_dice(data):
     if r["sixCount"]>=3:
         r["log"]=u+" üç kere 6 attı, sıra geçti."
         ludo_advance_turn(r)
-        ludo_run_bots(r)
+        ludo_maybe_schedule_bots(r["code"])
         ludo_broadcast(r)
         return
     moves=ludo_valid_moves_for(r,u,roll)
@@ -6935,14 +6960,14 @@ def ludo_roll_dice(data):
         r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
         if roll!=6:
             ludo_advance_turn(r)
-        ludo_run_bots(r)
+        ludo_maybe_schedule_bots(r["code"])
         ludo_broadcast(r)
         return
     if len(moves)==1:
         won=ludo_apply_move(r,moves[0])
         if not won and roll!=6:
             ludo_advance_turn(r)
-        ludo_run_bots(r)
+        ludo_maybe_schedule_bots(r["code"])
         ludo_broadcast(r)
         return
     r["pendingMoves"]=moves
@@ -6962,7 +6987,7 @@ def ludo_move_token(data):
     won=ludo_apply_move(r,match)
     if not won and r["lastRoll"]!=6:
         ludo_advance_turn(r)
-    ludo_run_bots(r)
+    ludo_maybe_schedule_bots(r["code"])
     ludo_broadcast(r)
 
 
