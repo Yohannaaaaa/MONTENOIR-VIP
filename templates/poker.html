@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poker VIP</title>
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="/static/js/site_lang.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
+  .screen { display: none; width: 100%; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+  .screen.active { display: flex; }
+  h1 { font-size: 54px; font-weight: bold; color: #d4af37; text-shadow: 0 0 30px rgba(212,175,55,0.8); margin-bottom: 30px; letter-spacing: 6px; text-align: center; }
+  .card-box { background: rgba(26,26,26,0.98); border: 3px solid #d4af37; border-radius: 20px; padding: 40px; max-width: 460px; width: 100%; box-shadow: 0 0 50px rgba(212,175,55,0.4); }
+  .label { display: block; color: #d4af37; font-weight: bold; margin-top: 18px; margin-bottom: 10px; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+  .input { width: 100%; padding: 14px; background: #0a0a0a; border: 2px solid #d4af37; color: #f5e6d3; border-radius: 10px; font-size: 15px; }
+  .input:focus { outline: none; box-shadow: 0 0 20px rgba(212,175,55,0.6); }
+  .avatar-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin: 14px 0; }
+  .avatar-btn { aspect-ratio: 1; font-size: 22px; background: rgba(40,40,40,0.8); border: 2px solid #d4af37; color: #f5e6d3; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: all .25s; }
+  .avatar-btn:hover { background: rgba(60,60,60,0.9); transform: scale(1.05); }
+  .avatar-btn.selected { background: #d4af37; box-shadow: 0 0 20px #d4af37; transform: scale(1.1); }
+  .row2 { display: flex; gap: 12px; }
+  .row2 > div { flex: 1; }
+  .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #d4af37, #a0860d); color: #1a1a1a; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: all .25s; margin-top: 14px; letter-spacing: 1px; text-transform: uppercase; }
+  .btn:hover { transform: scale(1.02); box-shadow: 0 0 25px rgba(212,175,55,0.6); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn.green { background: linear-gradient(135deg, #2d7a56, #1f5a42); color: #fff; }
+  .btn.red { background: linear-gradient(135deg, #a83232, #6e1f1f); color: #fff; }
+  .btn.grey { background: #444; color: #f5e6d3; }
+  .error { color: #ff6b6b; text-align: center; margin-top: 14px; font-size: 14px; min-height: 20px; }
+  .lang-switch { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 480px; }
+  .lang-btn { padding: 7px 12px; background: rgba(40,40,40,0.8); border: 2px solid #d4af37; color: #f5e6d3; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+  .lang-btn.selected { background: #d4af37; color: #1a1a1a; box-shadow: 0 0 15px #d4af37; }
+  .room-code { font-size: 44px; color: #d4af37; font-weight: bold; margin: 26px 0; letter-spacing: 3px; text-shadow: 0 0 20px rgba(212,175,55,0.6); text-align: center; }
+  .players-list { background: rgba(10,10,10,0.8); border: 1px solid #d4af37; border-radius: 10px; padding: 14px; margin: 18px 0; max-height: 220px; overflow-y: auto; min-height: 60px; }
+  .player-item { padding: 9px 4px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 14px; display: flex; justify-content: space-between; }
+  .player-item:last-child { border-bottom: none; }
+
+  #gameScreen { padding: 14px; }
+  .table-wrap { position: relative; width: min(980px, 96vw); height: min(560px, 78vh); margin: 0 auto; }
+  .felt { position: absolute; inset: 0; border-radius: 50% / 42%; background: radial-gradient(ellipse at center, #1c7a45 0%, #0f5c33 55%, #08381f 100%); border: 14px solid #3a2410; box-shadow: 0 0 0 6px #1a1a1a, 0 20px 60px rgba(0,0,0,0.8), inset 0 0 80px rgba(0,0,0,0.5); }
+  .table-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; z-index: 3; }
+  .community { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; min-height: 78px; }
+  .pot-label { color: #ffe08a; font-weight: bold; font-size: 15px; text-shadow: 0 0 10px rgba(0,0,0,0.8); }
+  .stage-label { color: #d4af37; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; opacity: .85; }
+  .pcard { width: 46px; height: 66px; border-radius: 6px; background: linear-gradient(160deg,#fff,#f0f0f0); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 17px; box-shadow: 0 4px 10px rgba(0,0,0,0.6); border: 1px solid #ccc; }
+  .pcard.back { background: repeating-linear-gradient(45deg,#7a1c1c,#7a1c1c 6px,#5a1414 6px,#5a1414 12px); border: 2px solid #d4af37; color: transparent; }
+  .pcard.red { color: #c0272d; }
+  .pcard.black { color: #111; }
+  .pcard.small { width: 34px; height: 48px; font-size: 12px; border-radius: 5px; }
+
+  .seat { position: absolute; width: 148px; transform: translate(-50%,-50%); text-align: center; z-index: 4; }
+  .seat-box { background: rgba(10,10,10,0.88); border: 2px solid #6a5a2a; border-radius: 14px; padding: 8px 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.6); }
+  .seat.turn .seat-box { border-color: #d4af37; box-shadow: 0 0 22px rgba(212,175,55,0.9); }
+  .seat.folded .seat-box { opacity: .4; }
+  .seat.me .seat-box { border-color: #3a9d6d; }
+  .seat-avatar { font-size: 22px; }
+  .seat-name { font-size: 12px; font-weight: bold; color: #f5e6d3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seat-stack { font-size: 12px; color: #d4af37; }
+  .seat-cards { display: flex; gap: 4px; justify-content: center; margin: 4px 0; }
+  .seat-bet { font-size: 11px; color: #ffe08a; background: rgba(0,0,0,.5); border-radius: 8px; padding: 1px 8px; display: inline-block; margin-top: 3px; }
+  .dealer-btn { position: absolute; top: -6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: #f5e6d3; color: #000; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(0,0,0,.6); }
+
+  .side-panel { max-width: 980px; margin: 14px auto 0; background: rgba(26,26,26,0.9); border: 2px solid #d4af37; border-radius: 16px; padding: 14px 18px; }
+  .action-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
+  .action-bar .btn { width: auto; padding: 12px 20px; margin-top: 0; }
+  .raise-input { width: 110px; padding: 10px; background: #0a0a0a; border: 2px solid #d4af37; color: #f5e6d3; border-radius: 8px; font-size: 14px; text-align: center; }
+  .turn-indicator { text-align: center; color: #d4af37; font-weight: bold; margin-bottom: 10px; min-height: 20px; }
+  .action-log { color: #d4af37; font-size: 12px; text-align: center; margin-top: 10px; min-height: 16px; opacity: .9; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 980px; margin: 0 auto 8px; font-size: 12px; color: #d4af37; }
+  .top-bar button { background: none; border: 1px solid #d4af37; color: #d4af37; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="screen active">
+  <div class="lang-switch" id="langSwitch"></div>
+  <h1>♠️ POKER ♥️</h1>
+  <div class="card-box">
+    <label class="label" data-i18n="label_username">🎮 Ton Pseudo</label>
+    <input type="text" id="username" class="input" data-i18n-placeholder="placeholder_username" placeholder="Entre ton nom">
+    <label class="label" data-i18n="label_avatar">🃏 Choisis ton avatar</label>
+    <div class="avatar-grid">
+      <button class="avatar-btn selected" data-avatar="🎩">🎩</button>
+      <button class="avatar-btn" data-avatar="🕶️">🕶️</button>
+      <button class="avatar-btn" data-avatar="👑">👑</button>
+      <button class="avatar-btn" data-avatar="🃏">🃏</button>
+      <button class="avatar-btn" data-avatar="💰">💰</button>
+      <button class="avatar-btn" data-avatar="🎲">🎲</button>
+    </div>
+    <div class="row2">
+      <div>
+        <label class="label" data-i18n="label_buyin">💵 Buy-in</label>
+        <input type="number" id="buyIn" class="input" value="500" min="50" step="50">
+      </div>
+      <div>
+        <label class="label" data-i18n="label_smallblind">🔹 Small Blind</label>
+        <input type="number" id="smallBlind" class="input" value="10" min="1" step="5">
+      </div>
+    </div>
+    <button class="btn" id="createBtn" data-i18n="btn_create">➕ Créer une table</button>
+    <label class="label" data-i18n="label_or_join">OU REJOIGNEZ</label>
+    <input type="text" id="roomCode" class="input" data-i18n-placeholder="placeholder_room_code" placeholder="Code de la table">
+    <button class="btn" id="joinBtn" data-i18n="btn_join">🔗 Rejoindre</button>
+    <div class="error" id="errorMsg"></div>
+  </div>
+</div>
+
+<div id="lobbyScreen" class="screen">
+  <h1 data-i18n="title_lobby">POKER</h1>
+  <div class="card-box">
+    <div style="text-align:center;color:#d4af37;margin-bottom:8px;font-weight:bold;" data-i18n="label_room_code">CODE DE LA TABLE</div>
+    <div class="room-code" id="roomCodeDisplay">PK-XXXX</div>
+    <div style="text-align:center;font-size:13px;color:#f5e6d3;" id="lobbyInfo"></div>
+    <label class="label" data-i18n="label_players">👥 Joueurs</label>
+    <div class="players-list" id="lobbyPlayersList"></div>
+    <button class="btn green" id="startBtn" data-i18n="btn_start">🚀 Démarrer la partie</button>
+    <button class="btn grey" id="leaveLobbyBtn" data-i18n="btn_leave">🚪 Quitter</button>
+  </div>
+</div>
+
+<div id="gameScreen" class="screen">
+  <div class="top-bar">
+    <span id="tableInfo"></span>
+    <button id="leaveTableBtn" data-i18n="btn_leave">🚪 Quitter</button>
+  </div>
+  <div class="table-wrap">
+    <div class="felt"></div>
+    <div class="table-center">
+      <div class="community" id="communityCards"></div>
+      <div class="pot-label" id="potLabel"></div>
+      <div class="stage-label" id="stageLabel"></div>
+    </div>
+    <div id="seatsLayer"></div>
+  </div>
+  <div class="side-panel">
+    <div class="turn-indicator" id="turnIndicator"></div>
+    <div class="action-bar" id="actionBar" style="display:none;">
+      <button class="btn red" id="foldBtn" data-i18n="btn_fold">✋ Se coucher</button>
+      <button class="btn grey" id="checkCallBtn"></button>
+      <input type="number" id="raiseAmount" class="raise-input">
+      <button class="btn green" id="raiseBtn" data-i18n="btn_raise">⬆️ Relancer</button>
+      <button class="btn" id="allinBtn" data-i18n="btn_allin">🔥 Tapis</button>
+    </div>
+    <div class="action-bar" id="nextHandBar" style="display:none;">
+      <button class="btn green" id="nextHandBtn" data-i18n="btn_next_hand">▶️ Main suivante</button>
+    </div>
+    <div class="action-log" id="actionLog"></div>
+  </div>
+</div>
+
+<script>
+const socket = io();
+let user = '', avatar = '🎩', room = '', myHole = [], lastState = null, isOwner = false;
+
+const I18N = {
+  fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🃏 Choisis ton avatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Créer une table',
+    label_or_join:'OU REJOIGNEZ', placeholder_room_code:'Code de la table', btn_join:'🔗 Rejoindre',
+    title_lobby:'POKER', label_room_code:'CODE DE LA TABLE', label_players:'👥 Joueurs',
+    btn_start:'🚀 Démarrer la partie', btn_leave:'🚪 Quitter', btn_fold:'✋ Se coucher', btn_check:'✅ Check',
+    btn_call:'📞 Suivre ({amount})', btn_raise:'⬆️ Relancer', btn_allin:'🔥 Tapis', btn_next_hand:'▶️ Main suivante',
+    pot:'Pot : {amount}', stage_waiting:'En attente', stage_preflop:'Pré-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Abattage', turn_mine:'✅ À toi de jouer !', turn_other:"⏳ Tour de {name}",
+    waiting_players:'En attente de joueurs (min. 2)…', alert_prefix:'❌ ', err_generic:'Erreur',
+    err_not_enough_chips:'Pas assez de jetons sur ton compte.', err_room_not_found:'Table introuvable.',
+    err_table_full:'Table complète.', err_need_players:'Il faut au moins 2 joueurs.',
+    err_not_your_turn:"Ce n'est pas ton tour.", err_cannot_check:'Tu dois suivre ou te coucher.',
+    err_invalid_raise:'Relance invalide.', you_label:'Toi' },
+  en: { label_username:'🎮 Your Nickname', placeholder_username:'Enter your name', label_avatar:'🃏 Choose your avatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Create a table',
+    label_or_join:'OR JOIN', placeholder_room_code:'Table code', btn_join:'🔗 Join',
+    title_lobby:'POKER', label_room_code:'TABLE CODE', label_players:'👥 Players',
+    btn_start:'🚀 Start game', btn_leave:'🚪 Leave', btn_fold:'✋ Fold', btn_check:'✅ Check',
+    btn_call:'📞 Call ({amount})', btn_raise:'⬆️ Raise', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Next hand',
+    pot:'Pot: {amount}', stage_waiting:'Waiting', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Your turn!', turn_other:"⏳ {name}'s turn",
+    waiting_players:'Waiting for players (min. 2)…', alert_prefix:'❌ ', err_generic:'Error',
+    err_not_enough_chips:'Not enough chips in your account.', err_room_not_found:'Table not found.',
+    err_table_full:'Table is full.', err_need_players:'Need at least 2 players.',
+    err_not_your_turn:"It's not your turn.", err_cannot_check:'You must call or fold.',
+    err_invalid_raise:'Invalid raise.', you_label:'You' },
+  es: { label_username:'🎮 Tu Apodo', placeholder_username:'Escribe tu nombre', label_avatar:'🃏 Elige tu avatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Ciega pequeña', btn_create:'➕ Crear una mesa',
+    label_or_join:'O ÚNETE', placeholder_room_code:'Código de la mesa', btn_join:'🔗 Unirse',
+    title_lobby:'POKER', label_room_code:'CÓDIGO DE LA MESA', label_players:'👥 Jugadores',
+    btn_start:'🚀 Empezar partida', btn_leave:'🚪 Salir', btn_fold:'✋ Retirarse', btn_check:'✅ Pasar',
+    btn_call:'📞 Igualar ({amount})', btn_raise:'⬆️ Subir', btn_allin:'🔥 Ir all-in', btn_next_hand:'▶️ Siguiente mano',
+    pot:'Bote: {amount}', stage_waiting:'Esperando', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Muestra de cartas', turn_mine:'✅ ¡Es tu turno!', turn_other:"⏳ Turno de {name}",
+    waiting_players:'Esperando jugadores (mín. 2)…', alert_prefix:'❌ ', err_generic:'Error',
+    err_not_enough_chips:'No tienes suficientes fichas en tu cuenta.', err_room_not_found:'Mesa no encontrada.',
+    err_table_full:'Mesa completa.', err_need_players:'Se necesitan al menos 2 jugadores.',
+    err_not_your_turn:'No es tu turno.', err_cannot_check:'Debes igualar o retirarte.',
+    err_invalid_raise:'Subida inválida.', you_label:'Tú' },
+  de: { label_username:'🎮 Dein Spitzname', placeholder_username:'Gib deinen Namen ein', label_avatar:'🃏 Wähle deinen Avatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Tisch erstellen',
+    label_or_join:'ODER BEITRETEN', placeholder_room_code:'Tischcode', btn_join:'🔗 Beitreten',
+    title_lobby:'POKER', label_room_code:'TISCHCODE', label_players:'👥 Spieler',
+    btn_start:'🚀 Spiel starten', btn_leave:'🚪 Verlassen', btn_fold:'✋ Aussteigen', btn_check:'✅ Checken',
+    btn_call:'📞 Mitgehen ({amount})', btn_raise:'⬆️ Erhöhen', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Nächste Hand',
+    pot:'Pot: {amount}', stage_waiting:'Warten', stage_preflop:'Pre-Flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Du bist dran!', turn_other:'⏳ {name} ist dran',
+    waiting_players:'Warten auf Spieler (min. 2)…', alert_prefix:'❌ ', err_generic:'Fehler',
+    err_not_enough_chips:'Nicht genug Chips auf deinem Konto.', err_room_not_found:'Tisch nicht gefunden.',
+    err_table_full:'Tisch voll.', err_need_players:'Mindestens 2 Spieler nötig.',
+    err_not_your_turn:'Du bist nicht dran.', err_cannot_check:'Du musst mitgehen oder aussteigen.',
+    err_invalid_raise:'Ungültige Erhöhung.', you_label:'Du' },
+  it: { label_username:'🎮 Il tuo soprannome', placeholder_username:'Inserisci il tuo nome', label_avatar:'🃏 Scegli il tuo avatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Crea un tavolo',
+    label_or_join:'O UNISCITI', placeholder_room_code:'Codice del tavolo', btn_join:'🔗 Unisciti',
+    title_lobby:'POKER', label_room_code:'CODICE DEL TAVOLO', label_players:'👥 Giocatori',
+    btn_start:'🚀 Inizia partita', btn_leave:'🚪 Esci', btn_fold:'✋ Passa', btn_check:'✅ Check',
+    btn_call:'📞 Paga ({amount})', btn_raise:'⬆️ Rilancia', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Mano successiva',
+    pot:'Piatto: {amount}', stage_waiting:'In attesa', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Tocca a te!', turn_other:'⏳ Turno di {name}',
+    waiting_players:'In attesa di giocatori (min. 2)…', alert_prefix:'❌ ', err_generic:'Errore',
+    err_not_enough_chips:'Fiches insufficienti sul tuo account.', err_room_not_found:'Tavolo non trovato.',
+    err_table_full:'Tavolo pieno.', err_need_players:'Servono almeno 2 giocatori.',
+    err_not_your_turn:'Non è il tuo turno.', err_cannot_check:'Devi pagare o passare.',
+    err_invalid_raise:'Rilancio non valido.', you_label:'Tu' },
+  nl: { label_username:'🎮 Jouw Bijnaam', placeholder_username:'Voer je naam in', label_avatar:'🃏 Kies je avatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Tafel aanmaken',
+    label_or_join:'OF DOE MEE', placeholder_room_code:'Tafelcode', btn_join:'🔗 Meedoen',
+    title_lobby:'POKER', label_room_code:'TAFELCODE', label_players:'👥 Spelers',
+    btn_start:'🚀 Spel starten', btn_leave:'🚪 Verlaten', btn_fold:'✋ Passen', btn_check:'✅ Checken',
+    btn_call:'📞 Meegaan ({amount})', btn_raise:'⬆️ Verhogen', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Volgende hand',
+    pot:'Pot: {amount}', stage_waiting:'Wachten', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Jij bent aan de beurt!', turn_other:'⏳ Beurt van {name}',
+    waiting_players:'Wachten op spelers (min. 2)…', alert_prefix:'❌ ', err_generic:'Fout',
+    err_not_enough_chips:'Niet genoeg chips op je account.', err_room_not_found:'Tafel niet gevonden.',
+    err_table_full:'Tafel vol.', err_need_players:'Minimaal 2 spelers nodig.',
+    err_not_your_turn:'Jij bent niet aan de beurt.', err_cannot_check:'Je moet meegaan of passen.',
+    err_invalid_raise:'Ongeldige verhoging.', you_label:'Jij' },
+  ru: { label_username:'🎮 Твой ник', placeholder_username:'Введите ваше имя', label_avatar:'🃏 Выберите аватар',
+    label_buyin:'💵 Бай-ин', label_smallblind:'🔹 Малый блайнд', btn_create:'➕ Создать стол',
+    label_or_join:'ИЛИ ПРИСОЕДИНИТЬСЯ', placeholder_room_code:'Код стола', btn_join:'🔗 Присоединиться',
+    title_lobby:'ПОКЕР', label_room_code:'КОД СТОЛА', label_players:'👥 Игроки',
+    btn_start:'🚀 Начать игру', btn_leave:'🚪 Выйти', btn_fold:'✋ Сбросить', btn_check:'✅ Чек',
+    btn_call:'📞 Уравнять ({amount})', btn_raise:'⬆️ Повысить', btn_allin:'🔥 Ва-банк', btn_next_hand:'▶️ Следующая раздача',
+    pot:'Банк: {amount}', stage_waiting:'Ожидание', stage_preflop:'Префлоп', stage_flop:'Флоп', stage_turn:'Тёрн',
+    stage_river:'Ривер', stage_showdown:'Вскрытие', turn_mine:'✅ Твой ход!', turn_other:'⏳ Ход игрока {name}',
+    waiting_players:'Ожидание игроков (мин. 2)…', alert_prefix:'❌ ', err_generic:'Ошибка',
+    err_not_enough_chips:'Недостаточно фишек на счёте.', err_room_not_found:'Стол не найден.',
+    err_table_full:'Стол заполнен.', err_need_players:'Нужно минимум 2 игрока.',
+    err_not_your_turn:'Сейчас не твой ход.', err_cannot_check:'Нужно уравнять или сбросить карты.',
+    err_invalid_raise:'Неверное повышение.', you_label:'Ты' },
+  ar: { label_username:'🎮 اسمك المستعار', placeholder_username:'أدخل اسمك', label_avatar:'🃏 اختر صورتك الرمزية',
+    label_buyin:'💵 مبلغ الدخول', label_smallblind:'🔹 الرهان الصغير', btn_create:'➕ إنشاء طاولة',
+    label_or_join:'أو انضم', placeholder_room_code:'رمز الطاولة', btn_join:'🔗 انضمام',
+    title_lobby:'بوكر', label_room_code:'رمز الطاولة', label_players:'👥 اللاعبون',
+    btn_start:'🚀 ابدأ اللعبة', btn_leave:'🚪 مغادرة', btn_fold:'✋ الانسحاب', btn_check:'✅ تمرير',
+    btn_call:'📞 مجاراة ({amount})', btn_raise:'⬆️ رفع', btn_allin:'🔥 كل الرقائق', btn_next_hand:'▶️ الجولة التالية',
+    pot:'الوعاء: {amount}', stage_waiting:'انتظار', stage_preflop:'قبل الفلوب', stage_flop:'فلوب', stage_turn:'تيرن',
+    stage_river:'ريفر', stage_showdown:'كشف الأوراق', turn_mine:'✅ دورك الآن!', turn_other:'⏳ دور {name}',
+    waiting_players:'في انتظار اللاعبين (٢ على الأقل)…', alert_prefix:'❌ ', err_generic:'خطأ',
+    err_not_enough_chips:'لا توجد رقائق كافية في حسابك.', err_room_not_found:'الطاولة غير موجودة.',
+    err_table_full:'الطاولة ممتلئة.', err_need_players:'يلزم لاعبان على الأقل.',
+    err_not_your_turn:'ليس دورك.', err_cannot_check:'يجب أن تجاري أو تنسحب.',
+    err_invalid_raise:'رفع غير صالح.', you_label:'أنت' },
+  pt: { label_username:'🎮 Seu Apelido', placeholder_username:'Digite seu nome', label_avatar:'🃏 Escolha seu avatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Criar uma mesa',
+    label_or_join:'OU ENTRAR', placeholder_room_code:'Código da mesa', btn_join:'🔗 Entrar',
+    title_lobby:'POKER', label_room_code:'CÓDIGO DA MESA', label_players:'👥 Jogadores',
+    btn_start:'🚀 Iniciar jogo', btn_leave:'🚪 Sair', btn_fold:'✋ Desistir', btn_check:'✅ Passar',
+    btn_call:'📞 Pagar ({amount})', btn_raise:'⬆️ Aumentar', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Próxima mão',
+    pot:'Pote: {amount}', stage_waiting:'Aguardando', stage_preflop:'Pré-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ É a sua vez!', turn_other:'⏳ Vez de {name}',
+    waiting_players:'Aguardando jogadores (mín. 2)…', alert_prefix:'❌ ', err_generic:'Erro',
+    err_not_enough_chips:'Fichas insuficientes na sua conta.', err_room_not_found:'Mesa não encontrada.',
+    err_table_full:'Mesa cheia.', err_need_players:'É necessário pelo menos 2 jogadores.',
+    err_not_your_turn:'Não é a sua vez.', err_cannot_check:'Você precisa pagar ou desistir.',
+    err_invalid_raise:'Aumento inválido.', you_label:'Você' },
+  pl: { label_username:'🎮 Twój Pseudonim', placeholder_username:'Wpisz swoje imię', label_avatar:'🃏 Wybierz awatar',
+    label_buyin:'💵 Buy-in', label_smallblind:'🔹 Mały blind', btn_create:'➕ Utwórz stół',
+    label_or_join:'LUB DOŁĄCZ', placeholder_room_code:'Kod stołu', btn_join:'🔗 Dołącz',
+    title_lobby:'POKER', label_room_code:'KOD STOŁU', label_players:'👥 Gracze',
+    btn_start:'🚀 Rozpocznij grę', btn_leave:'🚪 Opuść', btn_fold:'✋ Spasuj', btn_check:'✅ Czekaj',
+    btn_call:'📞 Sprawdź ({amount})', btn_raise:'⬆️ Podbij', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Następna ręka',
+    pot:'Pula: {amount}', stage_waiting:'Oczekiwanie', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Showdown', turn_mine:'✅ Twoja kolej!', turn_other:'⏳ Kolej gracza {name}',
+    waiting_players:'Oczekiwanie na graczy (min. 2)…', alert_prefix:'❌ ', err_generic:'Błąd',
+    err_not_enough_chips:'Za mało żetonów na koncie.', err_room_not_found:'Nie znaleziono stołu.',
+    err_table_full:'Stół pełny.', err_need_players:'Potrzeba co najmniej 2 graczy.',
+    err_not_your_turn:'To nie twoja kolej.', err_cannot_check:'Musisz sprawdzić lub spasować.',
+    err_invalid_raise:'Nieprawidłowe podbicie.', you_label:'Ty' },
+  tr: { label_username:'🎮 Takma Adın', placeholder_username:'Adını gir', label_avatar:'🃏 Avatarını seç',
+    label_buyin:'💵 Giriş miktarı', label_smallblind:'🔹 Küçük Blind', btn_create:'➕ Masa kur',
+    label_or_join:'YA DA KATIL', placeholder_room_code:'Masa kodu', btn_join:'🔗 Katıl',
+    title_lobby:'POKER', label_room_code:'MASA KODU', label_players:'👥 Oyuncular',
+    btn_start:'🚀 Oyunu başlat', btn_leave:'🚪 Ayrıl', btn_fold:'✋ Fold', btn_check:'✅ Check',
+    btn_call:'📞 Gör ({amount})', btn_raise:'⬆️ Yükselt', btn_allin:'🔥 All-in', btn_next_hand:'▶️ Sonraki el',
+    pot:'Pot: {amount}', stage_waiting:'Bekleniyor', stage_preflop:'Pre-flop', stage_flop:'Flop', stage_turn:'Turn',
+    stage_river:'River', stage_showdown:'Kartları açma', turn_mine:'✅ Sıra sende!', turn_other:'⏳ Sıra: {name}',
+    waiting_players:'Oyuncular bekleniyor (min. 2)…', alert_prefix:'❌ ', err_generic:'Hata',
+    err_not_enough_chips:'Hesabında yeterli jeton yok.', err_room_not_found:'Masa bulunamadı.',
+    err_table_full:'Masa dolu.', err_need_players:'En az 2 oyuncu gerekli.',
+    err_not_your_turn:'Sıra sende değil.', err_cannot_check:'Görmek veya fold etmek zorundasın.',
+    err_invalid_raise:'Geçersiz yükseltme.', you_label:'Sen' },
+  ja: { label_username:'🎮 ニックネーム', placeholder_username:'名前を入力', label_avatar:'🃏 アバターを選択',
+    label_buyin:'💵 バイイン', label_smallblind:'🔹 スモールブラインド', btn_create:'➕ テーブルを作成',
+    label_or_join:'または参加', placeholder_room_code:'テーブルコード', btn_join:'🔗 参加',
+    title_lobby:'ポーカー', label_room_code:'テーブルコード', label_players:'👥 プレイヤー',
+    btn_start:'🚀 ゲーム開始', btn_leave:'🚪 退出', btn_fold:'✋ フォールド', btn_check:'✅ チェック',
+    btn_call:'📞 コール ({amount})', btn_raise:'⬆️ レイズ', btn_allin:'🔥 オールイン', btn_next_hand:'▶️ 次のハンド',
+    pot:'ポット: {amount}', stage_waiting:'待機中', stage_preflop:'プリフロップ', stage_flop:'フロップ', stage_turn:'ターン',
+    stage_river:'リバー', stage_showdown:'ショーダウン', turn_mine:'✅ あなたの番です！', turn_other:'⏳ {name}の番',
+    waiting_players:'プレイヤーを待っています（最低2人）…', alert_prefix:'❌ ', err_generic:'エラー',
+    err_not_enough_chips:'アカウントのチップが足りません。', err_room_not_found:'テーブルが見つかりません。',
+    err_table_full:'テーブルは満席です。', err_need_players:'最低2人のプレイヤーが必要です。',
+    err_not_your_turn:'あなたの番ではありません。', err_cannot_check:'コールするかフォールドしてください。',
+    err_invalid_raise:'無効なレイズです。', you_label:'あなた' },
+  zh: { label_username:'🎮 你的昵称', placeholder_username:'输入你的名字', label_avatar:'🃏 选择你的头像',
+    label_buyin:'💵 买入金额', label_smallblind:'🔹 小盲注', btn_create:'➕ 创建牌桌',
+    label_or_join:'或加入', placeholder_room_code:'牌桌代码', btn_join:'🔗 加入',
+    title_lobby:'扑克', label_room_code:'牌桌代码', label_players:'👥 玩家',
+    btn_start:'🚀 开始游戏', btn_leave:'🚪 离开', btn_fold:'✋ 弃牌', btn_check:'✅ 让牌',
+    btn_call:'📞 跟注 ({amount})', btn_raise:'⬆️ 加注', btn_allin:'🔥 全下', btn_next_hand:'▶️ 下一局',
+    pot:'底池：{amount}', stage_waiting:'等待中', stage_preflop:'翻牌前', stage_flop:'翻牌', stage_turn:'转牌',
+    stage_river:'河牌', stage_showdown:'摊牌', turn_mine:'✅ 轮到你了！', turn_other:'⏳ 轮到 {name}',
+    waiting_players:'等待玩家中（至少2人）…', alert_prefix:'❌ ', err_generic:'错误',
+    err_not_enough_chips:'账户筹码不足。', err_room_not_found:'未找到牌桌。',
+    err_table_full:'牌桌已满。', err_need_players:'至少需要2名玩家。',
+    err_not_your_turn:'还没轮到你。', err_cannot_check:'你必须跟注或弃牌。',
+    err_invalid_raise:'加注无效。', you_label:'你' },
+  ko: { label_username:'🎮 닉네임', placeholder_username:'이름을 입력하세요', label_avatar:'🃏 아바타를 선택하세요',
+    label_buyin:'💵 바이인', label_smallblind:'🔹 스몰 블라인드', btn_create:'➕ 테이블 만들기',
+    label_or_join:'또는 참가하기', placeholder_room_code:'테이블 코드', btn_join:'🔗 참가',
+    title_lobby:'포커', label_room_code:'테이블 코드', label_players:'👥 플레이어',
+    btn_start:'🚀 게임 시작', btn_leave:'🚪 나가기', btn_fold:'✋ 폴드', btn_check:'✅ 체크',
+    btn_call:'📞 콜 ({amount})', btn_raise:'⬆️ 레이즈', btn_allin:'🔥 올인', btn_next_hand:'▶️ 다음 핸드',
+    pot:'팟: {amount}', stage_waiting:'대기 중', stage_preflop:'프리플랍', stage_flop:'플랍', stage_turn:'턴',
+    stage_river:'리버', stage_showdown:'쇼다운', turn_mine:'✅ 당신의 차례입니다!', turn_other:'⏳ {name}의 차례',
+    waiting_players:'플레이어를 기다리는 중 (최소 2명)…', alert_prefix:'❌ ', err_generic:'오류',
+    err_not_enough_chips:'계정에 칩이 부족합니다.', err_room_not_found:'테이블을 찾을 수 없습니다.',
+    err_table_full:'테이블이 가득 찼습니다.', err_need_players:'최소 2명의 플레이어가 필요합니다.',
+    err_not_your_turn:'당신의 차례가 아닙니다.', err_cannot_check:'콜하거나 폴드해야 합니다.',
+    err_invalid_raise:'잘못된 레이즈입니다.', you_label:'당신' }
+};
+const POKER_LANGS = ['fr','en','es','de','it','nl','ru','ar','pt','pl','tr','ja','zh','ko'];
+let lang = POKER_LANGS.includes(getSiteLang()) ? getSiteLang() : 'fr';
+
+function t(key, params) {
+  const dict = I18N[lang] || I18N.fr;
+  let str = dict[key] !== undefined ? dict[key] : (I18N.fr[key] !== undefined ? I18N.fr[key] : key);
+  if (params) Object.keys(params).forEach(k => { str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), params[k]); });
+  return str;
+}
+
+function applyStaticI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+}
+
+buildLangSelector(document.getElementById('langSwitch'), (code) => { lang = code; applyStaticI18n(); if (lastState) render(lastState); }, POKER_LANGS);
+applyStaticI18n();
+
+function show(s) {
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.getElementById(s).classList.add('active');
+}
+
+document.querySelectorAll('.avatar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    avatar = btn.dataset.avatar;
+  });
+});
+
+document.getElementById('createBtn').addEventListener('click', () => {
+  user = document.getElementById('username').value.trim();
+  if (!user) return document.getElementById('errorMsg').textContent = t('err_generic');
+  const buyIn = parseInt(document.getElementById('buyIn').value, 10) || 500;
+  const smallBlind = parseInt(document.getElementById('smallBlind').value, 10) || 10;
+  socket.emit('poker_create_room', {username: user, token: avatar, buyIn, smallBlind});
+});
+
+document.getElementById('joinBtn').addEventListener('click', () => {
+  user = document.getElementById('username').value.trim();
+  room = document.getElementById('roomCode').value.trim().toUpperCase();
+  if (!user || !room) return document.getElementById('errorMsg').textContent = t('err_generic');
+  socket.emit('poker_join_room', {username: user, token: avatar, code: room});
+});
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  socket.emit('poker_start_game', {code: room});
+});
+
+document.getElementById('leaveLobbyBtn').addEventListener('click', leaveTable);
+document.getElementById('leaveTableBtn').addEventListener('click', leaveTable);
+function leaveTable() {
+  socket.emit('poker_leave_room', {code: room, username: user});
+  room = ''; lastState = null; myHole = [];
+  show('loginScreen');
+}
+
+document.getElementById('nextHandBtn').addEventListener('click', () => {
+  socket.emit('poker_next_hand', {code: room});
+});
+
+document.getElementById('foldBtn').addEventListener('click', () => socket.emit('poker_action', {code: room, username: user, action: 'fold'}));
+document.getElementById('checkCallBtn').addEventListener('click', () => {
+  if (!lastState) return;
+  const me = lastState.players.find(p => p.name === user);
+  const action = (me && me.bet === lastState.currentBet) ? 'check' : 'call';
+  socket.emit('poker_action', {code: room, username: user, action});
+});
+document.getElementById('raiseBtn').addEventListener('click', () => {
+  const amount = parseInt(document.getElementById('raiseAmount').value, 10) || 0;
+  socket.emit('poker_action', {code: room, username: user, action: 'raise', amount});
+});
+document.getElementById('allinBtn').addEventListener('click', () => socket.emit('poker_action', {code: room, username: user, action: 'allin'}));
+
+function suitInfo(card) {
+  const suit = card[card.length - 1];
+  const map = {S:{sym:'♠',cls:'black'}, C:{sym:'♣',cls:'black'}, H:{sym:'♥',cls:'red'}, D:{sym:'♦',cls:'red'}};
+  return map[suit] || {sym:'', cls:'black'};
+}
+function cardRankLabel(card) { return card[0] === 'T' ? '10' : card[0]; }
+
+function renderCard(card, small) {
+  if (card === '??') return `<div class="pcard back${small ? ' small' : ''}"></div>`;
+  const {sym, cls} = suitInfo(card);
+  return `<div class="pcard ${cls}${small ? ' small' : ''}">${cardRankLabel(card)}<span>${sym}</span></div>`;
+}
+
+function seatPositions(n) {
+  const cx = 490, cy = 280, rx = 430, ry = 225, pts = [];
+  for (let i = 0; i < n; i++) {
+    const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
+    pts.push({x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle)});
+  }
+  return pts;
+}
+
+function render(state) {
+  lastState = state;
+  room = state.code;
+  isOwner = state.owner === user;
+  document.getElementById('tableInfo').textContent = `${state.code} — 🔹${state.smallBlind}/${state.bigBlind}  💵 buy-in ${state.buyIn}`;
+
+  if (!state.started) {
+    show('lobbyScreen');
+    document.getElementById('roomCodeDisplay').textContent = state.code;
+    document.getElementById('lobbyInfo').textContent = t('waiting_players');
+    document.getElementById('lobbyPlayersList').innerHTML = state.players.map(p => `<div class="player-item"><span>${p.token || '🎩'} ${p.name}</span><span>💰 ${p.stack}</span></div>`).join('');
+    document.getElementById('startBtn').style.display = isOwner ? 'block' : 'none';
+    return;
+  }
+  show('gameScreen');
+
+  document.getElementById('communityCards').innerHTML = state.community.map(c => renderCard(c, false)).join('') || '&nbsp;';
+  document.getElementById('potLabel').textContent = t('pot', {amount: state.pot});
+  document.getElementById('stageLabel').textContent = t('stage_' + state.stage);
+
+  const players = state.players.filter(p => true);
+  const myIdx = players.findIndex(p => p.name === user);
+  const ordered = myIdx >= 0 ? players.slice(myIdx).concat(players.slice(0, myIdx)) : players;
+  const positions = seatPositions(ordered.length);
+  const layer = document.getElementById('seatsLayer');
+  layer.innerHTML = ordered.map((p, i) => {
+    const pos = positions[i];
+    const isTurn = state.turn === p.name;
+    const cards = (p.name === user && myHole.length) ? myHole : p.hole;
+    const cardsHtml = (cards || []).map(c => renderCard(c, true)).join('');
+    const isDealer = state.dealer === p.name;
+    const nameLabel = p.name === user ? t('you_label') : p.name;
+    return `<div class="seat${isTurn ? ' turn' : ''}${p.folded ? ' folded' : ''}${p.name === user ? ' me' : ''}" style="left:${pos.x}px;top:${pos.y}px;">
+      <div class="seat-box">
+        ${isDealer ? '<div class="dealer-btn">D</div>' : ''}
+        <div class="seat-avatar">${p.token || '🎩'}</div>
+        <div class="seat-name">${nameLabel}</div>
+        <div class="seat-stack">💰 ${p.stack}</div>
+        <div class="seat-cards">${cardsHtml}</div>
+        ${p.bet > 0 ? `<div class="seat-bet">${p.bet}</div>` : ''}
+        ${p.allIn ? '<div class="seat-bet">ALL-IN</div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const me = players.find(p => p.name === user);
+  const myTurn = state.turn === user;
+  document.getElementById('turnIndicator').textContent = myTurn ? t('turn_mine') : (state.turn ? t('turn_other', {name: state.turn}) : '');
+  document.getElementById('actionBar').style.display = myTurn ? 'flex' : 'none';
+  document.getElementById('nextHandBar').style.display = (state.stage === 'showdown' || state.stage === 'waiting') ? 'flex' : 'none';
+  document.getElementById('actionLog').textContent = state.log || '';
+
+  if (myTurn && me) {
+    const toCall = state.currentBet - me.bet;
+    const checkCallBtn = document.getElementById('checkCallBtn');
+    if (toCall <= 0) { checkCallBtn.textContent = t('btn_check'); }
+    else { checkCallBtn.textContent = t('btn_call', {amount: Math.min(toCall, me.stack)}); }
+    const raiseInput = document.getElementById('raiseAmount');
+    const minRaise = state.currentBet + state.minRaise;
+    raiseInput.min = minRaise;
+    raiseInput.step = state.smallBlind;
+    if (!raiseInput.value || parseInt(raiseInput.value, 10) < minRaise) raiseInput.value = minRaise;
+    document.getElementById('raiseBtn').disabled = me.stack + me.bet <= state.currentBet;
+  }
+}
+
+socket.on('poker_state', render);
+socket.on('poker_your_hand', (d) => { myHole = d.hole || []; if (lastState) render(lastState); });
+socket.on('poker_error', (d) => {
+  const msg = d.code ? t('err_' + d.code) : t('err_generic');
+  document.getElementById('errorMsg').textContent = msg;
+  alert(t('alert_prefix') + msg);
+});
+</script>
+
+</body>
+</html>
