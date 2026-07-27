@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools
 try:
     import psycopg2
 except Exception:
@@ -1884,7 +1884,7 @@ html,body{margin:0;width:100%;min-height:100%;font-family:Arial,Helvetica,sans-s
   <section id="gamesPanel" class="gamesPanel">
     <div class="panelTitle">🎮 <span data-i18n="games">OYUNLAR</span></div>
     <div class="gameGrid">
-      <a href="/codenames">👑 Codenames VIP</a><a href="/coming-soon/Poker">♠️ Poker</a>
+      <a href="/codenames">👑 Codenames VIP</a><a href="/poker">♠️ Poker</a>
       <a href="/coming-soon/Tavla">🎲 Tavla</a><a href="/coming-soon/Okey">🀄 Okey</a>
       <a href="/coming-soon/101">💎 101</a><a href="/monopoly">🏙️ Metropoly</a>
       <a href="/coming-soon/Ludo">🔴 Ludo</a><a href="/coming-soon/Bowling">🎳 Bowling</a>
@@ -5993,6 +5993,359 @@ def monopoly_add_hotel(data):
     emit("monopoly_room_state",m_public(r),room=c)
 
 
+# =========================
+# POKER (Texas Hold'em, table verte)
+# =========================
+POKER_ROOMS={}
+POKER_RANKS="23456789TJQKA"
+POKER_SUITS="SHDC"
+
+def poker_make_deck():
+    deck=[r+s for r in POKER_RANKS for s in POKER_SUITS]
+    random.shuffle(deck)
+    return deck
+
+def poker_card_rank(c):
+    return POKER_RANKS.index(c[0])+2
+
+def poker_eval5(cards):
+    ranks=sorted([poker_card_rank(c) for c in cards],reverse=True)
+    suits=[c[1] for c in cards]
+    is_flush=len(set(suits))==1
+    counts={}
+    for r in ranks: counts[r]=counts.get(r,0)+1
+    uniq=sorted(set(ranks),reverse=True)
+    is_straight=False; straight_high=None
+    for i in range(len(uniq)-4+1):
+        window=uniq[i:i+5]
+        if len(window)==5 and window[0]-window[4]==4:
+            is_straight=True; straight_high=window[0]; break
+    if not is_straight and {14,5,4,3,2}.issubset(set(uniq)):
+        is_straight=True; straight_high=5
+    if is_straight and is_flush:
+        return (8,straight_high)
+    counts_sorted=sorted(counts.items(),key=lambda x:(-x[1],-x[0]))
+    countvals=[v for _,v in counts_sorted]
+    if countvals[0]==4:
+        four=counts_sorted[0][0]; kicker=max(r for r in ranks if r!=four)
+        return (7,four,kicker)
+    if countvals[0]==3 and len(counts_sorted)>1 and counts_sorted[1][1]>=2:
+        return (6,counts_sorted[0][0],counts_sorted[1][0])
+    if is_flush:
+        return (5,)+tuple(ranks[:5])
+    if is_straight:
+        return (4,straight_high)
+    if countvals[0]==3:
+        three=counts_sorted[0][0]; kickers=sorted([r for r in ranks if r!=three],reverse=True)[:2]
+        return (3,three)+tuple(kickers)
+    if countvals[0]==2 and len(counts_sorted)>1 and counts_sorted[1][1]==2:
+        p1,p2=sorted([counts_sorted[0][0],counts_sorted[1][0]],reverse=True)
+        kicker=max(r for r in ranks if r!=p1 and r!=p2)
+        return (2,p1,p2,kicker)
+    if countvals[0]==2:
+        pair=counts_sorted[0][0]; kickers=sorted([r for r in ranks if r!=pair],reverse=True)[:3]
+        return (1,pair)+tuple(kickers)
+    return (0,)+tuple(ranks[:5])
+
+def poker_best_hand(cards7):
+    best=None
+    for combo in itertools.combinations(cards7,5):
+        score=poker_eval5(list(combo))
+        if best is None or score>best: best=score
+    return best
+
+def poker_code():
+    while True:
+        c="PK-"+"".join(random.choices(string.digits,k=4))
+        if c not in POKER_ROOMS:
+            return c
+
+def poker_new_room(code,owner,buyIn,sb,bb):
+    return {"code":code,"owner":owner,"buyIn":buyIn,"smallBlind":sb,"bigBlind":bb,"started":False,
+            "players":{},"seatOrder":[],"order":[],"actIdx":None,"toAct":set(),"dealerIndex":0,"handNo":0,
+            "stage":"waiting","community":[],"deck":[],"pot":0,"currentBet":0,"minRaise":bb,"log":"Table prête."}
+
+def poker_active_seated(r):
+    return [u for u in r["seatOrder"] if r["players"][u]["stack"]>0]
+
+def poker_next_actor(r,fromIdx):
+    n=len(r["order"])
+    if n==0: return None
+    i=fromIdx
+    for _ in range(n):
+        i=(i+1)%n
+        u=r["order"][i]; p=r["players"][u]
+        if not p["folded"] and not p.get("allIn"):
+            return i
+    return None
+
+def poker_deal_community(r,n):
+    for _ in range(n):
+        r["community"].append(r["deck"].pop())
+
+def poker_award_pot_single(r,winner):
+    r["players"][winner]["stack"]+=r["pot"]
+    r["log"]=f"{winner} remporte le pot ({r['pot']} jetons), tous les autres se sont couchés."
+    r["pot"]=0
+    r["stage"]="showdown"
+    r["actIdx"]=None
+
+def poker_distribute_pot(r,handOrder):
+    contenders=[u for u in handOrder if not r["players"][u]["folded"]]
+    if len(contenders)==1:
+        poker_award_pot_single(r,contenders[0])
+        return
+    scores={u:poker_best_hand(r["players"][u]["hole"]+r["community"]) for u in contenders}
+    contributions={u:r["players"][u]["totalBet"] for u in handOrder}
+    levels=sorted(set(v for v in contributions.values() if v>0))
+    prev=0; winners_log=[]
+    for lvl in levels:
+        payers=[u for u,c in contributions.items() if c>=lvl]
+        tier=(lvl-prev)*len(payers)
+        elig=[u for u in payers if u in contenders]
+        if elig and tier>0:
+            best=max(scores[u] for u in elig)
+            tier_winners=[u for u in elig if scores[u]==best]
+            share=tier//len(tier_winners); rem=tier%len(tier_winners)
+            for i,u in enumerate(tier_winners):
+                gain=share+(1 if i<rem else 0)
+                r["players"][u]["stack"]+=gain
+                winners_log.append(f"{u}:+{gain}")
+        prev=lvl
+    r["pot"]=0; r["stage"]="showdown"; r["actIdx"]=None
+    r["log"]="Abattage — "+", ".join(winners_log) if winners_log else "Abattage."
+
+def poker_advance_stage(r,handOrder):
+    not_folded=[u for u in handOrder if not r["players"][u]["folded"]]
+    if len(not_folded)==1:
+        poker_award_pot_single(r,not_folded[0]); return
+    can_act=[u for u in not_folded if not r["players"][u].get("allIn")]
+    if r["stage"]=="preflop":
+        poker_deal_community(r,3); r["stage"]="flop"
+    elif r["stage"]=="flop":
+        poker_deal_community(r,1); r["stage"]="turn"
+    elif r["stage"]=="turn":
+        poker_deal_community(r,1); r["stage"]="river"
+    elif r["stage"]=="river":
+        poker_distribute_pot(r,handOrder); return
+    for u in handOrder: r["players"][u]["bet"]=0
+    r["currentBet"]=0; r["minRaise"]=r["bigBlind"]
+    if len(can_act)<=1:
+        poker_advance_stage(r,handOrder); return
+    r["toAct"]=set(can_act)
+    r["actIdx"]=poker_next_actor(r,-1)
+
+def poker_start_new_hand(r):
+    handOrder=poker_active_seated(r)
+    if len(handOrder)<2:
+        r["stage"]="waiting"; r["order"]=[]; r["actIdx"]=None; r["log"]="En attente de joueurs (min. 2)."
+        return
+    r["handNo"]=r.get("handNo",0)+1
+    dealerIdx=(r["handNo"]-1)%len(handOrder)
+    order=handOrder[dealerIdx:]+handOrder[:dealerIdx]
+    deck=poker_make_deck()
+    for u in handOrder:
+        p=r["players"][u]
+        p["hole"]=[deck.pop(),deck.pop()]; p["bet"]=0; p["totalBet"]=0; p["folded"]=False; p["allIn"]=False
+    r["deck"]=deck; r["community"]=[]; r["pot"]=0; r["order"]=order; r["stage"]="preflop"
+    n=len(order)
+    sbIdx,bbIdx=(0,1) if n==2 else (1,2)
+    sbIdx%=n; bbIdx%=n
+    sbUser=order[sbIdx]; bbUser=order[bbIdx]
+    for user,blind in ((sbUser,r["smallBlind"]),(bbUser,r["bigBlind"])):
+        p=r["players"][user]; pay=min(blind,p["stack"])
+        p["stack"]-=pay; p["bet"]+=pay; p["totalBet"]+=pay; r["pot"]+=pay
+        if p["stack"]==0: p["allIn"]=True
+    r["currentBet"]=r["bigBlind"]; r["minRaise"]=r["bigBlind"]
+    r["toAct"]=set(u for u in handOrder if not r["players"][u].get("allIn"))
+    r["actIdx"]=poker_next_actor(r,bbIdx)
+    r["log"]=f"Main #{r['handNo']} — {sbUser} mise SB {r['smallBlind']}, {bbUser} mise BB {r['bigBlind']}."
+    if r["actIdx"] is None:
+        poker_advance_stage(r,handOrder)
+
+def poker_public(r):
+    handOrder=poker_active_seated(r) if r["stage"]=="waiting" else list(r.get("order") or [])
+    showdown=r["stage"]=="showdown"
+    players=[]
+    for u in r["seatOrder"]:
+        p=r["players"][u]
+        inHand=u in r.get("order",[])
+        hole=p.get("hole") or []
+        show=showdown and inHand and not p["folded"]
+        players.append({"name":u,"token":p.get("token","🂠"),"stack":p["stack"],"bet":p["bet"],
+                         "totalBet":p.get("totalBet",0),"folded":p["folded"] if inHand else False,
+                         "allIn":p.get("allIn",False),"inHand":inHand,
+                         "hole":hole if show else (["??","??"] if (inHand and hole) else [])})
+    turnUser=None
+    if r.get("order") and r["actIdx"] is not None and r["stage"] not in ("waiting","showdown"):
+        turnUser=r["order"][r["actIdx"]]
+    return {"code":r["code"],"started":r["started"],"stage":r["stage"],"community":r["community"],
+            "pot":r["pot"],"currentBet":r["currentBet"],"minRaise":r["minRaise"],"smallBlind":r["smallBlind"],
+            "bigBlind":r["bigBlind"],"buyIn":r["buyIn"],
+            "dealer":r["order"][0] if r.get("order") else None,"turn":turnUser,
+            "players":players,"log":r["log"],"handNo":r.get("handNo",0),"owner":r["owner"]}
+
+def poker_broadcast(r):
+    for u,p in r["players"].items():
+        if p.get("sid"):
+            emit("poker_your_hand",{"hole":p.get("hole") or []},room=p["sid"])
+    emit("poker_state",poker_public(r),room=r["code"])
+
+def poker_take_chips(username,amount):
+    users=load_users()
+    key=find_user_key(users,username)
+    if not key:
+        ensure_user_account(username); users=load_users(); key=find_user_key(users,username)
+    if not key: return None
+    chips=int(users[key].get("chips",1000))
+    if chips<amount: return False
+    users[key]["chips"]=chips-amount; save_users(users)
+    return True
+
+def poker_give_chips(username,amount):
+    if amount<=0: return
+    users=load_users()
+    key=find_user_key(users,username)
+    if not key: return
+    users[key]["chips"]=int(users[key].get("chips",1000))+amount
+    save_users(users)
+
+@socketio.on("poker_create_room")
+def poker_create_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","🂠")
+    buyIn=max(50,int((data or {}).get("buyIn",500) or 500))
+    sb=max(1,int((data or {}).get("smallBlind",10) or 10)); bb=sb*2
+    ok=poker_take_chips(u,buyIn)
+    if not ok:
+        emit("poker_error",{"code":"not_enough_chips"}); return
+    code=poker_code(); r=poker_new_room(code,u,buyIn,sb,bb); POKER_ROOMS[code]=r; join_room(code)
+    r["players"][u]={"name":u,"token":t,"sid":request.sid,"stack":buyIn,"hole":[],"bet":0,"totalBet":0,"folded":False,"allIn":False}
+    r["seatOrder"].append(u)
+    r["log"]=u+" a créé la table."
+    poker_broadcast(r)
+
+@socketio.on("poker_join_room")
+def poker_join_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","🂠")
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=POKER_ROOMS.get(code)
+    if not r: emit("poker_error",{"code":"room_not_found"}); return
+    if u not in r["players"] and len(r["seatOrder"])>=8:
+        emit("poker_error",{"code":"table_full"}); return
+    join_room(code)
+    if u in r["players"]:
+        r["players"][u]["sid"]=request.sid
+    else:
+        ok=poker_take_chips(u,r["buyIn"])
+        if not ok:
+            emit("poker_error",{"code":"not_enough_chips"}); return
+        r["players"][u]={"name":u,"token":t,"sid":request.sid,"stack":r["buyIn"],"hole":[],"bet":0,"totalBet":0,"folded":False,"allIn":False}
+        r["seatOrder"].append(u)
+    r["log"]=u+" a rejoint la table."
+    poker_broadcast(r)
+
+@socketio.on("poker_leave_room")
+def poker_leave_room(data):
+    u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
+    r=POKER_ROOMS.get(code)
+    if not r or u not in r["players"]: return
+    stack=r["players"][u]["stack"]
+    mid_hand=u in r.get("order",[]) and r["stage"] not in ("waiting","showdown")
+    if mid_hand:
+        r["players"][u]["folded"]=True
+        r["toAct"].discard(u)
+        handOrder=list(r["order"])
+        not_folded=[x for x in handOrder if not r["players"][x]["folded"]]
+        if len(not_folded)==1:
+            poker_award_pot_single(r,not_folded[0])
+        elif not r["toAct"]:
+            poker_advance_stage(r,handOrder)
+        elif r["order"][r["actIdx"]]==u:
+            r["actIdx"]=poker_next_actor(r,r["actIdx"])
+            if r["actIdx"] is None:
+                poker_advance_stage(r,handOrder)
+    poker_give_chips(u,stack)
+    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+    if mid_hand:
+        r["players"][u]["stack"]=0
+    else:
+        del r["players"][u]
+    r["log"]=u+" a quitté la table."
+    if not r["players"]:
+        del POKER_ROOMS[code]; return
+    poker_broadcast(r)
+
+@socketio.on("poker_start_game")
+def poker_start_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=POKER_ROOMS.get(code)
+    if not r or len(r["seatOrder"])<2: emit("poker_error",{"code":"need_players"}); return
+    r["started"]=True
+    poker_start_new_hand(r)
+    poker_broadcast(r)
+
+@socketio.on("poker_next_hand")
+def poker_next_hand(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=POKER_ROOMS.get(code)
+    if not r or not r["started"]: return
+    if r["stage"] not in ("showdown","waiting"): return
+    poker_start_new_hand(r)
+    poker_broadcast(r)
+
+@socketio.on("poker_action")
+def poker_action(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    action=(data or {}).get("action",""); amount=int((data or {}).get("amount",0) or 0)
+    r=POKER_ROOMS.get(code)
+    if not r or not r.get("order") or u not in r["players"]: return
+    if r["stage"] in ("waiting","showdown"): return
+    n=len(r["order"])
+    if r["order"][r["actIdx"]]!=u: emit("poker_error",{"code":"not_your_turn"}); return
+    p=r["players"][u]
+    if action=="fold":
+        p["folded"]=True; r["toAct"].discard(u)
+        r["log"]=u+" se couche."
+    elif action=="check":
+        if p["bet"]!=r["currentBet"]: emit("poker_error",{"code":"cannot_check"}); return
+        r["toAct"].discard(u); r["log"]=u+" checke."
+    elif action=="call":
+        pay=min(r["currentBet"]-p["bet"],p["stack"])
+        p["stack"]-=pay; p["bet"]+=pay; p["totalBet"]+=pay; r["pot"]+=pay
+        if p["stack"]==0: p["allIn"]=True
+        r["toAct"].discard(u); r["log"]=f"{u} suit ({pay})."
+    elif action in ("raise","bet","allin"):
+        if action=="allin":
+            raiseTo=p["bet"]+p["stack"]
+        else:
+            raiseTo=max(amount,r["currentBet"]+r["minRaise"])
+        pay=min(raiseTo-p["bet"],p["stack"])
+        if pay<=0: emit("poker_error",{"code":"invalid_raise"}); return
+        newBet=p["bet"]+pay
+        p["stack"]-=pay; p["bet"]=newBet; p["totalBet"]+=pay; r["pot"]+=pay
+        if p["stack"]==0: p["allIn"]=True
+        raiseAmount=newBet-r["currentBet"]
+        if newBet>r["currentBet"]:
+            if raiseAmount>=r["minRaise"] or p["allIn"]:
+                r["minRaise"]=max(r["minRaise"],raiseAmount)
+            r["currentBet"]=newBet
+            r["toAct"]=set(x for x in r["order"] if not r["players"][x]["folded"] and not r["players"][x].get("allIn") and x!=u)
+        else:
+            r["toAct"].discard(u)
+        r["log"]=f"{u} relance à {newBet}." if newBet>0 else f"{u} mise."
+    else:
+        return
+    handOrder=[x for x in r["order"]]
+    not_folded=[x for x in handOrder if not r["players"][x]["folded"]]
+    if len(not_folded)==1:
+        poker_award_pot_single(r,not_folded[0])
+    elif not r["toAct"]:
+        poker_advance_stage(r,handOrder)
+    else:
+        r["actIdx"]=poker_next_actor(r,r["actIdx"])
+        if r["actIdx"] is None:
+            poker_advance_stage(r,handOrder)
+    poker_broadcast(r)
 
 
 
@@ -6043,7 +6396,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <div class="grid">
 <a class="card" href="/codenames">🎯 Codenames VIP</a>
 <a class="card" href="/metropoly">🏛️ Metropoly Luxe</a>
-<a class="card" href="/coming-soon/poker">♠ Poker</a>
+<a class="card" href="/poker">♠ Poker</a>
 <a class="card" href="/coming-soon/tavla">🎲 Tavla</a>
 <a class="card" href="/coming-soon/okey">🀄 Okey</a>
 <a class="card" href="/coming-soon/101">💯 101</a>
@@ -6064,6 +6417,10 @@ applyCommonI18n();
 @app.route("/monopoly", endpoint="force_monopoly_alias_to_metropoly")
 def force_metropoly_3d():
     return render_template("metropoly.html", cells=METROPOLY_CELLS)
+
+@app.route("/poker")
+def poker_page():
+    return render_template("poker.html")
 
 
 # =========================
