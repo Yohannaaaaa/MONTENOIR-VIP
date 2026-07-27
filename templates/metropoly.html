@@ -309,6 +309,13 @@ function updateTurnUI(state) {
 }
 
 const BUILD_COSTS = [50, 50, 50, 50, 100];
+const GROUP_LABELS = { green: 'vert', brown: 'marron', orange: 'orange', purple: 'violet', yellow: 'jaune', blue: 'bleu', red: 'rouge' };
+
+function ownsFullGroup(state, grp, username) {
+  const owners = state.owners || {};
+  const cells = CELLS.map((c, i) => ({c, i})).filter(x => x.c[1] === 'property' && x.c[4] === grp).map(x => x.i);
+  return cells.length > 0 && cells.every(i => owners[i] === username);
+}
 
 function renderBuildToolbar(state) {
   const toolbar = document.getElementById('buildToolbar');
@@ -322,11 +329,14 @@ function renderBuildToolbar(state) {
   const houses = (state.houses && state.houses[idx]) || 0;
   const hotel = state.hotels && state.hotels[idx];
   const color = GROUP_COLORS[grp] || '#d4af37';
-  document.getElementById('buildToolbarTitle').textContent = `🏗️ Construire sur ${name}`;
+  const hasMonopoly = ownsFullGroup(state, grp, user);
+  document.getElementById('buildToolbarTitle').textContent = hasMonopoly
+    ? `🏗️ Construire sur ${name}`
+    : `🔒 Possède toutes les propriétés ${GROUP_LABELS[grp] || grp} pour construire sur ${name}`;
   const levelsHtml = [0, 1, 2, 3, 4].map(i => {
     const isHotel = i === 4;
     const done = isHotel ? !!hotel : houses > i;
-    const active = !hotel && (isHotel ? houses >= 4 : houses === i);
+    const active = hasMonopoly && !hotel && (isHotel ? houses >= 4 : houses === i);
     const icon = isHotel ? '/static/hotel_gold.png' : houseIcon(grp);
     const filterStyle = isHotel ? '' : houseFilterStyle(grp);
     const label = isHotel ? 'HÔTEL' : `${i + 1} MAISON${i > 0 ? 'S' : ''}`;
