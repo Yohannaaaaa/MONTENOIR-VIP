@@ -45,8 +45,9 @@
 
   .board-wrap { padding: 6px 0 26px; position: relative; }
   .board-wrap::before { content: ''; position: absolute; left: 8%; right: 8%; bottom: 6px; height: 26px; background: radial-gradient(ellipse, rgba(0,0,0,.65), transparent 75%); z-index: -1; }
-  .board { display: flex; flex-direction: column; gap: 8px; background: linear-gradient(160deg, #4a2f15, #2e1c0b 60%, #3a2410); border: 8px solid #1a1006; border-radius: 10px; padding: 12px; box-shadow: 0 4px 0 #241606, 0 22px 45px rgba(0,0,0,.8), inset 0 2px 4px rgba(255,220,150,.15); }
-  .board-row { display: flex; gap: 3px; height: 160px; }
+  .board-wrap::after { content: ''; position: absolute; top: -50px; left: 50%; width: 560px; max-width: 90vw; height: 260px; transform: translateX(-50%); background: radial-gradient(ellipse at center, rgba(255,225,160,.14), transparent 72%); pointer-events: none; z-index: -1; }
+  .board { display: flex; flex-direction: column; gap: 8px; background: linear-gradient(160deg, #4a2f15, #2e1c0b 60%, #3a2410); border: 8px solid #1a1006; border-radius: 10px; padding: 12px; box-shadow: 0 4px 0 #241606, 0 22px 45px rgba(0,0,0,.8), inset 0 2px 4px rgba(255,220,150,.15), inset 0 0 0 3px rgba(212,175,55,.55); }
+  .board-row { display: flex; gap: 3px; height: 160px; background: linear-gradient(180deg, #6b4a1e, #4a3013); border-radius: 3px; }
   .point { flex: 1; position: relative; display: flex; align-items: center; }
   .point.top { flex-direction: column; justify-content: flex-start; }
   .point.bottom { flex-direction: column-reverse; justify-content: flex-start; }
@@ -57,18 +58,19 @@
   .point.dark .triangle { background: linear-gradient(180deg, #90593a, #7a4a25 55%, #5e3618); }
   .point.highlight { cursor: pointer; }
   .point.highlight .triangle { box-shadow: inset 0 0 0 3px #3a9d6d; }
-  .bar-gap { width: 24px; background: #241608; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6px 0; cursor: default; }
+  .bar-gap { width: 24px; background: linear-gradient(180deg, #3a2410, #150d05); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6px 0; cursor: default; position: relative; }
+  .bar-gap::before { content: ''; position: absolute; top: 4px; bottom: 4px; left: 50%; width: 2px; background: linear-gradient(180deg, rgba(212,175,55,.75), rgba(212,175,55,.1)); transform: translateX(-50%); }
   .bar-gap.highlight { box-shadow: inset 0 0 0 3px #3a9d6d; cursor: pointer; }
-  .bar-half { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .checker { width: 26px; height: 26px; border-radius: 50%; z-index: 1; box-shadow: 0 4px 8px rgba(0,0,0,.7), inset 0 -3px 5px rgba(0,0,0,.35), inset 0 3px 4px rgba(255,255,255,.5); margin-top: -12px; position: relative; }
+  .bar-half { display: flex; flex-direction: column; align-items: center; gap: 2px; z-index: 1; }
+  .checker { width: 28px; height: 28px; border-radius: 50%; z-index: 1; margin-top: -14px; position: relative; box-shadow: 0 5px 10px rgba(0,0,0,.75), inset 0 -4px 6px rgba(0,0,0,.4), inset 0 4px 5px rgba(255,255,255,.5), 0 0 0 2px #8a6c2a, 0 0 0 3px rgba(0,0,0,.5); }
   .checker:first-child { margin-top: 0; }
-  .checker.white { background: radial-gradient(circle at 35% 28%, #fff, #d8d8d8 55%, #aaa); border: 2px solid #888; }
-  .checker.black { background: radial-gradient(circle at 35% 28%, #666, #222 55%, #000); border: 2px solid #000; }
-  .checker .count-badge { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #a83232; }
+  .checker.white { background: radial-gradient(circle at 35% 26%, #fffef6, #e8dcb8 55%, #b89b5e 100%); }
+  .checker.black { background: radial-gradient(circle at 35% 26%, #5a5a5a, #262626 55%, #000 100%); }
+  .checker .count-badge { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   .off-trays { display: flex; justify-content: space-between; margin-top: 8px; width: 100%; max-width: 700px; }
   .off-tray { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: #ffe08a; }
-  .off-checkers { display: flex; flex-wrap: wrap; gap: 2px; max-width: 90px; }
-  .off-checkers .checker { margin-top: 0; width: 16px; height: 16px; }
+  .off-checkers { display: flex; flex-wrap: wrap; gap: 3px; max-width: 100px; min-height: 20px; border: 1px solid rgba(212,175,55,.4); border-radius: 8px; padding: 5px; background: rgba(0,0,0,.3); }
+  .off-checkers .checker { margin-top: 0; width: 16px; height: 16px; box-shadow: 0 2px 4px rgba(0,0,0,.7), 0 0 0 1px #8a6c2a; }
 
   .side-panel { max-width: 960px; margin: 10px auto 0; background: rgba(26,26,26,0.9); border: 2px solid #d4af37; border-radius: 16px; padding: 14px 18px; }
   .turn-indicator { text-align: center; color: #d4af37; font-weight: bold; margin-bottom: 8px; min-height: 20px; }
@@ -82,7 +84,7 @@
     0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
     100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
   }
-  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(160deg,#fff,#e2e2e2); border: 2px solid #2a2a2a; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: inset -3px -3px 7px rgba(0,0,0,.3), inset 3px 3px 8px rgba(255,255,255,.9); }
+  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(160deg,#fffdf5,#f0e6c8 60%,#ddc999); border: 2px solid #8a6c2a; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: inset -3px -3px 7px rgba(0,0,0,.25), inset 3px 3px 8px rgba(255,255,255,.9); }
   .pip-dot { position: absolute; width: 7px; height: 7px; background: radial-gradient(circle at 35% 35%, #333, #000); border-radius: 50%; box-shadow: inset 0 1px 2px rgba(0,0,0,.9); }
   .face-1 { transform: translateZ(26px); }
   .face-2 { transform: rotateY(180deg) translateZ(26px); }
@@ -396,10 +398,20 @@ function renderCheckerStack(idx, count, color) {
   return html;
 }
 
+function diceForSource(src, legalMoves) {
+  return Object.keys(legalMoves || {}).filter(d => (legalMoves[d] || []).includes(src));
+}
+
 function pointClickable(idx, myTurn, legalMoves) {
-  if (!myTurn || armedDie === null) return false;
-  const froms = legalMoves[armedDie] || [];
-  return froms.includes(idx);
+  if (!myTurn) return false;
+  if (armedDie !== null) return (legalMoves[armedDie] || []).includes(idx);
+  return diceForSource(idx, legalMoves).length > 0;
+}
+
+function pickDieFor(src, legalMoves) {
+  if (armedDie !== null && (legalMoves[armedDie] || []).includes(src)) return armedDie;
+  const opts = diceForSource(src, legalMoves);
+  return opts.length ? parseInt(opts[0], 10) : null;
 }
 
 function renderPoint(idx, rowClass, myTurn, legalMoves) {
@@ -452,21 +464,26 @@ function render(state) {
   document.querySelectorAll('.point[data-point-idx]').forEach(el => {
     el.addEventListener('click', () => {
       if (!el.classList.contains('highlight')) return;
-      socket.emit('tavla_move', {code: room, username: user, from: parseInt(el.dataset.pointIdx, 10), die: armedDie});
+      const idx = parseInt(el.dataset.pointIdx, 10);
+      const die = pickDieFor(idx, legalMoves);
+      if (die === null) return;
+      socket.emit('tavla_move', {code: room, username: user, from: idx, die});
       armedDie = null;
     });
   });
 
   const me = state.players.find(p => p.name === user);
   const myColor = me ? me.color : null;
-  const barClickable = myTurn && armedDie !== null && (legalMoves[armedDie] || []).includes('bar');
+  const barClickable = myTurn && (armedDie !== null ? (legalMoves[armedDie] || []).includes('bar') : diceForSource('bar', legalMoves).length > 0);
   document.querySelectorAll('.bar-gap').forEach(el => {
     el.classList.toggle('highlight', barClickable);
   });
   document.querySelectorAll('.bar-gap').forEach(el => {
     el.onclick = () => {
       if (!barClickable) return;
-      socket.emit('tavla_move', {code: room, username: user, from: 'bar', die: armedDie});
+      const die = pickDieFor('bar', legalMoves);
+      if (die === null) return;
+      socket.emit('tavla_move', {code: room, username: user, from: 'bar', die});
       armedDie = null;
     };
   });
