@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tavla VIP</title>
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="/static/js/site_lang.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
+  .screen { display: none; width: 100%; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+  .screen.active { display: flex; }
+  h1 { font-size: 50px; font-weight: bold; color: #d4af37; text-shadow: 0 0 30px rgba(212,175,55,0.8); margin-bottom: 26px; letter-spacing: 6px; text-align: center; }
+  .card-box { background: rgba(26,26,26,0.98); border: 3px solid #d4af37; border-radius: 20px; padding: 40px; max-width: 460px; width: 100%; box-shadow: 0 0 50px rgba(212,175,55,0.4); }
+  .label { display: block; color: #d4af37; font-weight: bold; margin-top: 18px; margin-bottom: 10px; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+  .input { width: 100%; padding: 14px; background: #0a0a0a; border: 2px solid #d4af37; color: #f5e6d3; border-radius: 10px; font-size: 15px; }
+  .input:focus { outline: none; box-shadow: 0 0 20px rgba(212,175,55,0.6); }
+  .avatar-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin: 14px 0; }
+  .avatar-btn { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 3px solid #3a2f1a; transition: all .25s; }
+  .avatar-btn.selected { border-color: #d4af37; box-shadow: 0 0 18px #d4af37; transform: scale(1.08); }
+  .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #d4af37, #a0860d); color: #1a1a1a; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: all .25s; margin-top: 14px; letter-spacing: 1px; text-transform: uppercase; }
+  .btn:hover { transform: scale(1.02); box-shadow: 0 0 25px rgba(212,175,55,0.6); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn.green { background: linear-gradient(135deg, #2d7a56, #1f5a42); color: #fff; }
+  .btn.grey { background: #444; color: #f5e6d3; }
+  .error { color: #ff6b6b; text-align: center; margin-top: 14px; font-size: 14px; min-height: 20px; }
+  .lang-switch { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 480px; }
+  .lang-btn { padding: 7px 12px; background: rgba(40,40,40,0.8); border: 2px solid #d4af37; color: #f5e6d3; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+  .lang-btn.selected { background: #d4af37; color: #1a1a1a; box-shadow: 0 0 15px #d4af37; }
+  .room-code { font-size: 44px; color: #d4af37; font-weight: bold; margin: 26px 0; letter-spacing: 3px; text-shadow: 0 0 20px rgba(212,175,55,0.6); text-align: center; }
+  .players-list { background: rgba(10,10,10,0.8); border: 1px solid #d4af37; border-radius: 10px; padding: 14px; margin: 18px 0; max-height: 220px; overflow-y: auto; min-height: 60px; }
+  .player-item { padding: 9px 4px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 14px; display: flex; justify-content: space-between; }
+  .player-item:last-child { border-bottom: none; }
+
+  #gameScreen { padding: 14px; max-width: 960px; margin: 0 auto; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: #d4af37; }
+  .top-bar button { background: none; border: 1px solid #d4af37; color: #d4af37; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .players-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .player-chip { display: flex; align-items: center; gap: 6px; background: rgba(10,10,10,.8); border: 2px solid #444; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
+  .player-chip.turn { border-color: #d4af37; box-shadow: 0 0 12px rgba(212,175,55,.7); }
+  .swatch { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+  .swatch.white { background: radial-gradient(circle at 35% 30%, #fff, #ccc); border: 1px solid #888; }
+  .swatch.black { background: radial-gradient(circle at 35% 30%, #555, #111); border: 1px solid #000; }
+
+  .board { display: flex; flex-direction: column; gap: 8px; background: #3a2410; border: 8px solid #1a1006; border-radius: 10px; padding: 12px; box-shadow: 0 15px 40px rgba(0,0,0,.7); }
+  .board-row { display: flex; gap: 3px; height: 160px; }
+  .point { flex: 1; position: relative; display: flex; align-items: center; }
+  .point.top { flex-direction: column; justify-content: flex-start; }
+  .point.bottom { flex-direction: column-reverse; justify-content: flex-start; }
+  .triangle { position: absolute; inset: 0; z-index: 0; }
+  .point.top .triangle { clip-path: polygon(0 0, 100% 0, 50% 100%); }
+  .point.bottom .triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .point.light .triangle { background: #c9a869; }
+  .point.dark .triangle { background: #7a4a25; }
+  .point.highlight { cursor: pointer; }
+  .point.highlight .triangle { box-shadow: inset 0 0 0 3px #3a9d6d; }
+  .bar-gap { width: 24px; background: #241608; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6px 0; cursor: default; }
+  .bar-gap.highlight { box-shadow: inset 0 0 0 3px #3a9d6d; cursor: pointer; }
+  .bar-half { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .checker { width: 26px; height: 26px; border-radius: 50%; z-index: 1; box-shadow: 0 3px 6px rgba(0,0,0,.6); margin-top: -12px; position: relative; }
+  .checker:first-child { margin-top: 0; }
+  .checker.white { background: radial-gradient(circle at 35% 30%, #fff, #ccc); border: 2px solid #888; }
+  .checker.black { background: radial-gradient(circle at 35% 30%, #555, #111); border: 2px solid #000; }
+  .checker .count-badge { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #a83232; }
+  .off-trays { display: flex; justify-content: space-between; margin-top: 8px; width: 100%; max-width: 700px; }
+  .off-tray { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: #ffe08a; }
+  .off-checkers { display: flex; flex-wrap: wrap; gap: 2px; max-width: 90px; }
+  .off-checkers .checker { margin-top: 0; width: 16px; height: 16px; }
+
+  .side-panel { max-width: 960px; margin: 10px auto 0; background: rgba(26,26,26,0.9); border: 2px solid #d4af37; border-radius: 16px; padding: 14px 18px; }
+  .turn-indicator { text-align: center; color: #d4af37; font-weight: bold; margin-bottom: 8px; min-height: 20px; }
+  .dice-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+  .die-chip { width: 46px; height: 46px; background: linear-gradient(160deg,#fff,#e8e8e8); border: 2px solid #333; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #111; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,.6); }
+  .die-chip.armed { border-color: #3a9d6d; box-shadow: 0 0 14px rgba(58,157,109,.9); transform: translateY(-4px); }
+  .action-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
+  .action-bar .btn { width: auto; padding: 10px 20px; margin-top: 0; }
+  .action-log { color: #d4af37; font-size: 12px; text-align: center; margin-top: 10px; min-height: 16px; opacity: .9; }
+  .winner-box { text-align: center; }
+  @media (max-width: 700px) { .board-row { height: 110px; } .checker { width: 20px; height: 20px; margin-top: -9px; } }
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="screen active">
+  <div class="lang-switch" id="langSwitch"></div>
+  <h1>🎲 TAVLA 🎲</h1>
+  <div class="card-box">
+    <label class="label" data-i18n="label_username">🎮 Ton Pseudo</label>
+    <input type="text" id="username" class="input" data-i18n-placeholder="placeholder_username" placeholder="Entre ton nom">
+    <label class="label" data-i18n="label_avatar">🎨 Choisis ton avatar</label>
+    <div class="avatar-grid">
+      <button class="avatar-btn selected" data-avatar="⚪" style="background:#eee;"></button>
+      <button class="avatar-btn" data-avatar="⚫" style="background:#222;"></button>
+      <button class="avatar-btn" data-avatar="🎩" style="background:#8a6a1f;"></button>
+      <button class="avatar-btn" data-avatar="👑" style="background:#d4af37;"></button>
+    </div>
+    <button class="btn" id="createBtn" data-i18n="btn_create">➕ Créer une table</button>
+    <label class="label" data-i18n="label_or_join">OU REJOIGNEZ</label>
+    <input type="text" id="roomCode" class="input" data-i18n-placeholder="placeholder_room_code" placeholder="Code de la table">
+    <button class="btn" id="joinBtn" data-i18n="btn_join">🔗 Rejoindre</button>
+    <div class="error" id="errorMsg"></div>
+  </div>
+</div>
+
+<div id="lobbyScreen" class="screen">
+  <h1 data-i18n="title_lobby">TAVLA</h1>
+  <div class="card-box">
+    <div style="text-align:center;color:#d4af37;margin-bottom:8px;font-weight:bold;" data-i18n="label_room_code">CODE DE LA TABLE</div>
+    <div class="room-code" id="roomCodeDisplay">TAV-XXXX</div>
+    <div style="text-align:center;font-size:13px;color:#f5e6d3;" id="lobbyInfo"></div>
+    <label class="label" data-i18n="label_players">👥 Joueurs (2 max)</label>
+    <div class="players-list" id="lobbyPlayersList"></div>
+    <button class="btn green" id="startBtn" data-i18n="btn_start">🚀 Démarrer la partie</button>
+    <button class="btn grey" id="addBotBtn" data-i18n="btn_add_bot">🤖 Ajouter un bot IA</button>
+    <button class="btn grey" id="leaveLobbyBtn" data-i18n="btn_leave">🚪 Quitter</button>
+  </div>
+</div>
+
+<div id="gameScreen" class="screen">
+  <div class="top-bar">
+    <span id="tableInfo"></span>
+    <button id="leaveTableBtn" data-i18n="btn_leave">🚪 Quitter</button>
+  </div>
+  <div class="players-row" id="playersRow"></div>
+  <div class="board">
+    <div class="board-row" id="topRow"></div>
+    <div class="board-row" id="bottomRow"></div>
+  </div>
+  <div class="off-trays">
+    <div class="off-tray"><span data-i18n="off_white">Sorties blanches</span><div class="off-checkers" id="offWhite"></div></div>
+    <div class="off-tray"><span data-i18n="off_black">Sorties noires</span><div class="off-checkers" id="offBlack"></div></div>
+  </div>
+  <div class="side-panel">
+    <div class="turn-indicator" id="turnIndicator"></div>
+    <div class="dice-row" id="diceRow"></div>
+    <div class="action-bar" id="actionBar">
+      <button class="btn green" id="rollBtn" style="width:auto;" data-i18n="btn_roll">🎲 Lancer</button>
+    </div>
+    <div class="action-bar" id="roundOverBar" style="display:none;">
+      <div class="winner-box">
+        <div id="winnerMsg" style="color:#d4af37;font-weight:bold;margin-bottom:8px;"></div>
+        <button class="btn green" id="nextGameBtn" data-i18n="btn_next_game">▶️ Nouvelle partie</button>
+      </div>
+    </div>
+    <div class="action-log" id="actionLog"></div>
+  </div>
+</div>
+
+<script>
+const socket = io();
+let user = '', avatar = '⚪', room = '', lastState = null, isOwner = false, armedDie = null;
+
+const TOP_ORDER = [12,13,14,15,16,17,18,19,20,21,22,23];
+const BOTTOM_ORDER = [11,10,9,8,7,6,5,4,3,2,1,0];
+
+const I18N = {
+  fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🎨 Choisis ton avatar',
+    btn_create:'➕ Créer une table', label_or_join:'OU REJOIGNEZ', placeholder_room_code:'Code de la table', btn_join:'🔗 Rejoindre',
+    title_lobby:'TAVLA', label_room_code:'CODE DE LA TABLE', label_players:'👥 Joueurs (2 max)',
+    btn_start:'🚀 Démarrer la partie', btn_add_bot:'🤖 Ajouter un bot IA', btn_leave:'🚪 Quitter', btn_roll:'🎲 Lancer', btn_next_game:'▶️ Nouvelle partie',
+    off_white:'Sorties blanches', off_black:'Sorties noires',
+    turn_mine:'✅ À toi de jouer !', turn_other:'⏳ Tour de {name}', roll_hint:'Lance les dés.',
+    move_hint:'Clique un dé puis un pion à déplacer.', win_msg:'{name} a gagné la partie ! 🏆', you_label:'Toi',
+    alert_prefix:'❌ ', err_generic:'Erreur', err_room_not_found:'Table introuvable.', err_table_full:'Table complète (2 joueurs).',
+    err_need_players:'Il faut exactement 2 joueurs.', err_not_your_turn:"Ce n'est pas ton tour.", err_already_rolled:'Tu as déjà lancé les dés.',
+    err_invalid_die:'Dé invalide.', err_invalid_move:'Coup invalide.' },
+  en: { label_username:'🎮 Your Nickname', placeholder_username:'Enter your name', label_avatar:'🎨 Choose your avatar',
+    btn_create:'➕ Create a table', label_or_join:'OR JOIN', placeholder_room_code:'Table code', btn_join:'🔗 Join',
+    title_lobby:'TAVLA', label_room_code:'TABLE CODE', label_players:'👥 Players (max 2)',
+    btn_start:'🚀 Start game', btn_add_bot:'🤖 Add AI bot', btn_leave:'🚪 Leave', btn_roll:'🎲 Roll', btn_next_game:'▶️ New game',
+    off_white:'White borne off', off_black:'Black borne off',
+    turn_mine:'✅ Your turn!', turn_other:"⏳ {name}'s turn", roll_hint:'Roll the dice.',
+    move_hint:'Click a die then a checker to move.', win_msg:'{name} won the game! 🏆', you_label:'You',
+    alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Table not found.', err_table_full:'Table full (2 players).',
+    err_need_players:'Need exactly 2 players.', err_not_your_turn:"It's not your turn.", err_already_rolled:'You already rolled.',
+    err_invalid_die:'Invalid die.', err_invalid_move:'Invalid move.' },
+  es: { label_username:'🎮 Tu Apodo', placeholder_username:'Escribe tu nombre', label_avatar:'🎨 Elige tu avatar',
+    btn_create:'➕ Crear una mesa', label_or_join:'O ÚNETE', placeholder_room_code:'Código de la mesa', btn_join:'🔗 Unirse',
+    title_lobby:'TAVLA', label_room_code:'CÓDIGO DE LA MESA', label_players:'👥 Jugadores (máx 2)',
+    btn_start:'🚀 Empezar partida', btn_add_bot:'🤖 Añadir un bot IA', btn_leave:'🚪 Salir', btn_roll:'🎲 Lanzar', btn_next_game:'▶️ Nueva partida',
+    off_white:'Blancas retiradas', off_black:'Negras retiradas',
+    turn_mine:'✅ ¡Es tu turno!', turn_other:'⏳ Turno de {name}', roll_hint:'Lanza los dados.',
+    move_hint:'Toca un dado y luego una ficha para mover.', win_msg:'¡{name} ganó la partida! 🏆', you_label:'Tú',
+    alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Mesa no encontrada.', err_table_full:'Mesa completa (2 jugadores).',
+    err_need_players:'Se necesitan exactamente 2 jugadores.', err_not_your_turn:'No es tu turno.', err_already_rolled:'Ya lanzaste los dados.',
+    err_invalid_die:'Dado inválido.', err_invalid_move:'Movimiento inválido.' },
+  de: { label_username:'🎮 Dein Spitzname', placeholder_username:'Gib deinen Namen ein', label_avatar:'🎨 Wähle deinen Avatar',
+    btn_create:'➕ Tisch erstellen', label_or_join:'ODER BEITRETEN', placeholder_room_code:'Tischcode', btn_join:'🔗 Beitreten',
+    title_lobby:'TAVLA', label_room_code:'TISCHCODE', label_players:'👥 Spieler (max 2)',
+    btn_start:'🚀 Spiel starten', btn_add_bot:'🤖 KI-Bot hinzufügen', btn_leave:'🚪 Verlassen', btn_roll:'🎲 Würfeln', btn_next_game:'▶️ Neues Spiel',
+    off_white:'Weiß ausgewürfelt', off_black:'Schwarz ausgewürfelt',
+    turn_mine:'✅ Du bist dran!', turn_other:'⏳ {name} ist dran', roll_hint:'Würfle.',
+    move_hint:'Klicke einen Würfel, dann einen Stein zum Ziehen.', win_msg:'{name} hat das Spiel gewonnen! 🏆', you_label:'Du',
+    alert_prefix:'❌ ', err_generic:'Fehler', err_room_not_found:'Tisch nicht gefunden.', err_table_full:'Tisch voll (2 Spieler).',
+    err_need_players:'Es werden genau 2 Spieler benötigt.', err_not_your_turn:'Du bist nicht dran.', err_already_rolled:'Du hast schon gewürfelt.',
+    err_invalid_die:'Ungültiger Würfel.', err_invalid_move:'Ungültiger Zug.' },
+  it: { label_username:'🎮 Il tuo soprannome', placeholder_username:'Inserisci il tuo nome', label_avatar:'🎨 Scegli il tuo avatar',
+    btn_create:'➕ Crea un tavolo', label_or_join:'O UNISCITI', placeholder_room_code:'Codice del tavolo', btn_join:'🔗 Unisciti',
+    title_lobby:'TAVLA', label_room_code:'CODICE DEL TAVOLO', label_players:'👥 Giocatori (max 2)',
+    btn_start:'🚀 Inizia partita', btn_add_bot:'🤖 Aggiungi un bot IA', btn_leave:'🚪 Esci', btn_roll:'🎲 Lancia', btn_next_game:'▶️ Nuova partita',
+    off_white:'Bianche uscite', off_black:'Nere uscite',
+    turn_mine:'✅ Tocca a te!', turn_other:'⏳ Turno di {name}', roll_hint:'Lancia i dadi.',
+    move_hint:'Clicca un dado e poi una pedina da muovere.', win_msg:'{name} ha vinto la partita! 🏆', you_label:'Tu',
+    alert_prefix:'❌ ', err_generic:'Errore', err_room_not_found:'Tavolo non trovato.', err_table_full:'Tavolo pieno (2 giocatori).',
+    err_need_players:'Servono esattamente 2 giocatori.', err_not_your_turn:'Non è il tuo turno.', err_already_rolled:'Hai già lanciato i dadi.',
+    err_invalid_die:'Dado non valido.', err_invalid_move:'Mossa non valida.' },
+  nl: { label_username:'🎮 Jouw Bijnaam', placeholder_username:'Voer je naam in', label_avatar:'🎨 Kies je avatar',
+    btn_create:'➕ Tafel aanmaken', label_or_join:'OF DOE MEE', placeholder_room_code:'Tafelcode', btn_join:'🔗 Meedoen',
+    title_lobby:'TAVLA', label_room_code:'TAFELCODE', label_players:'👥 Spelers (max 2)',
+    btn_start:'🚀 Spel starten', btn_add_bot:'🤖 AI-bot toevoegen', btn_leave:'🚪 Verlaten', btn_roll:'🎲 Gooien', btn_next_game:'▶️ Nieuw spel',
+    off_white:'Wit eruit', off_black:'Zwart eruit',
+    turn_mine:'✅ Jij bent aan de beurt!', turn_other:'⏳ Beurt van {name}', roll_hint:'Gooi de dobbelstenen.',
+    move_hint:'Klik een dobbelsteen en dan een steen om te verplaatsen.', win_msg:'{name} heeft het spel gewonnen! 🏆', you_label:'Jij',
+    alert_prefix:'❌ ', err_generic:'Fout', err_room_not_found:'Tafel niet gevonden.', err_table_full:'Tafel vol (2 spelers).',
+    err_need_players:'Precies 2 spelers nodig.', err_not_your_turn:'Jij bent niet aan de beurt.', err_already_rolled:'Je hebt al gegooid.',
+    err_invalid_die:'Ongeldige dobbelsteen.', err_invalid_move:'Ongeldige zet.' },
+  ru: { label_username:'🎮 Твой ник', placeholder_username:'Введите ваше имя', label_avatar:'🎨 Выберите аватар',
+    btn_create:'➕ Создать стол', label_or_join:'ИЛИ ПРИСОЕДИНИТЬСЯ', placeholder_room_code:'Код стола', btn_join:'🔗 Присоединиться',
+    title_lobby:'НАРДЫ', label_room_code:'КОД СТОЛА', label_players:'👥 Игроки (макс 2)',
+    btn_start:'🚀 Начать игру', btn_add_bot:'🤖 Добавить ИИ-бота', btn_leave:'🚪 Выйти', btn_roll:'🎲 Бросить', btn_next_game:'▶️ Новая игра',
+    off_white:'Белые вышли', off_black:'Чёрные вышли',
+    turn_mine:'✅ Твой ход!', turn_other:'⏳ Ход игрока {name}', roll_hint:'Брось кости.',
+    move_hint:'Кликни кость, затем шашку для хода.', win_msg:'{name} выиграл партию! 🏆', you_label:'Ты',
+    alert_prefix:'❌ ', err_generic:'Ошибка', err_room_not_found:'Стол не найден.', err_table_full:'Стол заполнен (2 игрока).',
+    err_need_players:'Нужно ровно 2 игрока.', err_not_your_turn:'Сейчас не твой ход.', err_already_rolled:'Ты уже бросил кости.',
+    err_invalid_die:'Неверная кость.', err_invalid_move:'Недопустимый ход.' },
+  ar: { label_username:'🎮 اسمك المستعار', placeholder_username:'أدخل اسمك', label_avatar:'🎨 اختر صورتك الرمزية',
+    btn_create:'➕ إنشاء طاولة', label_or_join:'أو انضم', placeholder_room_code:'رمز الطاولة', btn_join:'🔗 انضمام',
+    title_lobby:'الطاولة', label_room_code:'رمز الطاولة', label_players:'👥 اللاعبون (٢ كحد أقصى)',
+    btn_start:'🚀 ابدأ اللعبة', btn_add_bot:'🤖 إضافة بوت ذكاء اصطناعي', btn_leave:'🚪 مغادرة', btn_roll:'🎲 ارمِ', btn_next_game:'▶️ لعبة جديدة',
+    off_white:'الأبيض خارج', off_black:'الأسود خارج',
+    turn_mine:'✅ دورك الآن!', turn_other:'⏳ دور {name}', roll_hint:'ارمِ النرد.',
+    move_hint:'انقر على نرد ثم على قطعة لتحريكها.', win_msg:'فاز {name} بالمباراة! 🏆', you_label:'أنت',
+    alert_prefix:'❌ ', err_generic:'خطأ', err_room_not_found:'الطاولة غير موجودة.', err_table_full:'الطاولة ممتلئة (لاعبان).',
+    err_need_players:'يلزم لاعبان بالضبط.', err_not_your_turn:'ليس دورك.', err_already_rolled:'لقد رميت النرد بالفعل.',
+    err_invalid_die:'نرد غير صالح.', err_invalid_move:'حركة غير صالحة.' },
+  pt: { label_username:'🎮 Seu Apelido', placeholder_username:'Digite seu nome', label_avatar:'🎨 Escolha seu avatar',
+    btn_create:'➕ Criar uma mesa', label_or_join:'OU ENTRAR', placeholder_room_code:'Código da mesa', btn_join:'🔗 Entrar',
+    title_lobby:'GAMÃO', label_room_code:'CÓDIGO DA MESA', label_players:'👥 Jogadores (máx 2)',
+    btn_start:'🚀 Iniciar jogo', btn_add_bot:'🤖 Adicionar bot de IA', btn_leave:'🚪 Sair', btn_roll:'🎲 Lançar', btn_next_game:'▶️ Novo jogo',
+    off_white:'Brancas retiradas', off_black:'Pretas retiradas',
+    turn_mine:'✅ É a sua vez!', turn_other:'⏳ Vez de {name}', roll_hint:'Lance os dados.',
+    move_hint:'Clique num dado e depois numa peça para mover.', win_msg:'{name} venceu o jogo! 🏆', you_label:'Você',
+    alert_prefix:'❌ ', err_generic:'Erro', err_room_not_found:'Mesa não encontrada.', err_table_full:'Mesa cheia (2 jogadores).',
+    err_need_players:'É necessário exatamente 2 jogadores.', err_not_your_turn:'Não é a sua vez.', err_already_rolled:'Você já lançou os dados.',
+    err_invalid_die:'Dado inválido.', err_invalid_move:'Movimento inválido.' },
+  pl: { label_username:'🎮 Twój Pseudonim', placeholder_username:'Wpisz swoje imię', label_avatar:'🎨 Wybierz awatar',
+    btn_create:'➕ Utwórz stół', label_or_join:'LUB DOŁĄCZ', placeholder_room_code:'Kod stołu', btn_join:'🔗 Dołącz',
+    title_lobby:'TAVLA', label_room_code:'KOD STOŁU', label_players:'👥 Gracze (maks 2)',
+    btn_start:'🚀 Rozpocznij grę', btn_add_bot:'🤖 Dodaj bota AI', btn_leave:'🚪 Opuść', btn_roll:'🎲 Rzuć', btn_next_game:'▶️ Nowa gra',
+    off_white:'Białe zebrane', off_black:'Czarne zebrane',
+    turn_mine:'✅ Twoja kolej!', turn_other:'⏳ Kolej gracza {name}', roll_hint:'Rzuć kośćmi.',
+    move_hint:'Kliknij kostkę, a potem pionek do ruchu.', win_msg:'{name} wygrał grę! 🏆', you_label:'Ty',
+    alert_prefix:'❌ ', err_generic:'Błąd', err_room_not_found:'Nie znaleziono stołu.', err_table_full:'Stół pełny (2 graczy).',
+    err_need_players:'Potrzeba dokładnie 2 graczy.', err_not_your_turn:'To nie twoja kolej.', err_already_rolled:'Już rzuciłeś kośćmi.',
+    err_invalid_die:'Nieprawidłowa kostka.', err_invalid_move:'Nieprawidłowy ruch.' },
+  tr: { label_username:'🎮 Takma Adın', placeholder_username:'Adını gir', label_avatar:'🎨 Avatarını seç',
+    btn_create:'➕ Masa kur', label_or_join:'YA DA KATIL', placeholder_room_code:'Masa kodu', btn_join:'🔗 Katıl',
+    title_lobby:'TAVLA', label_room_code:'MASA KODU', label_players:'👥 Oyuncular (maks 2)',
+    btn_start:'🚀 Oyunu başlat', btn_add_bot:'🤖 Yapay zeka botu ekle', btn_leave:'🚪 Ayrıl', btn_roll:'🎲 Zar at', btn_next_game:'▶️ Yeni oyun',
+    off_white:'Beyaz çıkanlar', off_black:'Siyah çıkanlar',
+    turn_mine:'✅ Sıra sende!', turn_other:'⏳ Sıra: {name}', roll_hint:'Zar at.',
+    move_hint:'Bir zar seç, sonra oynatacağın pulu tıkla.', win_msg:'{name} oyunu kazandı! 🏆', you_label:'Sen',
+    alert_prefix:'❌ ', err_generic:'Hata', err_room_not_found:'Masa bulunamadı.', err_table_full:'Masa dolu (2 oyuncu).',
+    err_need_players:'Tam olarak 2 oyuncu gerekli.', err_not_your_turn:'Sıra sende değil.', err_already_rolled:'Zaten zar attın.',
+    err_invalid_die:'Geçersiz zar.', err_invalid_move:'Geçersiz hamle.' },
+  ja: { label_username:'🎮 ニックネーム', placeholder_username:'名前を入力', label_avatar:'🎨 アバターを選択',
+    btn_create:'➕ テーブルを作成', label_or_join:'または参加', placeholder_room_code:'テーブルコード', btn_join:'🔗 参加',
+    title_lobby:'バックギャモン', label_room_code:'テーブルコード', label_players:'👥 プレイヤー（最大2人）',
+    btn_start:'🚀 ゲーム開始', btn_add_bot:'🤖 AIボットを追加', btn_leave:'🚪 退出', btn_roll:'🎲 振る', btn_next_game:'▶️ 新しいゲーム',
+    off_white:'白の上がり', off_black:'黒の上がり',
+    turn_mine:'✅ あなたの番です！', turn_other:'⏳ {name}の番', roll_hint:'サイコロを振ってください。',
+    move_hint:'サイコロをクリックしてから動かす駒をクリック。', win_msg:'{name}がゲームに勝ちました！🏆', you_label:'あなた',
+    alert_prefix:'❌ ', err_generic:'エラー', err_room_not_found:'テーブルが見つかりません。', err_table_full:'テーブルは満席です（2人）。',
+    err_need_players:'ちょうど2人のプレイヤーが必要です。', err_not_your_turn:'あなたの番ではありません。', err_already_rolled:'すでにサイコロを振りました。',
+    err_invalid_die:'無効なサイコロです。', err_invalid_move:'無効な動きです。' },
+  zh: { label_username:'🎮 你的昵称', placeholder_username:'输入你的名字', label_avatar:'🎨 选择你的头像',
+    btn_create:'➕ 创建牌桌', label_or_join:'或加入', placeholder_room_code:'牌桌代码', btn_join:'🔗 加入',
+    title_lobby:'西洋双陆棋', label_room_code:'牌桌代码', label_players:'👥 玩家（最多2人）',
+    btn_start:'🚀 开始游戏', btn_add_bot:'🤖 添加AI机器人', btn_leave:'🚪 离开', btn_roll:'🎲 掷骰子', btn_next_game:'▶️ 新游戏',
+    off_white:'白棋已收', off_black:'黑棋已收',
+    turn_mine:'✅ 轮到你了！', turn_other:'⏳ 轮到 {name}', roll_hint:'掷骰子。',
+    move_hint:'点击骰子，然后点击要移动的棋子。', win_msg:'{name}赢得了游戏！🏆', you_label:'你',
+    alert_prefix:'❌ ', err_generic:'错误', err_room_not_found:'未找到牌桌。', err_table_full:'牌桌已满（2人）。',
+    err_need_players:'需要正好2名玩家。', err_not_your_turn:'还没轮到你。', err_already_rolled:'你已经掷过骰子了。',
+    err_invalid_die:'无效的骰子。', err_invalid_move:'无效的移动。' },
+  ko: { label_username:'🎮 닉네임', placeholder_username:'이름을 입력하세요', label_avatar:'🎨 아바타를 선택하세요',
+    btn_create:'➕ 테이블 만들기', label_or_join:'또는 참가하기', placeholder_room_code:'테이블 코드', btn_join:'🔗 참가',
+    title_lobby:'백개먼', label_room_code:'테이블 코드', label_players:'👥 플레이어 (최대 2명)',
+    btn_start:'🚀 게임 시작', btn_add_bot:'🤖 AI 봇 추가', btn_leave:'🚪 나가기', btn_roll:'🎲 굴리기', btn_next_game:'▶️ 새 게임',
+    off_white:'화이트 빼낸 말', off_black:'블랙 빼낸 말',
+    turn_mine:'✅ 당신의 차례입니다!', turn_other:'⏳ {name}의 차례', roll_hint:'주사위를 굴리세요.',
+    move_hint:'주사위를 클릭한 다음 움직일 말을 클릭하세요.', win_msg:'{name}이(가) 게임에서 승리했습니다! 🏆', you_label:'당신',
+    alert_prefix:'❌ ', err_generic:'오류', err_room_not_found:'테이블을 찾을 수 없습니다.', err_table_full:'테이블이 가득 찼습니다 (2명).',
+    err_need_players:'정확히 2명의 플레이어가 필요합니다.', err_not_your_turn:'당신의 차례가 아닙니다.', err_already_rolled:'이미 주사위를 굴렸습니다.',
+    err_invalid_die:'잘못된 주사위입니다.', err_invalid_move:'잘못된 이동입니다.' }
+};
+const LANGS = ['fr','en','es','de','it','nl','ru','ar','pt','pl','tr','ja','zh','ko'];
+let lang = LANGS.includes(getSiteLang()) ? getSiteLang() : 'fr';
+
+function t(key, params) {
+  const dict = I18N[lang] || I18N.fr;
+  let str = dict[key] !== undefined ? dict[key] : (I18N.fr[key] !== undefined ? I18N.fr[key] : key);
+  if (params) Object.keys(params).forEach(k => { str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), params[k]); });
+  return str;
+}
+function applyStaticI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+}
+buildLangSelector(document.getElementById('langSwitch'), (code) => { lang = code; applyStaticI18n(); if (lastState) render(lastState); }, LANGS);
+applyStaticI18n();
+
+function show(s) {
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.getElementById(s).classList.add('active');
+}
+
+document.querySelectorAll('.avatar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    avatar = btn.dataset.avatar;
+  });
+});
+
+document.getElementById('createBtn').addEventListener('click', () => {
+  user = document.getElementById('username').value.trim();
+  if (!user) return document.getElementById('errorMsg').textContent = t('err_generic');
+  socket.emit('tavla_create_room', {username: user, token: avatar});
+});
+document.getElementById('joinBtn').addEventListener('click', () => {
+  user = document.getElementById('username').value.trim();
+  room = document.getElementById('roomCode').value.trim().toUpperCase();
+  if (!user || !room) return document.getElementById('errorMsg').textContent = t('err_generic');
+  socket.emit('tavla_join_room', {username: user, token: avatar, code: room});
+});
+document.getElementById('startBtn').addEventListener('click', () => socket.emit('tavla_start_game', {code: room}));
+document.getElementById('addBotBtn').addEventListener('click', () => socket.emit('tavla_add_bot', {code: room}));
+document.getElementById('leaveLobbyBtn').addEventListener('click', leaveTable);
+document.getElementById('leaveTableBtn').addEventListener('click', leaveTable);
+function leaveTable() {
+  socket.emit('tavla_leave_room', {code: room, username: user});
+  room = ''; lastState = null; armedDie = null;
+  show('loginScreen');
+}
+document.getElementById('nextGameBtn').addEventListener('click', () => socket.emit('tavla_next_game', {code: room}));
+document.getElementById('rollBtn').addEventListener('click', () => socket.emit('tavla_roll_dice', {code: room, username: user}));
+
+function renderCheckerStack(idx, count, color) {
+  const abs = Math.min(Math.abs(count), 5);
+  let html = '';
+  for (let i = 0; i < abs; i++) {
+    const isLast = i === abs - 1 && Math.abs(count) > 5;
+    html += `<div class="checker ${color}">${isLast ? `<span class="count-badge">${Math.abs(count)}</span>` : ''}</div>`;
+  }
+  return html;
+}
+
+function pointClickable(idx, myTurn, legalMoves) {
+  if (!myTurn || armedDie === null) return false;
+  const froms = legalMoves[armedDie] || [];
+  return froms.includes(idx);
+}
+
+function renderPoint(idx, rowClass, myTurn, legalMoves) {
+  const val = lastState.points[idx];
+  const color = val > 0 ? 'white' : (val < 0 ? 'black' : null);
+  const lightDark = idx % 2 === 0 ? 'light' : 'dark';
+  const clickable = pointClickable(idx, myTurn, legalMoves);
+  const checkersHtml = color ? renderCheckerStack(idx, val, color) : '';
+  return `<div class="point ${rowClass} ${lightDark}${clickable ? ' highlight' : ''}" data-point-idx="${idx}">
+    <div class="triangle"></div>${checkersHtml}
+  </div>`;
+}
+
+function render(state) {
+  lastState = state;
+  room = state.code;
+  isOwner = state.owner === user;
+  document.getElementById('tableInfo').textContent = `${state.code} — Oyun #${state.gameNo || 0}`;
+
+  if (!state.started) {
+    show('lobbyScreen');
+    document.getElementById('roomCodeDisplay').textContent = state.code;
+    document.getElementById('lobbyInfo').textContent = t('err_need_players');
+    document.getElementById('lobbyPlayersList').innerHTML = state.players.map(p =>
+      `<div class="player-item"><span>${p.token || '⚪'} ${p.name}</span></div>`
+    ).join('');
+    document.getElementById('startBtn').style.display = isOwner ? 'block' : 'none';
+    document.getElementById('addBotBtn').style.display = (isOwner && state.players.length < 2) ? 'block' : 'none';
+    return;
+  }
+  show('gameScreen');
+
+  const myTurn = state.turn === user && state.stage === 'playing';
+  const legalMoves = state.legalMoves || {};
+
+  document.getElementById('playersRow').innerHTML = state.players.map(p => {
+    const cls = 'player-chip' + (state.turn === p.name ? ' turn' : '');
+    return `<div class="${cls}"><span class="swatch ${p.color || 'white'}"></span>${p.name === user ? t('you_label') : p.name} (${p.color || '?'})</div>`;
+  }).join('');
+
+  document.getElementById('topRow').innerHTML = TOP_ORDER.map((idx, i) => {
+    const html = renderPoint(idx, 'top', myTurn, legalMoves);
+    return i === 6 ? barGapHtml('top') + html : html;
+  }).join('');
+  document.getElementById('bottomRow').innerHTML = BOTTOM_ORDER.map((idx, i) => {
+    const html = renderPoint(idx, 'bottom', myTurn, legalMoves);
+    return i === 6 ? barGapHtml('bottom') + html : html;
+  }).join('');
+
+  document.querySelectorAll('.point[data-point-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (!el.classList.contains('highlight')) return;
+      socket.emit('tavla_move', {code: room, username: user, from: parseInt(el.dataset.pointIdx, 10), die: armedDie});
+      armedDie = null;
+    });
+  });
+
+  const me = state.players.find(p => p.name === user);
+  const myColor = me ? me.color : null;
+  const barClickable = myTurn && armedDie !== null && (legalMoves[armedDie] || []).includes('bar');
+  document.querySelectorAll('.bar-gap').forEach(el => {
+    el.classList.toggle('highlight', barClickable);
+  });
+  document.querySelectorAll('.bar-gap').forEach(el => {
+    el.onclick = () => {
+      if (!barClickable) return;
+      socket.emit('tavla_move', {code: room, username: user, from: 'bar', die: armedDie});
+      armedDie = null;
+    };
+  });
+
+  document.getElementById('offWhite').innerHTML = Array.from({length: state.off.white}).map(() => '<div class="checker white"></div>').join('');
+  document.getElementById('offBlack').innerHTML = Array.from({length: state.off.black}).map(() => '<div class="checker black"></div>').join('');
+
+  document.getElementById('turnIndicator').textContent = state.stage === 'finished' ? '' :
+    (myTurn ? (state.dice.length ? t('move_hint') : t('turn_mine')) : (state.turn ? t('turn_other', {name: state.turn}) : ''));
+  document.getElementById('actionLog').textContent = state.log || '';
+
+  document.getElementById('diceRow').innerHTML = (state.dice || []).map((d, i) =>
+    `<div class="die-chip${armedDie === d ? ' armed' : ''}" data-die="${d}" data-die-idx="${i}">${d}</div>`
+  ).join('');
+  document.querySelectorAll('.die-chip').forEach(el => {
+    el.addEventListener('click', () => {
+      const d = parseInt(el.dataset.die, 10);
+      armedDie = (armedDie === d) ? null : d;
+      render(lastState);
+    });
+  });
+
+  document.getElementById('rollBtn').style.display = (myTurn && state.dice.length === 0) ? 'inline-block' : 'none';
+
+  const over = state.stage === 'finished';
+  document.getElementById('roundOverBar').style.display = over ? 'flex' : 'none';
+  document.getElementById('actionBar').style.display = over ? 'none' : 'flex';
+  if (over) {
+    document.getElementById('winnerMsg').textContent = state.winner ? t('win_msg', {name: state.winner}) : '';
+  }
+}
+
+function barGapHtml(rowClass) {
+  return `<div class="bar-gap" data-bar-row="${rowClass}">
+    <div class="bar-half">${lastState ? Array.from({length: Math.min(lastState.bar.white,5)}).map(()=>'<div class="checker white" style="margin-top:0;"></div>').join('') : ''}</div>
+    <div class="bar-half">${lastState ? Array.from({length: Math.min(lastState.bar.black,5)}).map(()=>'<div class="checker black" style="margin-top:0;"></div>').join('') : ''}</div>
+  </div>`;
+}
+
+socket.on('tavla_state', render);
+socket.on('tavla_error', (d) => {
+  const msg = d.code ? t('err_' + d.code) : t('err_generic');
+  document.getElementById('errorMsg').textContent = msg;
+  alert(t('alert_prefix') + msg);
+});
+</script>
+
+</body>
+</html>
