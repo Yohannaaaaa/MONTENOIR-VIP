@@ -5608,6 +5608,22 @@ def api_profile_avatar():
     return {"ok": True, "msg": "Avatar güncellendi.", "avatar": avatar_url}
 
 
+@app.route("/api/profile/avatar/delete", methods=["POST"])
+def api_profile_avatar_delete():
+    data = request.get_json(force=True, silent=True) or {}
+    username = (data.get("username") or "").strip()
+    if not username:
+        return {"ok": False, "msg": "Önce giriş yap."}
+    users = load_users()
+    key = next((k for k in users if k.lower() == username.lower()), None)
+    if not key:
+        return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+    users[key]["avatarData"] = ""
+    users[key]["avatar"] = "woman.png"
+    save_users(users)
+    return {"ok": True, "msg": "Avatar silindi."}
+
+
 @app.route("/api/reward/daily", methods=["POST"])
 def api_daily_reward():
     data = request.get_json(force=True, silent=True) or {}
@@ -6196,6 +6212,100 @@ def login_page():
           msgEl.textContent = translateAuthMsg(d.msg);
         }
       }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
+    });
+    </script>
+    """)
+
+@app.route("/profil")
+@app.route("/profile")
+@app.route("/mon-compte")
+def profile_page():
+    return render_template_string(AUTH_PAGE_STYLE + """
+    <div class="lang-selector" id="langSelector"></div>
+    <h1 data-common-i18n="profile_title">👤 Mon Profil</h1>
+    <div class="card" id="notLoggedCard" style="display:none;">
+      <p data-common-i18n="not_logged_in_msg">Tu n'es pas connecté.</p>
+      <a class="switch-link" href="/login" data-common-i18n="go_to_login_btn" style="display:block;text-align:center;">Se connecter</a>
+    </div>
+    <div class="card" id="profileCard" style="display:none;">
+      <div style="text-align:center;">
+        <img id="avatarPreview" src="" alt="avatar" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #d4af37;box-shadow:0 0 20px rgba(212,175,55,.5);background:#0a0a0a;">
+        <div style="margin-top:10px;color:#d4af37;font-weight:bold;font-size:16px;" id="profileUsername"></div>
+      </div>
+      <div style="display:flex;justify-content:space-around;margin:18px 0;font-size:13px;color:#f5e6d3;">
+        <div><span data-common-i18n="account_chips">Jetons</span> : <b id="statChips">-</b></div>
+        <div><span data-common-i18n="account_level">Niveau</span> : <b id="statLevel">-</b></div>
+        <div><span data-common-i18n="account_xp">XP</span> : <b id="statXp">-</b></div>
+      </div>
+      <label data-common-i18n="current_avatar_label" style="font-size:11px;color:#8a7550;text-transform:none;">Avatar actuel</label>
+      <label data-common-i18n="choose_new_avatar">Choisir une nouvelle photo</label>
+      <input type="file" id="avatarFile" accept="image/png,image/jpeg,image/webp">
+      <p style="font-size:11px;color:#8a7550;margin-top:6px;" data-common-i18n="avatar_help">PNG, JPG ou WebP, taille raisonnable.</p>
+      <div class="buy-actions" style="display:flex;gap:10px;margin-top:14px;">
+        <button class="submit" id="saveAvatarBtn" data-common-i18n="save_avatar_btn" style="margin-top:0;">Enregistrer l'avatar</button>
+        <button class="submit skip-btn" id="deleteAvatarBtn" data-common-i18n="delete_avatar_btn" style="margin-top:0;">Supprimer l'avatar</button>
+      </div>
+      <div class="msg" id="avatarMsg"></div>
+    </div>
+    <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+    <script src="/static/js/site_lang.js"></script>
+    <script>
+    buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+    applyCommonI18n();
+    const DEFAULT_AVATAR_SVG = "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><circle cx="60" cy="60" r="58" fill="#1a1a1a" stroke="#d4af37" stroke-width="4"/><text x="60" y="78" font-size="56" text-anchor="middle">👤</text></svg>');
+    const profileUser = localStorage.getItem('montenoirUser') || localStorage.getItem('loggedUser') || '';
+    function setAvatarPreview(url) { document.getElementById('avatarPreview').src = url || DEFAULT_AVATAR_SVG; }
+    function loadProfile() {
+      if (!profileUser) { document.getElementById('notLoggedCard').style.display = 'block'; return; }
+      document.getElementById('profileCard').style.display = 'block';
+      document.getElementById('profileUsername').textContent = profileUser;
+      setAvatarPreview('');
+      fetch('/api/auth/profile?username=' + encodeURIComponent(profileUser)).then(r => r.json()).then(d => {
+        if (d.ok && d.profile) {
+          const p = d.profile;
+          setAvatarPreview(p.avatarData);
+          document.getElementById('statChips').textContent = p.chips;
+          document.getElementById('statLevel').textContent = p.level;
+          document.getElementById('statXp').textContent = p.xp;
+          localStorage.setItem('montenoirProfile', JSON.stringify(p));
+          localStorage.setItem('codenamesProfile', JSON.stringify(p));
+        }
+      });
+    }
+    loadProfile();
+    document.getElementById('saveAvatarBtn').addEventListener('click', function(){
+      const msgEl = document.getElementById('avatarMsg');
+      const file = document.getElementById('avatarFile').files[0];
+      if (!file) { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Avatar dosyası seçilmedi.'); return; }
+      const fd = new FormData();
+      fd.append('username', profileUser);
+      fd.append('avatar', file);
+      fetch('/api/profile/avatar', { method: 'POST', body: fd }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('avatar_saved_msg');
+          setAvatarPreview(d.avatar);
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = translateAuthMsg(d.msg);
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
+    });
+    document.getElementById('deleteAvatarBtn').addEventListener('click', function(){
+      const msgEl = document.getElementById('avatarMsg');
+      fetch('/api/profile/avatar/delete', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: profileUser})
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('avatar_deleted_msg');
+          setAvatarPreview('');
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = translateAuthMsg(d.msg);
+        }
+      });
     });
     </script>
     """)
