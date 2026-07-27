@@ -2231,11 +2231,19 @@ function uploadAvatar(){const u=currentMontenoirUser();if(!u){avatarStatus.inner
 
 
 COMING_SOON_HTML = r'''
-<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Yakında</title><style>body{margin:0;min-height:100vh;background:radial-gradient(circle,#2c2108,#000 65%);color:#f6d777;font-family:Arial;text-align:center;display:flex;align-items:center;justify-content:center}.box{border:2px solid #d4af37;border-radius:28px;padding:45px;max-width:620px;background:rgba(0,0,0,.72);box-shadow:0 0 45px rgba(212,175,55,.45)}h1{font-family:Georgia,serif;font-size:48px}a{display:inline-block;margin-top:18px;padding:14px 20px;border-radius:14px;background:#111;border:1px solid #d4af37;color:#f6d777;text-decoration:none;font-weight:bold}
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Yakında</title><style>body{margin:0;min-height:100vh;background:radial-gradient(circle,#2c2108,#000 65%);color:#f6d777;font-family:Arial;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.box{border:2px solid #d4af37;border-radius:28px;padding:45px;max-width:620px;background:rgba(0,0,0,.72);box-shadow:0 0 45px rgba(212,175,55,.45)}h1{font-family:Georgia,serif;font-size:48px}a{display:inline-block;margin-top:18px;padding:14px 20px;border-radius:14px;background:#111;border:1px solid #d4af37;color:#f6d777;text-decoration:none;font-weight:bold}
+.lang-selector{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:520px;margin-bottom:20px;}
+.lang-btn{width:30px;height:30px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:14px;cursor:pointer;}
+.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}
 /* Londres VIP: oyun içinde üyelik/tarot/shop yok; sadece profil + XP */
 #tarotTopBtn,#menuAuthBtn,#menuShopBtn{display:none!important;}
 .vipProfileChip .xpMini{color:#9fffbf;font-weight:900;margin-left:6px;}
-</style></head><body><div class="box"><h1>👑 {{ game }}</h1><h2>Yakında geliyor</h2><p>Bu oyun daha sonra kurallarına göre ayrı ayrı kodlanacak.</p><a href="/">⬅ Ana sayfaya dön</a></div></body></html>
+</style></head><body>
+<div class="lang-selector" id="langSelector"></div>
+<div class="box"><h1>👑 {{ game }}</h1><h2 data-common-i18n="coming_soon">Bientôt disponible.</h2><p data-common-i18n="coming_soon_game_desc">Ce jeu sera codé séparément plus tard selon ses propres règles.</p><a href="/" data-common-i18n="back_home">← Retour accueil</a></div>
+<script src="/static/js/site_lang.js"></script>
+<script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script>
+</body></html>
 '''
 
 HTML = r'''
@@ -4662,7 +4670,7 @@ FEATURES_HTML = r"""
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏛️ Londres VIP MENU</title>
+<title>🏛️ Montenoir VIP MENU</title>
 <style>
 body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#30220a,#050505 55%,#000);color:#f6d777;font-family:Arial,Helvetica,sans-serif;text-align:center}
 .wrap{max-width:1050px;margin:auto;padding:35px 18px}
@@ -4679,7 +4687,7 @@ h1{font-family:Georgia,serif;font-size:46px;text-shadow:0 0 18px #d4af37;margin-
 <body>
 <div class="wrap">
 <a class="back" href="/">← Ana sayfa</a>
-<h1>☰ Londres VIP MENU</h1>
+<h1>☰ Montenoir VIP MENU</h1>
 <div class="sub">Tüm ek sistemler tek yerde.</div>
 <div class="grid">
 <div class="card"><h2>🎟️ Turnuvalar</h2><p>Turnuvalar ve ödüller.</p><a class="btn" href="/turnuvalar">Aç</a></div>
@@ -4772,21 +4780,7 @@ def settings_page():
     content = """
     <h2 data-i18n='settings'>⚙️ Ayarlar</h2>
     <div class='grid'>
-      <div class='item'><h3><span data-i18n="language">🌍 Dil</span></h3><p>Seçim tarayıcıda kaydedilir.</p>
-        <select id="montenoirLangSelect" onchange="setMontenoirLang(this.value);alert('Dil değiştirildi.')">
-          <option value='fr'>🇫🇷 Français</option>
-          <option value='tr'>🇹🇷 Türkçe</option>
-          <option value='en'>🇬🇧 English</option>
-          <option value='es'>🇪🇸 Español</option>
-          <option value='de'>🇩🇪 Deutsch</option>
-          <option value='it'>🇮🇹 Italiano</option>
-          <option value='pt'>🇵🇹 Português</option>
-          <option value='nl'>🇳🇱 Nederlands</option>
-          <option value='ro'>🇷🇴 Română</option>
-          <option value='ar'>🇸🇦 العربية</option>
-          <option value='ru'>🇷🇺 Русский</option>
-        </select>
-      </div>
+      <div class='item'><h3><span data-i18n="language">🌍 Dil</span></h3><p>Utilise les drapeaux en bas de l'écran pour changer de langue.</p></div>
       <div class='item'><h3 data-i18n='rules'><span data-i18n="rulesTitle">📜 Kurallar</span></h3><p><span data-i18n="rulesText">Saygılı oyun, hile yasak, uygunsuz davranış yasak.</span></p></div>
       <div class='item'><h3><span data-i18n="theme">🎨 Tema</span></h3><p><span data-i18n="themeText">Siyah & altın Londres teması aktif.</span></p></div>
       <div class='item'><h3><span data-i18n="notifications">🔔 Bildirimler</span></h3><p>Turnuva, sandık ve özel mesaj bildirimleri yakında.</p></div>
@@ -4794,52 +4788,11 @@ def settings_page():
       <div class='item'><h3><span data-i18n="help">❓ Yardım</span></h3><p><span data-i18n="helpText">Oyun kuralları ve destek bölümü yakında.</span></p></div>
     </div>
     """
-    return montenoir_page("⚙️ Ayarlar", content)
+    return montenoir_page("⚙️ Ayarlar", content) + Londres_I18N_SCRIPT
 
 
 
 
-r"""
-<script>
-(function(){
-const D={
-tr:["🎮 <span data-i18n="games">OYUNLAR</span>","🔮 <span data-i18n="tarot">TAROT & RİTÜEL</span>","<span data-i18n="login">👤 ÜYELİK / GİRİŞ</span>","🏆 <span data-i18n="profile">PROFİL / XP</span>","🪙 <span data-i18n="cashier">Londres KASASI</span>","☰ MENU","⚙️ <span data-i18n="settings">AYARLAR</span>","🎟️ Turnuvalar","🎨 Profil Özelleştirme","🎁 Sandık Sistemi","🏆 Başarımlar","👥 Arkadaş Sistemi","🤖 AI Tarot Premium","📜 Oyun Kuralları","Satın Al","Aç","← Ana sayfa"],
-fr:["🎮 JEUX","🔮 TAROT & RITUEL","👤 ABONNEMENT / CONNEXION","🏆 PROFIL / XP","🪙 CAISSE Londres","☰ MENU","⚙️ PARAMÈTRES","🎟️ Tournois","🎨 Personnalisation profil","🎁 Coffres","🏆 Succès","👥 Amis","🤖 Tarot IA Premium","📜 Règles des jeux","Acheter","Ouvrir","🚪 LOCA"],
-en:["🎮 GAMES","🔮 TAROT & RITUAL","👤 MEMBERSHIP / LOGIN","🏆 PROFILE / XP","🪙 Londres CASHIER","☰ MENU","⚙️ SETTINGS","🎟️ Tournaments","🎨 Profile customization","🎁 Chests","🏆 Achievements","👥 Friends","🤖 Premium AI Tarot","📜 Game rules","Buy","Open","← Home"],
-es:["🎮 JUEGOS","🔮 TAROT Y RITUAL","👤 MEMBRESÍA / ENTRAR","🏆 PERFIL / XP","🪙 CAJA Londres","☰ MENU","⚙️ AJUSTES","🎟️ Torneos","🎨 Personalización perfil","🎁 Cofres","🏆 Logros","👥 Amigos","🤖 Tarot IA Premium","📜 Reglas de juego","Comprar","Abrir","← Inicio"],
-de:["🎮 SPIELE","🔮 TAROT & RITUAL","👤 MITGLIEDSCHAFT / LOGIN","🏆 PROFIL / XP","🪙 Londres KASSE","☰ MENU","⚙️ EINSTELLUNGEN","🎟️ Turniere","🎨 Profil anpassen","🎁 Truhen","🏆 Erfolge","👥 Freunde","🤖 Premium KI-Tarot","📜 Spielregeln","Kaufen","Öffnen","← Startseite"],
-it:["🎮 GIOCHI","🔮 TAROCCHI & RITUALE","👤 ABBONAMENTO / LOGIN","🏆 PROFILO / XP","🪙 CASSA Londres","☰ MENU","⚙️ IMPOSTAZIONI","🎟️ Tornei","🎨 Personalizza profilo","🎁 Forzieri","🏆 Obiettivi","👥 Amici","🤖 Tarocchi IA Premium","📜 Regole dei giochi","Acquista","Apri","← Home"],
-pt:["🎮 JOGOS","🔮 TAROT & RITUAL","👤 ADESÃO / LOGIN","🏆 PERFIL / XP","🪙 CAIXA Londres","☰ MENU","⚙️ DEFINIÇÕES","🎟️ Torneios","🎨 Personalizar perfil","🎁 Baús","🏆 Conquistas","👥 Amigos","🤖 Tarot IA Premium","📜 Regras dos jogos","Comprar","Abrir","← Início"],
-nl:["🎮 SPELLEN","🔮 TAROT & RITUEEL","👤 LIDMAATSCHAP / LOGIN","🏆 PROFIEL / XP","🪙 Londres KASSA","☰ MENU","⚙️ INSTELLINGEN","🎟️ Toernooien","🎨 Profiel aanpassen","🎁 Kisten","🏆 Prestaties","👥 Vrienden","🤖 Premium AI Tarot","📜 Spelregels","Kopen","Openen","← Home"],
-ro:["🎮 JOCURI","🔮 TAROT & RITUAL","👤 ABONAMENT / LOGIN","🏆 PROFIL / XP","🪙 CASIERIA Londres","☰ MENU","⚙️ SETĂRI","🎟️ Turnee","🎨 Personalizare profil","🎁 Cufere","🏆 Realizări","👥 Prieteni","🤖 Tarot AI Premium","📜 Regulile jocurilor","Cumpără","Deschide","← Acasă"],
-ar:["🎮 الألعاب","🔮 التاروت والطقوس","👤 العضوية / الدخول","🏆 الملف / XP","🪙 خزينة مونتينوار","☰ القائمة","⚙️ الإعدادات","🎟️ البطولات","🎨 تخصيص الملف","🎁 الصناديق","🏆 الإنجازات","👥 الأصدقاء","🤖 تاروت AI بريميوم","📜 قواعد الألعاب","شراء","فتح","← الرئيسية"],
-ru:["🎮 ИГРЫ","🔮 ТАРО И РИТУАЛ","👤 ПОДПИСКА / ВХОД","🏆 ПРОФИЛЬ / XP","🪙 КАССА Londres","☰ МЕНЮ","⚙️ НАСТРОЙКИ","🎟️ Турниры","🎨 Настройка профиля","🎁 Сундуки","🏆 Достижения","👥 Друзья","🤖 Премиум AI Таро","📜 Правила игр","Купить","Открыть","← Главная"]
-};
-const base=D.tr;
-function getLang(){return localStorage.getItem("montenoirLang")||"tr";}
-function applyLang(){
- const l=getLang(), arr=D[l]||D.tr;
- document.documentElement.lang=l;
- document.documentElement.dir=(l==="ar")?"rtl":"ltr";
- document.querySelectorAll("button,a,h1,h2,h3,p,div,span").forEach(el=>{
-   if(el.children.length>0 && !el.classList.contains("royalBtn") && !el.classList.contains("btn") && !el.classList.contains("gameItem")) return;
-   let t=(el.textContent||"").trim();
-   for(let i=0;i<base.length;i++){
-     if(t===base[i] || Object.values(D).some(v=>v[i]===t)){
-       el.textContent=arr[i]; break;
-     }
-   }
- });
- const s=document.getElementById("montenoirLangSelect");
- if(s) s.value=l;
-}
-window.setMontenoirLang=function(v){localStorage.setItem("montenoirLang",v);applyLang();};
-document.addEventListener("DOMContentLoaded",applyLang);
-setTimeout(applyLang,200);
-setTimeout(applyLang,700);
-})();
-</script>
-"""
 
 
 
@@ -5220,14 +5173,14 @@ def owner_panel():
     key=request.args.get("key","")
     if not owner_ok(key):
         return """<!doctype html><html><head><meta charset='utf-8'><style>body{background:#050505;color:#d4af37;font-family:Arial;display:grid;place-items:center;height:100vh}input,button{padding:12px;border:1px solid #d4af37;background:#111;color:#fff;border-radius:10px;margin:5px}</style></head><body><form><h2>🔐 Owner Panel</h2><input name='key' type='password' placeholder='Owner şifresi'><button>Giriş</button></form></body></html>"""
-    return """<!doctype html><html><head><meta charset='utf-8'><title>Owner Panel</title><style>body{background:#050505;color:#fff;font-family:Arial;margin:0}header{padding:18px 24px;color:#d4af37;border-bottom:1px solid #d4af37;background:#090909;font-weight:900}.card{border:1px solid rgba(212,175,55,.5);border-radius:14px;background:#0d0d0d;margin:16px;padding:16px}.row{display:grid;grid-template-columns:150px 1fr;gap:8px;margin:5px 0}.l{color:#d4af37;font-weight:bold}a{color:#00ff66}.mail{display:inline-block;margin-top:10px;border:1px solid #d4af37;border-radius:10px;padding:9px 12px;color:#d4af37;text-decoration:none}</style></head><body><header>👑 Londres VIP — OWNER PANEL</header><main id='list'>Yükleniyor...</main><script>
+    return """<!doctype html><html><head><meta charset='utf-8'><title>Owner Panel</title><style>body{background:#050505;color:#fff;font-family:Arial;margin:0}header{padding:18px 24px;color:#d4af37;border-bottom:1px solid #d4af37;background:#090909;font-weight:900}.card{border:1px solid rgba(212,175,55,.5);border-radius:14px;background:#0d0d0d;margin:16px;padding:16px}.row{display:grid;grid-template-columns:150px 1fr;gap:8px;margin:5px 0}.l{color:#d4af37;font-weight:bold}a{color:#00ff66}.mail{display:inline-block;margin-top:10px;border:1px solid #d4af37;border-radius:10px;padding:9px 12px;color:#d4af37;text-decoration:none}</style></head><body><header>👑 Montenoir VIP — OWNER PANEL</header><main id='list'>Yükleniyor...</main><script>
 const key=new URLSearchParams(location.search).get('key')||'';
 fetch('/api/owner/requests?key='+encodeURIComponent(key)).then(r=>r.json()).then(d=>{
  const box=document.getElementById('list');
  if(!d.ok){box.innerHTML='Yetkisiz erişim';return}
  if(!d.requests.length){box.innerHTML='<div class=card>Henüz talep yok.</div>';return}
  box.innerHTML=d.requests.map(x=>{
-  const subj=encodeURIComponent('Londres VIP - Tarot / Ritüel Cevabı');
+  const subj=encodeURIComponent('Montenoir VIP - Tarot / Ritüel Cevabı');
   const body=encodeURIComponent('Merhaba '+(x.name||'')+',\\n\\nTalebinle ilgili cevabım:\\n\\n');
   return `<div class="card"><h3>🆔 ${x.id} — ${x.category||''} / ${x.service||''}</h3>
   <div class=row><div class=l>Tarih</div><div>${x.createdAt||''}</div></div>
@@ -5686,35 +5639,35 @@ def api_daily_reward():
 
 @app.route("/premium")
 def premium_page_dup2():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>💎 Premium Üyelik</h1><p>Premium üyelik sistemi yakında aktif olacak.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='premium_title'>💎 Premium Üyelik</h1><p data-common-i18n='premium_desc'>Premium üyelik sistemi yakında aktif olacak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/kasa")
 def kasa_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🪙 Londres Kasası</h1><p>Jeton paketleri ve ödeme sistemi burada olacak.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='kasa_title'>🪙 Londres Kasası</h1><p data-common-i18n='kasa_desc'>Jeton paketleri ve ödeme sistemi burada olacak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/turnuvalar")
 def turnuvalar_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🏆 Turnuvalar</h1><p>Haftalık Codenames Turnuvası — Giriş: 100 jeton — Ödül: 5000 jeton.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='tournaments_title'>🏆 Turnuvalar</h1><p data-common-i18n='tournaments_desc'>Haftalık Codenames Turnuvası — Giriş: 100 jeton — Ödül: 5000 jeton.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/arkadaslar")
 def arkadaslar_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>👥 Arkadaşlar</h1><p>Arkadaş ekleme, özel mesaj ve çevrimiçi durumu yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='friends_title'>👥 Arkadaşlar</h1><p data-common-i18n='friends_desc'>Arkadaş ekleme, özel mesaj ve çevrimiçi durumu yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/oyun-kurallari")
 def oyun_kurallari_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>📜 Oyun Kuralları</h1><p>Saygılı oyun, hile yasak, uygunsuz davranış yasak.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='rules_title'>📜 Oyun Kuralları</h1><p data-common-i18n='rules_desc'>Saygılı oyun, hile yasak, uygunsuz davranış yasak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/sandiklar")
 def sandiklar_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🎁 Sandık Sistemi</h1><p>Bronz, Gümüş, Altın ve Elmas sandıklar yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='chests_title'>🎁 Sandık Sistemi</h1><p data-common-i18n='chests_desc'>Bronz, Gümüş, Altın ve Elmas sandıklar yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/profil-magazasi")
 def profil_magazasi_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🎨 Profil Özelleştirme</h1><p>Altın çerçeve, elmas çerçeve, barok çerçeve, isim renkleri ve animasyonlu profil yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='profile_shop_title'>🎨 Profil Özelleştirme</h1><p data-common-i18n='profile_shop_desc'>Altın çerçeve, elmas çerçeve, barok çerçeve, isim renkleri ve animasyonlu profil yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 @app.route("/ai-tarot-premium")
 def ai_tarot_premium_page_dup2():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><h1>🤖 AI Tarot Premium</h1><p>Doğum tarihi, soru ve fotoğraf ile kişiselleştirilmiş yorum yakında.</p></body></html>"""
+    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='ai_tarot_title'>🤖 AI Tarot Premium</h1><p data-common-i18n='ai_tarot_desc2'>Doğum tarihi, soru ve fotoğraf ile kişiselleştirilmiş yorum yakında.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
 
 
 
@@ -6255,7 +6208,7 @@ if __name__ == "__main__":
     except Exception:
         traceback.print_exc()
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Londres VIP starting on port {port}", flush=True)
+    print(f"🚀 Montenoir VIP starting on port {port}", flush=True)
     try:
         socketio.run(app, host="0.0.0.0", port=port, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
     except Exception:
