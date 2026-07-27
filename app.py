@@ -1885,7 +1885,7 @@ html,body{margin:0;width:100%;min-height:100%;font-family:Arial,Helvetica,sans-s
     <div class="panelTitle">🎮 <span data-i18n="games">OYUNLAR</span></div>
     <div class="gameGrid">
       <a href="/codenames">👑 Codenames VIP</a><a href="/poker">♠️ Poker</a>
-      <a href="/coming-soon/Tavla">🎲 Tavla</a><a href="/coming-soon/Okey">🀄 Okey</a>
+      <a href="/coming-soon/Tavla">🎲 Tavla</a><a href="/okey">🀄 Okey</a>
       <a href="/coming-soon/101">💎 101</a><a href="/monopoly">🏙️ Metropoly</a>
       <a href="/coming-soon/Ludo">🔴 Ludo</a><a href="/coming-soon/Bowling">🎳 Bowling</a>
     </div>
@@ -6399,6 +6399,217 @@ def poker_action(data):
     poker_broadcast(r)
 
 
+# =========================
+# OKEY (taşlar / tuiles colorées)
+# =========================
+OKEY_ROOMS={}
+OKEY_COLORS=["red","yellow","black","blue"]
+
+def okey_make_tiles():
+    tiles=[]
+    tid=0
+    for c in OKEY_COLORS:
+        for n in range(1,14):
+            for _ in range(2):
+                tiles.append({"id":tid,"color":c,"number":n}); tid+=1
+    for _ in range(2):
+        tiles.append({"id":tid,"color":"joker","number":0}); tid+=1
+    random.shuffle(tiles)
+    return tiles
+
+def okey_is_wild(tile,r):
+    return tile["color"]=="joker" or (tile["color"]==r["okeyColor"] and tile["number"]==r["okeyNumber"])
+
+def okey_valid_meld(group,r):
+    if len(group)<3: return False
+    real=[t for t in group if not okey_is_wild(t,r)]
+    if not real: return True
+    numbers=[t["number"] for t in real]; colors=[t["color"] for t in real]
+    if len(set(numbers))==1 and len(colors)==len(set(colors)):
+        return True
+    if len(set(colors))==1 and len(set(numbers))==len(numbers):
+        nums=sorted(numbers); needed=len(group)
+        lo=max(1,nums[-1]-needed+1); hi=min(nums[0],13-needed+1)
+        for start in range(lo,hi+1):
+            seq=set(range(start,start+needed))
+            if set(nums).issubset(seq):
+                return True
+    return False
+
+def okey_can_partition(tiles,r):
+    if not tiles: return True
+    if len(tiles)<3: return False
+    first=tiles[0]; rest=tiles[1:]
+    for size in (3,4):
+        if size-1>len(rest): continue
+        for combo in itertools.combinations(range(len(rest)),size-1):
+            group=[first]+[rest[i] for i in combo]
+            if okey_valid_meld(group,r):
+                remaining=[t for i,t in enumerate(rest) if i not in combo]
+                if okey_can_partition(remaining,r):
+                    return True
+    return False
+
+def okey_code():
+    while True:
+        c="OKY-"+"".join(random.choices(string.digits,k=4))
+        if c not in OKEY_ROOMS:
+            return c
+
+def okey_new_room(code,owner):
+    return {"code":code,"owner":owner,"started":False,"players":{},"seatOrder":[],"order":[],
+            "turnIdx":0,"deck":[],"discard":[],"indicator":None,"okeyColor":None,"okeyNumber":None,
+            "mustDiscard":False,"stage":"waiting","log":"Masa hazır.","handNo":0}
+
+def okey_public(r):
+    players=[]
+    for u in r["seatOrder"]:
+        p=r["players"][u]
+        players.append({"name":u,"token":p.get("token","🀄"),"handCount":len(p["hand"]),"roundsWon":p.get("roundsWon",0)})
+    return {"code":r["code"],"started":r["started"],"stage":r["stage"],"indicator":r["indicator"],
+            "okeyColor":r["okeyColor"],"okeyNumber":r["okeyNumber"],"deckCount":len(r["deck"]),
+            "discardTop":r["discard"][-1] if r["discard"] else None,"turn":r["order"][r["turnIdx"]] if r.get("order") else None,
+            "mustDiscard":r["mustDiscard"],"players":players,"log":r["log"],"owner":r["owner"],"handNo":r.get("handNo",0),
+            "winningHand":r.get("winningHand")}
+
+def okey_broadcast(r):
+    for u,p in r["players"].items():
+        if p.get("sid"):
+            emit("okey_your_hand",{"hand":p["hand"]},room=p["sid"])
+    emit("okey_state",okey_public(r),room=r["code"])
+
+def okey_deal(r):
+    order=list(r["seatOrder"])
+    if len(order)<2:
+        r["stage"]="waiting"; r["order"]=[]; r["log"]="En attente de joueurs (min. 2)."
+        return
+    deck=okey_make_tiles()
+    indicator=deck.pop()
+    while indicator["color"]=="joker":
+        deck.insert(0,indicator); random.shuffle(deck); indicator=deck.pop()
+    r["indicator"]=indicator
+    r["okeyColor"]=indicator["color"]
+    r["okeyNumber"]=indicator["number"]%13+1
+    r["handNo"]=r.get("handNo",0)+1
+    starter=(r["handNo"]-1)%len(order)
+    order=order[starter:]+order[:starter]
+    for i,u in enumerate(order):
+        count=15 if i==0 else 14
+        r["players"][u]["hand"]=[deck.pop() for _ in range(count)]
+    r["deck"]=deck; r["discard"]=[]; r["order"]=order; r["turnIdx"]=0
+    r["mustDiscard"]=True; r["stage"]="playing"; r["winningHand"]=None
+    r["log"]=f"El #{r['handNo']} — {order[0]} başlıyor."
+
+@socketio.on("okey_create_room")
+def okey_create_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","🀄")
+    code=okey_code(); r=okey_new_room(code,u); OKEY_ROOMS[code]=r; join_room(code)
+    r["players"][u]={"name":u,"token":t,"sid":request.sid,"hand":[],"roundsWon":0}
+    r["seatOrder"].append(u)
+    r["log"]=u+" a créé la table."
+    okey_broadcast(r)
+
+@socketio.on("okey_join_room")
+def okey_join_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","🀄")
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=OKEY_ROOMS.get(code)
+    if not r: emit("okey_error",{"code":"room_not_found"}); return
+    if u not in r["players"] and len(r["seatOrder"])>=4:
+        emit("okey_error",{"code":"table_full"}); return
+    join_room(code)
+    if u in r["players"]:
+        r["players"][u]["sid"]=request.sid
+    else:
+        r["players"][u]={"name":u,"token":t,"sid":request.sid,"hand":[],"roundsWon":0}
+        r["seatOrder"].append(u)
+    r["log"]=u+" a rejoint la table."
+    okey_broadcast(r)
+
+@socketio.on("okey_leave_room")
+def okey_leave_room(data):
+    u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
+    r=OKEY_ROOMS.get(code)
+    if not r or u not in r["players"]: return
+    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+    del r["players"][u]
+    r["log"]=u+" a quitté la table."
+    if not r["players"]:
+        del OKEY_ROOMS[code]; return
+    if u in r.get("order",[]) and r["stage"]=="playing":
+        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, el iptal edildi."
+    okey_broadcast(r)
+
+@socketio.on("okey_start_game")
+def okey_start_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
+    if not r or len(r["seatOrder"])<2: emit("okey_error",{"code":"need_players"}); return
+    r["started"]=True
+    okey_deal(r)
+    okey_broadcast(r)
+
+@socketio.on("okey_next_hand")
+def okey_next_hand(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
+    if not r or not r["started"] or r["stage"]=="playing": return
+    okey_deal(r)
+    okey_broadcast(r)
+
+@socketio.on("okey_draw")
+def okey_draw(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    source=(data or {}).get("source","deck")
+    r=OKEY_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
+    if r["mustDiscard"]: emit("okey_error",{"code":"must_discard"}); return
+    if source=="discard":
+        if not r["discard"]: emit("okey_error",{"code":"discard_empty"}); return
+        tile=r["discard"].pop(); r["log"]=u+" ıskartadan çekti."
+    else:
+        if not r["deck"]:
+            r["stage"]="round_over"; r["log"]="Taş kalmadı — berabere."
+            okey_broadcast(r); return
+        tile=r["deck"].pop(); r["log"]=u+" taş çekti."
+    r["players"][u]["hand"].append(tile)
+    r["mustDiscard"]=True
+    okey_broadcast(r)
+
+@socketio.on("okey_discard")
+def okey_discard(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    tileId=(data or {}).get("tileId")
+    r=OKEY_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
+    if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
+    hand=r["players"][u]["hand"]
+    idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
+    if idx is None: return
+    tile=hand.pop(idx)
+    r["discard"].append(tile)
+    r["mustDiscard"]=False
+    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+    r["log"]=u+" taş attı."
+    okey_broadcast(r)
+
+@socketio.on("okey_declare_finish")
+def okey_declare_finish(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    r=OKEY_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
+    if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
+    hand=r["players"][u]["hand"]
+    if not okey_can_partition(hand,r):
+        emit("okey_error",{"code":"invalid_hand"}); return
+    r["players"][u]["roundsWon"]=r["players"][u].get("roundsWon",0)+1
+    r["stage"]="round_over"
+    r["winningHand"]={"name":u,"hand":hand}
+    r["log"]=u+" — Bitti! 🎉"
+    okey_broadcast(r)
 
 
 # === CLEAN ROUTES MONTENOIR / METROPOLY ===
@@ -6447,7 +6658,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <a class="card" href="/metropoly">🏛️ Metropoly Luxe</a>
 <a class="card" href="/poker">♠ Poker</a>
 <a class="card" href="/coming-soon/tavla">🎲 Tavla</a>
-<a class="card" href="/coming-soon/okey">🀄 Okey</a>
+<a class="card" href="/okey">🀄 Okey</a>
 <a class="card" href="/coming-soon/101">💯 101</a>
 <a class="card" href="/coming-soon/ludo">🎮 Ludo</a>
 <a class="card" href="/coming-soon/bowling">🎳 Bowling</a>
@@ -6470,6 +6681,10 @@ def force_metropoly_3d():
 @app.route("/poker")
 def poker_page():
     return render_template("poker.html")
+
+@app.route("/okey")
+def okey_page():
+    return render_template("okey.html")
 
 
 # =========================
