@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Metropoly VIP</title>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="/static/js/site_lang.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: linear-gradient(rgba(5,5,5,0.88), rgba(5,5,5,0.94)), url('/static/metroploy_plateau_lux.png.png') center/cover fixed no-repeat, #0a0a0a; color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -101,11 +102,7 @@
 <body>
 
 <div id="loginScreen" class="screen active">
-  <div class="lang-switch" id="langSwitch">
-    <button class="lang-btn" data-lang="fr">🇫🇷 FR</button>
-    <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
-    <button class="lang-btn" data-lang="tr">🇹🇷 TR</button>
-  </div>
+  <div class="lang-switch" id="langSwitch"></div>
   <h1>♠️ METROPOLY ♦️</h1>
   <div class="card">
     <label class="label" data-i18n="label_username">🎮 Ton Pseudo</label>
@@ -294,7 +291,8 @@ const I18N = {
     groups: { green:'yeşil', brown:'kahverengi', orange:'turuncu', purple:'mor', yellow:'sarı', blue:'mavi', red:'kırmızı' }
   }
 };
-let lang = localStorage.getItem('metropoly_lang') || 'fr';
+const METROPOLY_LANGS = ['fr', 'en', 'tr'];
+let lang = METROPOLY_LANGS.includes(getSiteLang()) ? getSiteLang() : 'fr';
 
 function t(key, params) {
   const dict = I18N[lang] || I18N.fr;
@@ -306,16 +304,9 @@ function t(key, params) {
 function applyStaticI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
-  document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.lang === lang));
 }
 
-document.querySelectorAll('.lang-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    lang = btn.dataset.lang;
-    localStorage.setItem('metropoly_lang', lang);
-    applyStaticI18n();
-  });
-});
+buildLangSelector(document.getElementById('langSwitch'), (code) => { lang = code; applyStaticI18n(); }, METROPOLY_LANGS);
 applyStaticI18n();
 
 const CELLS = {{ cells|tojson }}; // [nom, type, prix, loyer, groupe] par case, indexé comme côté serveur

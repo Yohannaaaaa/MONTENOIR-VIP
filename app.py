@@ -5975,7 +5975,50 @@ def force_accueil_couverture_luxe():
 @app.route("/oyunlar", endpoint="force_oyunlar_to_metropoly")
 @app.route("/jeux")
 def jeux():
-    return render_template_string('<!DOCTYPE html>\n<html lang="fr">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Jeux Montenoir VIP</title>\n<style>\nhtml,body{margin:0;min-height:100%;background:#050505;color:#d4af37;font-family:Georgia,serif;}\nbody{background:radial-gradient(circle at top,#2b1a05,#050505 55%,#000);}\n.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;}\nh1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:35px;}\n.grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:22px;width:min(900px,92vw);}\n.card{text-decoration:none;color:#120800;font-weight:900;text-align:center;padding:24px 18px;border-radius:24px;background:linear-gradient(145deg,#fff4b0,#d4af37 48%,#704000);border:2px solid #fff0a8;box-shadow:0 0 22px rgba(212,175,55,.65),inset 0 0 14px rgba(255,255,255,.45);transition:.25s;}\n.card:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 0 38px rgba(212,175,55,1);}\n.back{margin-top:35px;color:#d4af37;text-decoration:none;border:1px solid #d4af37;padding:12px 24px;border-radius:18px;background:#0009;}\n@media(max-width:800px){.grid{grid-template-columns:1fr;}h1{font-size:34px;}}\n</style>\n</head>\n<body>\n<div class="wrap">\n<h1>🎮 JEUX MONTENOIR</h1>\n<div class="grid">\n<a class="card" href="/codenames">🎯 Codenames VIP</a>\n<a class="card" href="/metropoly">🏛️ Metropoly Luxe</a>\n<a class="card" href="/coming-soon/poker">♠ Poker</a>\n<a class="card" href="/coming-soon/tavla">🎲 Tavla</a>\n<a class="card" href="/coming-soon/okey">🀄 Okey</a>\n<a class="card" href="/coming-soon/101">💯 101</a>\n<a class="card" href="/coming-soon/ludo">🎮 Ludo</a>\n<a class="card" href="/coming-soon/bowling">🎳 Bowling</a>\n</div>\n<a class="back" href="/">← Retour accueil</a>\n</div>\n</body>\n</html>')
+    return render_template_string("""<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeux Montenoir VIP</title>
+<style>
+html,body{margin:0;min-height:100%;background:#050505;color:#d4af37;font-family:Georgia,serif;}
+body{background:radial-gradient(circle at top,#2b1a05,#050505 55%,#000);}
+.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;}
+h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:35px;text-align:center;}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:22px;width:min(900px,92vw);}
+.card{text-decoration:none;color:#120800;font-weight:900;text-align:center;padding:24px 18px;border-radius:24px;background:linear-gradient(145deg,#fff4b0,#d4af37 48%,#704000);border:2px solid #fff0a8;box-shadow:0 0 22px rgba(212,175,55,.65),inset 0 0 14px rgba(255,255,255,.45);transition:.25s;}
+.card:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 0 38px rgba(212,175,55,1);}
+.back{margin-top:35px;color:#d4af37;text-decoration:none;border:1px solid #d4af37;padding:12px 24px;border-radius:18px;background:#0009;}
+.lang-selector{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:520px;margin-bottom:25px;}
+.lang-btn{width:32px;height:32px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.lang-btn.selected{background:#d4af37;box-shadow:0 0 12px rgba(212,175,55,.9);}
+@media(max-width:800px){.grid{grid-template-columns:1fr;}h1{font-size:34px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="lang-selector" id="langSelector"></div>
+<h1 data-common-i18n="games_title">🎮 JEUX MONTENOIR</h1>
+<div class="grid">
+<a class="card" href="/codenames">🎯 Codenames VIP</a>
+<a class="card" href="/metropoly">🏛️ Metropoly Luxe</a>
+<a class="card" href="/coming-soon/poker">♠ Poker</a>
+<a class="card" href="/coming-soon/tavla">🎲 Tavla</a>
+<a class="card" href="/coming-soon/okey">🀄 Okey</a>
+<a class="card" href="/coming-soon/101">💯 101</a>
+<a class="card" href="/coming-soon/ludo">🎮 Ludo</a>
+<a class="card" href="/coming-soon/bowling">🎳 Bowling</a>
+</div>
+<a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+</div>
+<script src="/static/js/site_lang.js"></script>
+<script>
+buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+applyCommonI18n();
+</script>
+</body>
+</html>""")
 
 @app.route("/metropoly", endpoint="force_metropoly_3d")
 @app.route("/monopoly", endpoint="force_monopoly_alias_to_metropoly")
@@ -5986,36 +6029,151 @@ def force_metropoly_3d():
 # =========================
 # HOME AUTH BUTTON ROUTES
 # =========================
+AUTH_PAGE_STYLE = """
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:linear-gradient(135deg,#0a0a0a 0%,#1a1512 100%);color:#f5e6d3;font-family:Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}
+  .lang-selector{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:560px;margin-bottom:25px;}
+  .lang-btn{width:32px;height:32px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:16px;cursor:pointer;}
+  .lang-btn.selected{background:#d4af37;box-shadow:0 0 12px rgba(212,175,55,.9);}
+  h1{color:#d4af37;text-shadow:0 0 20px rgba(212,175,55,.7);letter-spacing:2px;margin-bottom:4px;text-align:center;}
+  .card{background:rgba(26,26,26,0.98);border:2px solid #d4af37;border-radius:18px;padding:36px;max-width:420px;width:100%;box-shadow:0 0 40px rgba(212,175,55,.3);margin-top:20px;}
+  label{display:block;color:#d4af37;font-weight:bold;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin:14px 0 6px;}
+  input,select{width:100%;padding:12px;background:#0a0a0a;border:2px solid #d4af37;color:#f5e6d3;border-radius:8px;font-size:14px;}
+  input:focus,select:focus{outline:none;box-shadow:0 0 12px rgba(212,175,55,.6);}
+  button.submit{width:100%;padding:14px;background:linear-gradient(135deg,#d4af37,#a0860d);color:#1a1a1a;border:none;border-radius:8px;font-weight:bold;font-size:14px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:20px;}
+  button.submit:hover{box-shadow:0 0 20px rgba(212,175,55,.6);}
+  .switch-link{display:block;text-align:center;margin-top:16px;color:#d4af37;text-decoration:none;font-size:13px;}
+  .switch-link:hover{text-decoration:underline;}
+  .back{display:block;text-align:center;margin-top:20px;color:#8a7550;text-decoration:none;font-size:12px;}
+  .msg{margin-top:14px;text-align:center;font-size:13px;min-height:18px;}
+  .msg.error{color:#ff6b6b;}
+  .msg.success{color:#3adb76;}
+</style>
+"""
+
 @app.route("/register")
 @app.route("/uyelik")
 def register_page():
-    return render_template_string("""
-    <html>
-    <head><meta charset="UTF-8"><title>Üyelik</title></head>
-    <body style="margin:0;background:#050505;color:#d4af37;font-family:Arial,sans-serif;text-align:center;padding-top:120px;">
-        <h1>📝 Üyelik</h1>
-        <h2>MONTENOIR VIP</h2>
-        <p>Inscription bientôt disponible.</p>
-        <br>
-        <a href="/" style="color:white;text-decoration:none;">← Retour accueil</a>
-    </body>
-    </html>
+    return render_template_string(AUTH_PAGE_STYLE + """
+    <div class="lang-selector" id="langSelector"></div>
+    <h1 data-common-i18n="register_title">📝 Inscription</h1>
+    <div class="card">
+      <form id="registerForm">
+        <label data-common-i18n="field_username">Nom d'utilisateur</label>
+        <input type="text" id="regUsername" required minlength="3">
+        <label data-common-i18n="field_email">Email</label>
+        <input type="email" id="regEmail" required>
+        <label data-common-i18n="field_password">Mot de passe</label>
+        <input type="password" id="regPassword" required minlength="4">
+        <label data-common-i18n="field_confirm_password">Confirmer le mot de passe</label>
+        <input type="password" id="regPassword2" required minlength="4">
+        <label data-common-i18n="field_gender">Genre</label>
+        <select id="regGender">
+          <option value="male" data-common-i18n="gender_male">Homme</option>
+          <option value="female" data-common-i18n="gender_female">Femme</option>
+          <option value="other" data-common-i18n="gender_other">Autre</option>
+          <option value="" data-common-i18n="gender_prefer_not" selected>Je préfère ne pas dire</option>
+        </select>
+        <button type="submit" class="submit" data-common-i18n="btn_submit_register">S'inscrire</button>
+        <div class="msg" id="authMsg"></div>
+      </form>
+      <a class="switch-link" href="/login" data-common-i18n="link_have_account">Déjà un compte ? Se connecter</a>
+    </div>
+    <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+    <script src="/static/js/site_lang.js"></script>
+    <script>
+    buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+    applyCommonI18n();
+    document.getElementById('registerForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const msgEl = document.getElementById('authMsg');
+      const password = document.getElementById('regPassword').value;
+      const password2 = document.getElementById('regPassword2').value;
+      if (password !== password2) {
+        msgEl.className = 'msg error';
+        msgEl.textContent = ct('auth_passwords_mismatch');
+        return;
+      }
+      fetch('/api/auth/register', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: document.getElementById('regUsername').value,
+          email: document.getElementById('regEmail').value,
+          password: password, password2: password2,
+          gender: document.getElementById('regGender').value
+        })
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          const p = d.profile;
+          localStorage.setItem('montenoirUser', p.username);
+          localStorage.setItem('codenamesAccount', p.username);
+          localStorage.setItem('loggedUser', p.username);
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('montenoirProfile', JSON.stringify(p));
+          localStorage.setItem('codenamesProfile', JSON.stringify(p));
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('auth_success_register');
+          setTimeout(() => { window.location.href = '/'; }, 900);
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = translateAuthMsg(d.msg);
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
+    });
+    </script>
     """)
 
 @app.route("/login")
 @app.route("/connexion")
 def login_page():
-    return render_template_string("""
-    <html>
-    <head><meta charset="UTF-8"><title>Connexion</title></head>
-    <body style="margin:0;background:#050505;color:#d4af37;font-family:Arial,sans-serif;text-align:center;padding-top:120px;">
-        <h1>👤 Connexion</h1>
-        <h2>MONTENOIR VIP</h2>
-        <p>Connexion bientôt disponible.</p>
-        <br>
-        <a href="/" style="color:white;text-decoration:none;">← Retour accueil</a>
-    </body>
-    </html>
+    return render_template_string(AUTH_PAGE_STYLE + """
+    <div class="lang-selector" id="langSelector"></div>
+    <h1 data-common-i18n="login_title">👤 Connexion</h1>
+    <div class="card">
+      <form id="loginForm">
+        <label data-common-i18n="field_username">Nom d'utilisateur</label>
+        <input type="text" id="loginUsername" required>
+        <label data-common-i18n="field_password">Mot de passe</label>
+        <input type="password" id="loginPassword" required>
+        <button type="submit" class="submit" data-common-i18n="btn_submit_login">Se connecter</button>
+        <div class="msg" id="authMsg"></div>
+      </form>
+      <a class="switch-link" href="/register" data-common-i18n="link_no_account">Pas de compte ? S'inscrire</a>
+    </div>
+    <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+    <script src="/static/js/site_lang.js"></script>
+    <script>
+    buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+    applyCommonI18n();
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const msgEl = document.getElementById('authMsg');
+      fetch('/api/auth/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: document.getElementById('loginUsername').value,
+          password: document.getElementById('loginPassword').value
+        })
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          const p = d.profile;
+          localStorage.setItem('montenoirUser', p.username);
+          localStorage.setItem('codenamesAccount', p.username);
+          localStorage.setItem('loggedUser', p.username);
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('montenoirProfile', JSON.stringify(p));
+          localStorage.setItem('codenamesProfile', JSON.stringify(p));
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('auth_success_login');
+          setTimeout(() => { window.location.href = '/'; }, 900);
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = translateAuthMsg(d.msg);
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
+    });
+    </script>
     """)
 
 if __name__ == "__main__":

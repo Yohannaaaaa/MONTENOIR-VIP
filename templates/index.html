@@ -122,6 +122,7 @@
     </div>
   </div>
 
+  <script src="/static/js/site_lang.js"></script>
   <script>
     const translations = {
       en: {
@@ -224,58 +225,18 @@
       }
     };
 
-    const languages = [
-      {code: 'en', flag: '🇬🇧'},
-      {code: 'fr', flag: '🇫🇷'},
-      {code: 'es', flag: '🇪🇸'},
-      {code: 'de', flag: '🇩🇪'},
-      {code: 'it', flag: '🇮🇹'},
-      {code: 'nl', flag: '🇳🇱'},
-      {code: 'ru', flag: '🇷🇺'},
-      {code: 'ar', flag: '🇸🇦'},
-      {code: 'pt', flag: '🇵🇹'},
-      {code: 'pl', flag: '🇵🇱'},
-      {code: 'tr', flag: '🇹🇷'},
-      {code: 'ja', flag: '🇯🇵'},
-      {code: 'zh', flag: '🇨🇳'},
-      {code: 'ko', flag: '🇰🇷'}
-    ];
-
-    let currentLang = 'en';
-
-    // Build language selector
-    const selector = document.getElementById('langSelector');
-    languages.forEach(lang => {
-      const btn = document.createElement('button');
-      btn.className = 'lang-btn' + (lang.code === 'en' ? ' active' : '');
-      btn.textContent = lang.flag;
-      btn.title = lang.code.toUpperCase();
-      btn.dataset.lang = lang.code;
-      btn.addEventListener('click', switchLanguage);
-      selector.appendChild(btn);
-    });
-
-    function switchLanguage(e) {
-      const lang = e.target.dataset.lang;
-      if(lang === currentLang) return;
-      
-      currentLang = lang;
-      
-      // Update active button
-      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      
-      // Update text
-      const t = translations[lang];
+    function applyPageTranslations(lang) {
+      const t = translations[lang] || translations.en;
       document.querySelector('.text-register span').textContent = t.register;
       document.querySelector('.text-login span').textContent = t.login;
       document.querySelector('.text-premium span').textContent = t.premium;
       document.querySelector('.text-games span').textContent = t.games;
       document.querySelector('.text-tarot span').textContent = t.tarot;
-
-      // Set page direction if Arabic
-      document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
     }
+
+    const selector = document.getElementById('langSelector');
+    buildLangSelector(selector, applyPageTranslations, Object.keys(translations));
+    applyPageTranslations(getSiteLang());
   </script>
 </body>
 </html>
