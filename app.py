@@ -6459,7 +6459,7 @@ def okey_code():
 def okey_new_room(code,owner):
     return {"code":code,"owner":owner,"started":False,"players":{},"seatOrder":[],"order":[],
             "turnIdx":0,"deck":[],"discard":[],"indicator":None,"okeyColor":None,"okeyNumber":None,
-            "mustDiscard":False,"stage":"waiting","log":"Masa hazır.","handNo":0}
+            "mustDiscard":False,"stage":"waiting","log":"Masa hazır.","handNo":0,"botCount":0}
 
 def okey_public(r):
     players=[]
@@ -6528,6 +6528,19 @@ def okey_join_room(data):
     r["log"]=u+" a rejoint la table."
     okey_broadcast(r)
 
+@socketio.on("okey_add_bot")
+def okey_add_bot(data):
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=OKEY_ROOMS.get(code)
+    if not r or r["started"]: emit("okey_error",{"code":"cannot_add_bot"}); return
+    if len(r["seatOrder"])>=4: emit("okey_error",{"code":"table_full"}); return
+    r["botCount"]=r.get("botCount",0)+1
+    name=f"Bot {r['botCount']}"
+    r["players"][name]={"name":name,"token":"🤖","sid":None,"hand":[],"roundsWon":0,"isBot":True}
+    r["seatOrder"].append(name)
+    r["log"]=name+" a rejoint la table."
+    okey_broadcast(r)
+
 @socketio.on("okey_leave_room")
 def okey_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
@@ -6542,12 +6555,104 @@ def okey_leave_room(data):
         r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, el iptal edildi."
     okey_broadcast(r)
 
+def okey_finish_round(r,u,hand):
+    r["players"][u]["roundsWon"]=r["players"][u].get("roundsWon",0)+1
+    r["stage"]="round_over"
+    r["winningHand"]={"name":u,"hand":list(hand)}
+    r["log"]=u+" — Bitti! 🎉"
+
+def okey_perform_draw(r,u,source):
+    p=r["players"][u]
+    if source=="discard":
+        if not r["discard"]: return False
+        tile=r["discard"].pop(); r["log"]=u+" ıskartadan çekti."
+    else:
+        if not r["deck"]:
+            r["stage"]="round_over"; r["log"]="Taş kalmadı — berabere."
+            return False
+        tile=r["deck"].pop(); r["log"]=u+" taş çekti."
+    p["hand"].append(tile)
+    r["mustDiscard"]=True
+    return True
+
+def okey_perform_discard(r,u,tileId):
+    hand=r["players"][u]["hand"]
+    idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
+    if idx is None: return False
+    tile=hand.pop(idx)
+    r["discard"].append(tile)
+    r["mustDiscard"]=False
+    if okey_can_partition(hand,r):
+        okey_finish_round(r,u,hand)
+        return True
+    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+    r["log"]=u+" taş attı."
+    return True
+
+def okey_bot_decide_source(r,u):
+    p=r["players"][u]
+    if r["discard"]:
+        top=r["discard"][-1]
+        if not okey_is_wild(top,r):
+            for t in p["hand"]:
+                if okey_is_wild(t,r): continue
+                if t["color"]==top["color"] and abs(t["number"]-top["number"])<=2: return "discard"
+                if t["number"]==top["number"] and t["color"]!=top["color"]: return "discard"
+    return "deck"
+
+def okey_bot_pick_discard(hand,r):
+    for i in range(len(hand)):
+        if okey_is_wild(hand[i],r): continue
+        rest=hand[:i]+hand[i+1:]
+        if okey_can_partition(rest,r):
+            return i
+    def score(t):
+        if okey_is_wild(t,r): return 999
+        s=0
+        for other in hand:
+            if other is t or okey_is_wild(other,r): continue
+            if other["color"]==t["color"] and abs(other["number"]-t["number"])<=2: s+=2
+            if other["number"]==t["number"] and other["color"]!=t["color"]: s+=2
+        return s
+    return sorted(range(len(hand)),key=lambda i: score(hand[i]))[0]
+
+def okey_run_bots(r):
+    for _ in range(50):
+        if r["stage"]!="playing" or not r.get("order"): break
+        u=r["order"][r["turnIdx"]]
+        p=r["players"].get(u)
+        if not p or not p.get("isBot"): break
+        if not r["mustDiscard"]:
+            source=okey_bot_decide_source(r,u)
+            ok=okey_perform_draw(r,u,source)
+            okey_broadcast(r)
+            time.sleep(0.8)
+            if not ok or r["stage"]!="playing": break
+        hand=p["hand"]
+        if okey_can_partition(hand,r):
+            okey_finish_round(r,u,hand)
+            okey_broadcast(r)
+            break
+        idx=okey_bot_pick_discard(hand,r)
+        tile=hand.pop(idx)
+        r["discard"].append(tile)
+        r["mustDiscard"]=False
+        r["log"]=u+" taş attı."
+        if okey_can_partition(hand,r):
+            okey_finish_round(r,u,hand)
+            okey_broadcast(r)
+            break
+        r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+        okey_broadcast(r)
+        time.sleep(0.8)
+
 @socketio.on("okey_start_game")
 def okey_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("okey_error",{"code":"need_players"}); return
     r["started"]=True
     okey_deal(r)
+    okey_run_bots(r)
     okey_broadcast(r)
 
 @socketio.on("okey_next_hand")
@@ -6555,6 +6660,7 @@ def okey_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
     okey_deal(r)
+    okey_run_bots(r)
     okey_broadcast(r)
 
 @socketio.on("okey_draw")
@@ -6565,16 +6671,9 @@ def okey_draw(data):
     if not r or r["stage"]!="playing" or u not in r["players"]: return
     if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
     if r["mustDiscard"]: emit("okey_error",{"code":"must_discard"}); return
-    if source=="discard":
-        if not r["discard"]: emit("okey_error",{"code":"discard_empty"}); return
-        tile=r["discard"].pop(); r["log"]=u+" ıskartadan çekti."
-    else:
-        if not r["deck"]:
-            r["stage"]="round_over"; r["log"]="Taş kalmadı — berabere."
-            okey_broadcast(r); return
-        tile=r["deck"].pop(); r["log"]=u+" taş çekti."
-    r["players"][u]["hand"].append(tile)
-    r["mustDiscard"]=True
+    if source=="discard" and not r["discard"]:
+        emit("okey_error",{"code":"discard_empty"}); return
+    okey_perform_draw(r,u,source)
     okey_broadcast(r)
 
 @socketio.on("okey_discard")
@@ -6585,14 +6684,9 @@ def okey_discard(data):
     if not r or r["stage"]!="playing" or u not in r["players"]: return
     if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
     if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
-    hand=r["players"][u]["hand"]
-    idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
-    if idx is None: return
-    tile=hand.pop(idx)
-    r["discard"].append(tile)
-    r["mustDiscard"]=False
-    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
-    r["log"]=u+" taş attı."
+    okey_perform_discard(r,u,tileId)
+    if r["stage"]=="playing":
+        okey_run_bots(r)
     okey_broadcast(r)
 
 @socketio.on("okey_declare_finish")
@@ -6605,10 +6699,7 @@ def okey_declare_finish(data):
     hand=r["players"][u]["hand"]
     if not okey_can_partition(hand,r):
         emit("okey_error",{"code":"invalid_hand"}); return
-    r["players"][u]["roundsWon"]=r["players"][u].get("roundsWon",0)+1
-    r["stage"]="round_over"
-    r["winningHand"]={"name":u,"hand":hand}
-    r["log"]=u+" — Bitti! 🎉"
+    okey_finish_round(r,u,hand)
     okey_broadcast(r)
 
 
