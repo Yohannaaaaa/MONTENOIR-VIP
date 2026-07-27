@@ -1886,7 +1886,7 @@ html,body{margin:0;width:100%;min-height:100%;font-family:Arial,Helvetica,sans-s
     <div class="gameGrid">
       <a href="/codenames">👑 Codenames VIP</a><a href="/poker">♠️ Poker</a>
       <a href="/coming-soon/Tavla">🎲 Tavla</a><a href="/okey">🀄 Okey</a>
-      <a href="/coming-soon/101">💎 101</a><a href="/monopoly">🏙️ Metropoly</a>
+      <a href="/101">💎 101</a><a href="/monopoly">🏙️ Metropoly</a>
       <a href="/ludo">🔴 Ludo</a><a href="/coming-soon/Bowling">🎳 Bowling</a>
     </div>
   </section>
@@ -6991,6 +6991,326 @@ def ludo_move_token(data):
     ludo_broadcast(r)
 
 
+# =========================
+# 101 (101 Okey)
+# =========================
+R101_ROOMS={}
+
+def r101_code():
+    while True:
+        c="101-"+"".join(random.choices(string.digits,k=4))
+        if c not in R101_ROOMS:
+            return c
+
+def r101_new_room(code,owner):
+    return {"code":code,"owner":owner,"started":False,"players":{},"seatOrder":[],"order":[],
+            "turnIdx":0,"deck":[],"discard":[],"indicator":None,"okeyColor":None,"okeyNumber":None,
+            "mustDiscard":False,"stage":"waiting","log":"Masa hazır.","handNo":0,"botCount":0,
+            "table":[],"winner":None,"botTaskRunning":False}
+
+def r101_meld_value(group,r):
+    if len(group)<3: return None
+    real=[t for t in group if not okey_is_wild(t,r)]
+    if not real: return len(group)
+    numbers=[t["number"] for t in real]; colors=[t["color"] for t in real]
+    if len(set(numbers))==1 and len(colors)==len(set(colors)):
+        return numbers[0]*len(group)
+    if len(set(colors))==1 and len(set(numbers))==len(numbers):
+        nums=sorted(numbers); needed=len(group)
+        lo=max(1,nums[-1]-needed+1); hi=min(nums[0],13-needed+1)
+        for start in range(lo,hi+1):
+            seq=set(range(start,start+needed))
+            if set(nums).issubset(seq):
+                return sum(range(start,start+needed))
+    return None
+
+def r101_deal(r):
+    order=list(r["seatOrder"])
+    if len(order)<2:
+        r["stage"]="waiting"; r["order"]=[]; r["log"]="En attente de joueurs (min. 2)."
+        return
+    deck=okey_make_tiles()
+    indicator=deck.pop()
+    while indicator["color"]=="joker":
+        deck.insert(0,indicator); random.shuffle(deck); indicator=deck.pop()
+    r["indicator"]=indicator
+    r["okeyColor"]=indicator["color"]
+    r["okeyNumber"]=indicator["number"]%13+1
+    r["handNo"]=r.get("handNo",0)+1
+    starter=(r["handNo"]-1)%len(order)
+    order=order[starter:]+order[:starter]
+    for i,u in enumerate(order):
+        count=15 if i==0 else 14
+        r["players"][u]["hand"]=[deck.pop() for _ in range(count)]
+        r["players"][u]["opened"]=False
+    r["deck"]=deck; r["discard"]=[]; r["order"]=order; r["turnIdx"]=0
+    r["mustDiscard"]=True; r["stage"]="playing"; r["table"]=[]; r["winner"]=None
+    r["log"]=f"El #{r['handNo']} — {order[0]} başlıyor."
+
+def r101_public(r):
+    players=[]
+    for u in r["seatOrder"]:
+        p=r["players"][u]
+        players.append({"name":u,"token":p.get("token","💯"),"handCount":len(p.get("hand",[])),
+                         "opened":p.get("opened",False),"roundsWon":p.get("roundsWon",0)})
+    return {"code":r["code"],"started":r["started"],"stage":r["stage"],"indicator":r["indicator"],
+            "okeyColor":r["okeyColor"],"okeyNumber":r["okeyNumber"],"deckCount":len(r["deck"]),
+            "discardTop":r["discard"][-1] if r["discard"] else None,"turn":r["order"][r["turnIdx"]] if r.get("order") else None,
+            "mustDiscard":r["mustDiscard"],"players":players,"log":r["log"],"owner":r["owner"],
+            "handNo":r.get("handNo",0),"table":r["table"],"winner":r.get("winner")}
+
+def r101_broadcast(r):
+    for u,p in r["players"].items():
+        if p.get("sid"):
+            socketio.emit("r101_your_hand",{"hand":p.get("hand") or []},room=p["sid"])
+    socketio.emit("r101_state",r101_public(r),room=r["code"])
+
+def r101_finish_round(r,u):
+    r["players"][u]["roundsWon"]=r["players"][u].get("roundsWon",0)+1
+    r["stage"]="round_over"
+    r["winner"]=u
+    r["log"]=u+" — elini bitirdi, kazandı! 🎉"
+
+@socketio.on("r101_create_room")
+def r101_create_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","💯")
+    code=r101_code(); r=r101_new_room(code,u); R101_ROOMS[code]=r; join_room(code)
+    r["players"][u]={"name":u,"token":t,"sid":request.sid,"hand":[],"opened":False,"roundsWon":0}
+    r["seatOrder"].append(u)
+    r["log"]=u+" a créé la table."
+    r101_broadcast(r)
+
+@socketio.on("r101_join_room")
+def r101_join_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","💯")
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=R101_ROOMS.get(code)
+    if not r: emit("r101_error",{"code":"room_not_found"}); return
+    if u not in r["players"] and len(r["seatOrder"])>=4:
+        emit("r101_error",{"code":"table_full"}); return
+    join_room(code)
+    if u in r["players"]:
+        r["players"][u]["sid"]=request.sid
+    else:
+        r["players"][u]={"name":u,"token":t,"sid":request.sid,"hand":[],"opened":False,"roundsWon":0}
+        r["seatOrder"].append(u)
+    r["log"]=u+" a rejoint la table."
+    r101_broadcast(r)
+
+@socketio.on("r101_add_bot")
+def r101_add_bot(data):
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=R101_ROOMS.get(code)
+    if not r or r["started"]: emit("r101_error",{"code":"cannot_add_bot"}); return
+    if len(r["seatOrder"])>=4: emit("r101_error",{"code":"table_full"}); return
+    r["botCount"]=r.get("botCount",0)+1
+    name=f"Bot {r['botCount']}"
+    r["players"][name]={"name":name,"token":"🤖","sid":None,"hand":[],"opened":False,"roundsWon":0,"isBot":True}
+    r["seatOrder"].append(name)
+    r["log"]=name+" a rejoint la table."
+    r101_broadcast(r)
+
+@socketio.on("r101_leave_room")
+def r101_leave_room(data):
+    u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
+    r=R101_ROOMS.get(code)
+    if not r or u not in r["players"]: return
+    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+    del r["players"][u]
+    r["log"]=u+" a quitté la table."
+    if not r["players"]:
+        del R101_ROOMS[code]; return
+    if r["stage"]=="playing":
+        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, el iptal edildi."
+    r101_broadcast(r)
+
+@socketio.on("r101_start_game")
+def r101_start_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
+    if not r or len(r["seatOrder"])<2: emit("r101_error",{"code":"need_players"}); return
+    r["started"]=True
+    r101_deal(r)
+    r101_run_bots(r["code"])
+    r101_broadcast(r)
+
+@socketio.on("r101_next_hand")
+def r101_next_hand(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
+    if not r or not r["started"] or r["stage"]=="playing": return
+    r101_deal(r)
+    r101_run_bots(r["code"])
+    r101_broadcast(r)
+
+@socketio.on("r101_draw")
+def r101_draw(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    source=(data or {}).get("source","deck")
+    r=R101_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+    if r["mustDiscard"]: emit("r101_error",{"code":"must_discard"}); return
+    if source=="discard" and not r["discard"]:
+        emit("r101_error",{"code":"discard_empty"}); return
+    r101_perform_draw(r,u,source)
+    r101_broadcast(r)
+
+def r101_perform_draw(r,u,source):
+    p=r["players"][u]
+    if source=="discard":
+        tile=r["discard"].pop(); r["log"]=u+" ıskartadan çekti."
+    else:
+        if not r["deck"]:
+            r["stage"]="round_over"; r["log"]="Taş kalmadı — berabere."
+            return False
+        tile=r["deck"].pop(); r["log"]=u+" taş çekti."
+    p["hand"].append(tile)
+    r["mustDiscard"]=True
+    return True
+
+@socketio.on("r101_open")
+def r101_open(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    groupsSel=(data or {}).get("groups") or []
+    r=R101_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+    if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
+    p=r["players"][u]
+    if p.get("opened"): emit("r101_error",{"code":"already_opened"}); return
+    hand=p["hand"]
+    by_id={t["id"]:t for t in hand}
+    total=0; groupsTiles=[]
+    for ids in groupsSel:
+        try: tiles=[by_id[int(i)] for i in ids]
+        except (KeyError,ValueError): emit("r101_error",{"code":"invalid_group"}); return
+        val=r101_meld_value(tiles,r)
+        if val is None: emit("r101_error",{"code":"invalid_group"}); return
+        total+=val; groupsTiles.append(tiles)
+    if total<101: emit("r101_error",{"code":"not_enough_points"}); return
+    used_ids=set(i for ids in groupsSel for i in [int(x) for x in ids])
+    p["hand"]=[t for t in hand if t["id"] not in used_ids]
+    for tiles in groupsTiles:
+        r["table"].append({"owner":u,"tiles":tiles})
+    p["opened"]=True
+    r["log"]=f"{u} açıldı ({total} puan)."
+    if not p["hand"]:
+        r101_finish_round(r,u)
+        r101_broadcast(r); return
+    r101_broadcast(r)
+
+@socketio.on("r101_add_to_meld")
+def r101_add_to_meld(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    tileId=(data or {}).get("tileId"); meldIdx=(data or {}).get("meldIndex")
+    r=R101_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+    if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
+    p=r["players"][u]
+    if not p.get("opened"): emit("r101_error",{"code":"not_opened"}); return
+    try: meldIdx=int(meldIdx)
+    except (TypeError,ValueError): return
+    if meldIdx<0 or meldIdx>=len(r["table"]): emit("r101_error",{"code":"invalid_move"}); return
+    hand=p["hand"]
+    idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
+    if idx is None: return
+    tile=hand[idx]
+    meld=r["table"][meldIdx]["tiles"]
+    for pos in range(len(meld)+1):
+        candidate=meld[:pos]+[tile]+meld[pos:]
+        if r101_meld_value(candidate,r) is not None:
+            r["table"][meldIdx]["tiles"]=candidate
+            hand.pop(idx)
+            r["log"]=u+" masaya taş ekledi."
+            if not hand:
+                r101_finish_round(r,u)
+                r101_broadcast(r); return
+            r101_broadcast(r); return
+    emit("r101_error",{"code":"invalid_move"})
+
+@socketio.on("r101_discard")
+def r101_discard(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    tileId=(data or {}).get("tileId")
+    r=R101_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+    if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
+    hand=r["players"][u]["hand"]
+    idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
+    if idx is None: return
+    tile=hand.pop(idx)
+    r["discard"].append(tile)
+    r["mustDiscard"]=False
+    if not hand:
+        r101_finish_round(r,u)
+        r101_broadcast(r); return
+    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+    r["log"]=u+" taş attı."
+    r101_run_bots(r["code"])
+    r101_broadcast(r)
+
+def r101_bot_pick_discard(hand,r):
+    def score(t):
+        if okey_is_wild(t,r): return 999
+        s=0
+        for other in hand:
+            if other is t or okey_is_wild(other,r): continue
+            if other["color"]==t["color"] and abs(other["number"]-t["number"])<=2: s+=2
+            if other["number"]==t["number"] and other["color"]!=t["color"]: s+=2
+        return s
+    return sorted(range(len(hand)),key=lambda i: score(hand[i]))[0]
+
+def r101_next_is_bot(r):
+    if r["stage"]!="playing" or not r.get("order"): return False
+    p=r["players"].get(r["order"][r["turnIdx"]])
+    return bool(p and p.get("isBot"))
+
+def r101_run_bot_turns(code):
+    try:
+        while True:
+            r=R101_ROOMS.get(code)
+            if not r or not r101_next_is_bot(r): return
+            socketio.sleep(0.7)
+            r=R101_ROOMS.get(code)
+            if not r or not r101_next_is_bot(r): return
+            u=r["order"][r["turnIdx"]]
+            p=r["players"][u]
+            if not r["mustDiscard"]:
+                source="discard" if (r["discard"] and random.random()<0.3) else "deck"
+                if source=="discard" and not r["discard"]: source="deck"
+                ok=r101_perform_draw(r,u,source)
+                r101_broadcast(r)
+                if not ok or r["stage"]!="playing": return
+                socketio.sleep(0.7)
+                r=R101_ROOMS.get(code)
+                if not r or r["stage"]!="playing": return
+            hand=p["hand"]
+            if not hand: return
+            idx=r101_bot_pick_discard(hand,r)
+            tile=hand.pop(idx)
+            r["discard"].append(tile)
+            r["mustDiscard"]=False
+            r["log"]=u+" taş attı."
+            if not hand:
+                r101_finish_round(r,u)
+                r101_broadcast(r); return
+            r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+            r101_broadcast(r)
+    finally:
+        r=R101_ROOMS.get(code)
+        if r: r["botTaskRunning"]=False
+
+def r101_run_bots(code):
+    r=R101_ROOMS.get(code)
+    if not r or not r101_next_is_bot(r): return
+    if r.get("botTaskRunning"): return
+    r["botTaskRunning"]=True
+    socketio.start_background_task(r101_run_bot_turns,code)
+
+
 # === CLEAN ROUTES MONTENOIR / METROPOLY ===
 
 # === ROUTES PROPRES MONTENOIR / METROPOLY ===
@@ -7038,7 +7358,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <a class="card" href="/poker">♠ Poker</a>
 <a class="card" href="/coming-soon/tavla">🎲 Tavla</a>
 <a class="card" href="/okey">🀄 Okey</a>
-<a class="card" href="/coming-soon/101">💯 101</a>
+<a class="card" href="/101">💯 101</a>
 <a class="card" href="/ludo">🎮 Ludo</a>
 <a class="card" href="/coming-soon/bowling">🎳 Bowling</a>
 </div>
@@ -7068,6 +7388,10 @@ def okey_page():
 @app.route("/ludo")
 def ludo_page():
     return render_template("ludo.html")
+
+@app.route("/101")
+def r101_page():
+    return render_template("101.html")
 
 
 # =========================
