@@ -5743,17 +5743,6 @@ METROPOLY_CELLS=[
 ("Tokyo","property",180,20,"red")
 ]
 
-METROPOLY_GROUPS={}
-for i,c in enumerate(METROPOLY_CELLS):
-    if c[1]=="property":
-        METROPOLY_GROUPS.setdefault(c[4],[]).append(i)
-
-HOUSE_COST=50
-HOTEL_COST=50
-START_MONEY=1000
-PASS_START_BONUS=200
-JAIL_FINE=50
-
 def m_room(code,owner):
     return {"code":code,"owner":owner,"started":False,"turnIndex":0,"players":{},"owners":{},"houses":{},"hotels":{},"mortgages":{},"lastLog":"Oda hazır.","lastDice":None}
 
@@ -5765,252 +5754,6 @@ def m_code():
         c="MON-"+"".join(random.choices(string.digits,k=4))
         if c not in METROPOLY_ROOMS:
             return c
-
-def active_names(room):
-    return [n for n,p in room["players"].items() if not p.get("bankrupt")]
-
-def player_owns_full_group(room, username, group):
-    group_cells=METROPOLY_GROUPS.get(group,[])
-    return bool(group_cells) and all(room["owners"].get(str(i))==username for i in group_cells)
-
-def group_building_counts(room, group):
-    vals=[]
-    for i in METROPOLY_GROUPS.get(group,[]):
-        vals.append(int(room["houses"].get(str(i),0)) + (5 if room.get("hotels",{}).get(str(i)) else 0))
-    return vals
-
-def can_build_house(room, username, cell_index):
-    name,typ,price,base,group=METROPOLY_CELLS[cell_index]
-    if typ!="property":
-        return False,"Sadece şehirlerin üzerine ev kurulabilir."
-    if room["owners"].get(str(cell_index))!=username:
-        return False,"Bu şehir senin değil."
-    if not player_owns_full_group(room, username, group):
-        return False,"Bu renkteki tüm şehirleri almalısın."
-    if any(room.get("mortgages",{}).get(str(i)) for i in METROPOLY_GROUPS.get(group,[])):
-        return False,"Bu renk grubunda ipotekli mülk varken bina kurulamaz."
-    if room.get("hotels",{}).get(str(cell_index)):
-        return False,"Otelli arsaya ev kurulamaz."
-    current=int(room["houses"].get(str(cell_index),0))
-    if current>=4:
-        return False,"Bu arsada zaten 4 ev var. Otel kurabilirsin."
-    # dengeli ev kuralı: bir arsaya ikinci ev koymadan önce gruptaki herkes en az bir ev almalı
-    counts=[int(room["houses"].get(str(i),0)) for i in METROPOLY_GROUPS.get(group,[]) if not room.get("hotels",{}).get(str(i))]
-    if counts and current>min(counts):
-        return False,"Evler dengeli kurulmalı: önce aynı renkteki diğer şehirlere ev koy."
-    return True,"OK"
-
-def can_build_hotel(room, username, cell_index):
-    name,typ,price,base,group=METROPOLY_CELLS[cell_index]
-    if typ!="property":
-        return False,"Sadece şehirlerin üzerine otel kurulabilir."
-    if room["owners"].get(str(cell_index))!=username:
-        return False,"Bu şehir senin değil."
-    if not player_owns_full_group(room, username, group):
-        return False,"Bu renkteki tüm şehirleri almalısın."
-    if room.get("hotels",{}).get(str(cell_index)):
-        return False,"Bu arsada zaten otel var."
-    if int(room["houses"].get(str(cell_index),0))<4:
-        return False,"Otel için bu arsada 4 ev olmalı."
-    return True,"OK"
-
-def property_rent(room, cell_index):
-    name,typ,price,base,group=METROPOLY_CELLS[cell_index]
-    if room.get("mortgages",{}).get(str(cell_index)):
-        return 0
-    if room.get("hotels",{}).get(str(cell_index)):
-        return base*10
-    h=int(room["houses"].get(str(cell_index),0))
-    if h==1: return base*5
-    if h==2: return base*15
-    if h==3: return base*35
-    if h==4: return base*50
-    owner=room["owners"].get(str(cell_index))
-    if owner and player_owns_full_group(room, owner, group):
-        return base*2
-    return base
-
-def transport_rent(room, owner):
-    count=sum(1 for i,c in enumerate(METROPOLY_CELLS) if c[1]=="transport" and room["owners"].get(str(i))==owner and not room.get("mortgages",{}).get(str(i)))
-    return {1:25,2:50,3:100,4:200}.get(count,25)
-
-def utility_rent(room, owner, dice):
-    count=sum(1 for i,c in enumerate(METROPOLY_CELLS) if c[1]=="utility" and room["owners"].get(str(i))==owner and not room.get("mortgages",{}).get(str(i)))
-    return dice*(10 if count>=2 else 4)
-
-def next_turn(room):
-    names=active_names(room)
-    if names:
-        room["turnIndex"]=(room["turnIndex"]+1)%len(names)
-        room["lastLog"] += " Sıra: "+names[room["turnIndex"]]+"."
-
-@socketio.on("monopoly_create_room")
-def mc(data):
-    u=(data or {}).get("username","Misafir").strip() or "Misafir"
-    t=(data or {}).get("token","🎩")
-    c=m_code()
-    r=m_room(c,u)
-    METROPOLY_ROOMS[c]=r
-    join_room(c)
-    colors=["#34c759","#ff3b30","#007aff","#ffd60a","#bf5af2","#ff9500"]; color=colors[(len(r["players"]))%len(colors)]; r["players"][u]={"name":u,"token":t,"color":color,"money":START_MONEY,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False}
-    r["lastLog"]=u+" odayı kurdu."
-    emit("monopoly_room_state",m_public(r),room=c)
-
-@socketio.on("monopoly_join_room")
-def mj(data):
-    u=(data or {}).get("username","Misafir").strip() or "Misafir"
-    t=(data or {}).get("token","🎩")
-    c=((data or {}).get("code","") or "").strip().upper()
-    if c not in METROPOLY_ROOMS:
-        emit("monopoly_error",{"msg":"Oda bulunamadı."}); return
-    r=METROPOLY_ROOMS[c]
-    join_room(c)
-    if u not in r["players"]:
-        colors=["#34c759","#ff3b30","#007aff","#ffd60a","#bf5af2","#ff9500"]; color=colors[(len(r["players"]))%len(colors)]; r["players"][u]={"name":u,"token":t,"color":color,"money":START_MONEY,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False}
-    r["lastLog"]=u+" odaya girdi."
-    emit("monopoly_room_state",m_public(r),room=c)
-
-@socketio.on("monopoly_start_game")
-def ms(data):
-    c=((data or {}).get("code","") or "").strip().upper()
-    r=METROPOLY_ROOMS.get(c)
-    if r:
-        r["started"]=True
-        r["turnIndex"]=0
-        r["lastLog"]="Oyun başladı. Herkes 1000€ ile başladı."
-        emit("monopoly_room_state",m_public(r),room=c)
-
-
-def monopoly_apply_community_effect(r,u):
-    import random
-    p=r["players"][u]
-    effects=["plus200","plus100","minus100","pay50","start","paris"]
-    e=random.choice(effects)
-    if e=="plus200":
-        p["money"]+=200; msg="Banque sana 200€ verdi."
-    elif e=="plus100":
-        p["money"]+=100; msg="Banque sana 100€ verdi."
-    elif e=="minus100":
-        p["money"]-=100; msg="Banqueye 100€ ceza ödedin."
-    elif e=="pay50":
-        for n,op in r["players"].items():
-            if n!=u:
-                p["money"]-=50; op["money"]+=50
-        msg="Her oyuncuya 50€ ödedin."
-    elif e=="start":
-        p["position"]=0; msg="ALLEZ karesine gittin."
-    else:
-        p["position"]=9; msg="Paris karesine gittin."
-    r["lastLog"]=u+" - Caisse de Communauté: "+msg
-
-@socketio.on("monopoly_roll_dice")
-def mr(data):
-    c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip()
-    r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]:
-        emit("monopoly_error",{"msg":"Oda/oyuncu yok."}); return
-    names=active_names(r)
-    if not names:
-        return
-    if u!=names[r["turnIndex"]%len(names)]:
-        emit("monopoly_error",{"msg":"Sıra sende değil."}); return
-    p=r["players"][u]
-    if p.get("hasRolled") and r.get("lastDice")!=6:
-        emit("monopoly_error",{"msg":"Bu tur zaten zar attın. Sırayı bitir."}); return
-    if p.get("jailed",0)>0:
-        if p["money"]>=JAIL_FINE:
-            p["money"]-=JAIL_FINE
-            p["jailed"]=0
-            r["lastLog"]=u+" kodes cezası ödedi: -50€."
-        else:
-            p["bankrupt"]=True
-            r["lastLog"]=u+" kodes cezasını ödeyemedi ve iflas etti."
-            next_turn(r)
-            emit("monopoly_room_state",m_public(r),room=c); return
-
-    d=random.randint(1,6)
-    old=p["position"]
-    new=(old+d)%len(METROPOLY_CELLS)
-    if new<old:
-        p["money"]+=PASS_START_BONUS
-    p["position"]=new
-    name,typ,price,base,group=METROPOLY_CELLS[new]
-    log=f"{u} zar attı: {d}. {name} karesine geldi."
-    if new<old:
-        log+=" ALLEZ noktasından geçti: +200€."
-    pending=False
-    if typ in ["property","transport","utility"]:
-        owner=r["owners"].get(str(new))
-        if owner and owner!=u:
-            if typ=="property":
-                pay=property_rent(r,new)
-            elif typ=="transport":
-                pay=transport_rent(r,owner)
-            else:
-                pay=utility_rent(r,owner,d)
-            p["money"]-=pay
-            r["players"][owner]["money"]+=pay
-            log+=f" {owner} sahibine {pay}€ kira ödedi."
-        elif not owner:
-            pending=True
-            log+=f" Sahipsiz mülk. Satın alma fiyatı: {price}€."
-    elif typ=="tax":
-        p["money"]-=base
-        log+=f" Vergi ödedi: -{base}€."
-    elif typ=="bank":
-        b=random.choice([50,75,100,150])
-        p["money"]+=b
-        log+=f" Bankadan para aldı: +{b}€."
-    elif typ=="auction":
-        b=random.choice([-50,50,100])
-        p["money"]+=b
-        log+=f" Enchères sonucu: {b}€."
-    elif typ=="jail":
-        p["jailed"]=1
-        log+=" Prison: bir sonraki turda 50€ ödeyip çıkacak."
-    if p["money"]<0:
-        p["bankrupt"]=True
-        log+=" Para eksiye düştü: iflas."
-    r["lastDice"]=d
-    p["hasRolled"]=True
-    if d==6:
-        p["hasRolled"]=False
-        log+=" 6 geldi: tekrar oynama hakkı kazandı."
-    r["lastLog"]=log
-
-@socketio.on("monopoly_buy_property")
-def mb(data):
-    c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip()
-    r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]:
-        return
-    p=r["players"][u]
-    pos=p["position"]
-    name,typ,price,base,group=METROPOLY_CELLS[pos]
-    if typ not in ["property","transport","utility"] or str(pos) in r["owners"] or p["money"]<price:
-        emit("monopoly_error",{"msg":"Satın alınamaz."}); return
-    p["money"]-=price
-    r["owners"][str(pos)]=u
-    r["lastLog"]=f"{u}, {name} mülkünü {price}€ karşılığı satın aldı."
-    emit("monopoly_room_state",m_public(r),room=c)
-
-
-
-@socketio.on("monopoly_end_turn")
-def me(data):
-    c=((data or {}).get("code","") or "").strip().upper()
-    r=METROPOLY_ROOMS.get(c)
-    if not r:
-        return
-    names=active_names(r)
-    if len(names)<=1 and r.get("started"):
-        r["lastLog"]="🏆 Kazanan: "+(names[0] if names else "yok")
-    elif names:
-        r["turnIndex"]=(r["turnIndex"]+1)%len(names)
-        r["lastLog"]="Sıra: "+names[r["turnIndex"]]+"."
-    emit("monopoly_room_state",m_public(r),room=c)
 
 
 @socketio.on("monopoly_create_room")
@@ -6040,9 +5783,9 @@ def mr(data):
     if not r or u not in r["players"]: emit("monopoly_error",{"msg":"Oda/oyuncu yok."}); return
     names=[n for n,p in r["players"].items() if not p.get("bankrupt")]
     if u!=names[r["turnIndex"]%len(names)]: emit("monopoly_error",{"msg":"Sıra sende değil."}); return
-    p=r["players"][u]; d=random.randint(1,6); old=p["position"]; new=(old+d)%len(METROPOLY_CELLS)
+    p=r["players"][u]; d1=random.randint(1,6); d2=random.randint(1,6); d=d1+d2; old=p["position"]; new=(old+d)%len(METROPOLY_CELLS)
     if new<old: p["money"]+=200
-    p["position"]=new; name,typ,price,rent,grp=METROPOLY_CELLS[new]; log=f"{u} zar: {d}. {name}."
+    p["position"]=new; name,typ,price,rent,grp=METROPOLY_CELLS[new]; log=f"{u} zar: {d1}+{d2}. {name}."
     pending=False
     if typ in ["property","transport","utility"]:
         owner=r["owners"].get(str(new))
@@ -6054,7 +5797,9 @@ def mr(data):
     elif typ=="bonus": b=random.choice([-50,50,100,150]); p["money"]+=b; log+=f" Enchères: {b}€."
     elif typ=="jail": p["jailed"]=1; log+=" Prison."
     if p["money"]<0: p["bankrupt"]=True; log+=" İflas."
-    r["lastDice"]=d; r["lastLog"]=log; emit("monopoly_animate_move",{"username":u,"from":old,"to":new,"dice":d,"state":m_public(r),"pendingBuy":pending},room=c)
+    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
+    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
+    r["lastDice"]=d; r["lastLog"]=log; emit("monopoly_animate_move",{"username":u,"from":old,"to":new,"dice1":d1,"dice2":d2,"state":m_public(r),"pendingBuy":pending},room=c)
 
 @socketio.on("monopoly_buy_property")
 def mb(data):
