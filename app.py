@@ -1885,7 +1885,7 @@ html,body{margin:0;width:100%;min-height:100%;font-family:Arial,Helvetica,sans-s
     <div class="panelTitle">🎮 <span data-i18n="games">OYUNLAR</span></div>
     <div class="gameGrid">
       <a href="/codenames">👑 Codenames VIP</a><a href="/poker">♠️ Poker</a>
-      <a href="/coming-soon/Tavla">🎲 Tavla</a><a href="/okey">🀄 Okey</a>
+      <a href="/tavla">🎲 Tavla</a><a href="/okey">🀄 Okey</a>
       <a href="/101">💎 101</a><a href="/monopoly">🏙️ Metropoly</a>
       <a href="/ludo">🔴 Ludo</a><a href="/coming-soon/Bowling">🎳 Bowling</a>
     </div>
@@ -7311,6 +7311,332 @@ def r101_run_bots(code):
     socketio.start_background_task(r101_run_bot_turns,code)
 
 
+# =========================
+# TAVLA (Backgammon)
+# =========================
+TAVLA_ROOMS={}
+
+def tavla_code():
+    while True:
+        c="TAV-"+"".join(random.choices(string.digits,k=4))
+        if c not in TAVLA_ROOMS:
+            return c
+
+def tavla_new_room(code,owner):
+    return {"code":code,"owner":owner,"started":False,"players":{},"seatOrder":[],"order":[],"turnIdx":0,
+            "stage":"waiting","log":"Masa hazır.","botCount":0,"botTaskRunning":False,
+            "points":[],"bar":{"white":0,"black":0},"off":{"white":0,"black":0},"dice":[],
+            "winner":None,"gameNo":0}
+
+def tavla_pip_distance(player,idx):
+    return idx+1 if player=="white" else 24-idx
+
+def tavla_home_range(player):
+    return range(0,6) if player=="white" else range(18,24)
+
+def tavla_my_count(r,idx,player):
+    v=r["points"][idx]
+    if player=="white": return v if v>0 else 0
+    return -v if v<0 else 0
+
+def tavla_opp_count(r,idx,player):
+    v=r["points"][idx]
+    if player=="white": return -v if v<0 else 0
+    return v if v>0 else 0
+
+def tavla_all_home(r,player):
+    if r["bar"].get(player,0)>0: return False
+    home=set(tavla_home_range(player))
+    for idx in range(24):
+        if idx in home: continue
+        if tavla_my_count(r,idx,player)>0: return False
+    return True
+
+def tavla_legal_moves(r,player,die):
+    moves=[]
+    if r["bar"].get(player,0)>0:
+        idx=24-die if player=="white" else die-1
+        if 0<=idx<=23 and tavla_opp_count(r,idx,player)<2:
+            moves.append({"from":"bar","to":idx})
+        return moves
+    all_home=tavla_all_home(r,player)
+    for idx in range(24):
+        if tavla_my_count(r,idx,player)<=0: continue
+        target=idx-die if player=="white" else idx+die
+        if 0<=target<=23:
+            if tavla_opp_count(r,target,player)<2:
+                moves.append({"from":idx,"to":target})
+        elif all_home:
+            pip=tavla_pip_distance(player,idx)
+            if pip==die:
+                moves.append({"from":idx,"to":"off"})
+            elif pip<die:
+                home_pips=[tavla_pip_distance(player,i) for i in tavla_home_range(player) if tavla_my_count(r,i,player)>0]
+                if home_pips and pip==max(home_pips):
+                    moves.append({"from":idx,"to":"off"})
+    return moves
+
+def tavla_apply_move(r,player,move):
+    frm=move["from"]; to=move["to"]
+    if frm=="bar":
+        r["bar"][player]-=1
+    else:
+        r["points"][frm]-=1 if player=="white" else -1
+    if to=="off":
+        r["off"][player]+=1
+    else:
+        v=r["points"][to]
+        if player=="white":
+            if v==-1:
+                r["points"][to]=0
+                r["bar"]["black"]+=1
+            r["points"][to]+=1
+        else:
+            if v==1:
+                r["points"][to]=0
+                r["bar"]["white"]+=1
+            r["points"][to]-=1
+
+def tavla_prune_dead_dice(r,player):
+    if not r["dice"]: return
+    dead=[v for v in set(r["dice"]) if not tavla_legal_moves(r,player,v)]
+    if dead:
+        r["dice"]=[d for d in r["dice"] if d not in dead]
+
+def tavla_advance_turn(r):
+    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+    r["dice"]=[]
+
+def tavla_deal(r):
+    order=list(r["seatOrder"])
+    if len(order)!=2:
+        r["stage"]="waiting"; r["order"]=[]; r["log"]="Tam olarak 2 oyuncu gerekli."
+        return
+    colors=["white","black"]
+    for i,u in enumerate(order):
+        r["players"][u]["color"]=colors[i]
+    pts=[0]*24
+    pts[23]=2; pts[12]=5; pts[7]=3; pts[5]=5
+    pts[0]=-2; pts[11]=-5; pts[16]=-3; pts[18]=-5
+    r["points"]=pts
+    r["bar"]={"white":0,"black":0}
+    r["off"]={"white":0,"black":0}
+    r["dice"]=[]
+    r["order"]=order
+    r["gameNo"]=r.get("gameNo",0)+1
+    r["turnIdx"]=(r["gameNo"]-1)%2
+    r["stage"]="playing"; r["winner"]=None
+    r["log"]=f"Oyun #{r['gameNo']} — {order[r['turnIdx']]} başlıyor."
+
+def tavla_public(r):
+    players=[]
+    for u in r["seatOrder"]:
+        p=r["players"][u]
+        players.append({"name":u,"token":p.get("token","⚪"),"color":p.get("color"),"isBot":p.get("isBot",False)})
+    turn=r["order"][r["turnIdx"]] if r.get("order") else None
+    legal_moves={}
+    if r["stage"]=="playing" and turn and r.get("dice"):
+        player=r["players"][turn]["color"]
+        for d in set(r["dice"]):
+            froms=[m["from"] for m in tavla_legal_moves(r,player,d)]
+            if froms: legal_moves[d]=froms
+    return {"code":r["code"],"started":r["started"],"stage":r["stage"],"points":r.get("points",[]),
+            "bar":r.get("bar",{"white":0,"black":0}),"off":r.get("off",{"white":0,"black":0}),
+            "dice":r.get("dice",[]),"turn":turn,"legalMoves":legal_moves,
+            "players":players,"log":r["log"],"owner":r["owner"],"winner":r.get("winner"),"gameNo":r.get("gameNo",0)}
+
+def tavla_broadcast(r):
+    socketio.emit("tavla_state",tavla_public(r),room=r["code"])
+
+@socketio.on("tavla_create_room")
+def tavla_create_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","⚪")
+    code=tavla_code(); r=tavla_new_room(code,u); TAVLA_ROOMS[code]=r; join_room(code)
+    r["players"][u]={"name":u,"token":t,"sid":request.sid,"color":None,"isBot":False}
+    r["seatOrder"].append(u)
+    r["log"]=u+" a créé la table."
+    tavla_broadcast(r)
+
+@socketio.on("tavla_join_room")
+def tavla_join_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","⚪")
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=TAVLA_ROOMS.get(code)
+    if not r: emit("tavla_error",{"code":"room_not_found"}); return
+    if u not in r["players"] and len(r["seatOrder"])>=2:
+        emit("tavla_error",{"code":"table_full"}); return
+    join_room(code)
+    if u in r["players"]:
+        r["players"][u]["sid"]=request.sid
+    else:
+        r["players"][u]={"name":u,"token":t,"sid":request.sid,"color":None,"isBot":False}
+        r["seatOrder"].append(u)
+    r["log"]=u+" a rejoint la table."
+    tavla_broadcast(r)
+
+@socketio.on("tavla_add_bot")
+def tavla_add_bot(data):
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=TAVLA_ROOMS.get(code)
+    if not r or r["started"]: emit("tavla_error",{"code":"cannot_add_bot"}); return
+    if len(r["seatOrder"])>=2: emit("tavla_error",{"code":"table_full"}); return
+    r["botCount"]=r.get("botCount",0)+1
+    name=f"Bot {r['botCount']}"
+    r["players"][name]={"name":name,"token":"🤖","sid":None,"color":None,"isBot":True}
+    r["seatOrder"].append(name)
+    r["log"]=name+" a rejoint la table."
+    tavla_broadcast(r)
+
+@socketio.on("tavla_leave_room")
+def tavla_leave_room(data):
+    u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
+    r=TAVLA_ROOMS.get(code)
+    if not r or u not in r["players"]: return
+    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+    del r["players"][u]
+    r["log"]=u+" a quitté la table."
+    if not r["players"]:
+        del TAVLA_ROOMS[code]; return
+    if r["stage"]=="playing":
+        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    tavla_broadcast(r)
+
+@socketio.on("tavla_start_game")
+def tavla_start_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
+    if not r or len(r["seatOrder"])!=2: emit("tavla_error",{"code":"need_players"}); return
+    r["started"]=True
+    tavla_deal(r)
+    tavla_run_bots(r["code"])
+    tavla_broadcast(r)
+
+@socketio.on("tavla_next_game")
+def tavla_next_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
+    if not r or not r["started"] or r["stage"]=="playing": return
+    tavla_deal(r)
+    tavla_run_bots(r["code"])
+    tavla_broadcast(r)
+
+@socketio.on("tavla_roll_dice")
+def tavla_roll_dice(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    r=TAVLA_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("tavla_error",{"code":"not_your_turn"}); return
+    if r["dice"]: emit("tavla_error",{"code":"already_rolled"}); return
+    player=r["players"][u]["color"]
+    d1=random.randint(1,6); d2=random.randint(1,6)
+    r["dice"]=[d1,d1,d1,d1] if d1==d2 else [d1,d2]
+    r["log"]=f"{u} {d1}-{d2} attı."
+    tavla_prune_dead_dice(r,player)
+    if not r["dice"]:
+        r["log"]+=" Oynanabilecek hamle yok, sıra geçti."
+        tavla_advance_turn(r)
+        tavla_run_bots(r["code"])
+    tavla_broadcast(r)
+
+@socketio.on("tavla_move")
+def tavla_move(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    frm=(data or {}).get("from"); die=(data or {}).get("die")
+    r=TAVLA_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("tavla_error",{"code":"not_your_turn"}); return
+    try: die=int(die)
+    except (TypeError,ValueError): return
+    if die not in r["dice"]: emit("tavla_error",{"code":"invalid_die"}); return
+    player=r["players"][u]["color"]
+    moves=tavla_legal_moves(r,player,die)
+    frm_norm="bar" if frm=="bar" else int(frm)
+    match=next((m for m in moves if m["from"]==frm_norm),None)
+    if not match: emit("tavla_error",{"code":"invalid_move"}); return
+    tavla_apply_move(r,player,match)
+    r["dice"].remove(die)
+    r["log"]=f"{u}: hamle yaptı."
+    if r["off"][player]==15:
+        r["stage"]="finished"; r["winner"]=u; r["log"]=u+" kazandı! 🏆"
+        tavla_broadcast(r); return
+    tavla_prune_dead_dice(r,player)
+    if not r["dice"]:
+        tavla_advance_turn(r)
+        tavla_run_bots(r["code"])
+    tavla_broadcast(r)
+
+def tavla_next_is_bot(r):
+    if r["stage"]!="playing" or not r.get("order"): return False
+    p=r["players"].get(r["order"][r["turnIdx"]])
+    return bool(p and p.get("isBot"))
+
+def tavla_bot_pick_move(r,player,moves):
+    def is_hit(m):
+        return m["to"]!="off" and tavla_opp_count(r,m["to"],player)==1
+    hits=[m for m in moves if is_hit(m)]
+    if hits: return random.choice(hits)
+    offs=[m for m in moves if m["to"]=="off"]
+    if offs: return random.choice(offs)
+    safe=[m for m in moves if m["to"]!="off" and tavla_my_count(r,m["to"],player)>=1]
+    if safe: return random.choice(safe)
+    return random.choice(moves)
+
+def tavla_run_bot_turns(code):
+    try:
+        while True:
+            r=TAVLA_ROOMS.get(code)
+            if not r or not tavla_next_is_bot(r): return
+            u=r["order"][r["turnIdx"]]
+            player=r["players"][u]["color"]
+            if not r["dice"]:
+                socketio.sleep(0.6)
+                r=TAVLA_ROOMS.get(code)
+                if not r or not tavla_next_is_bot(r): return
+                d1=random.randint(1,6); d2=random.randint(1,6)
+                r["dice"]=[d1,d1,d1,d1] if d1==d2 else [d1,d2]
+                r["log"]=f"{u} {d1}-{d2} attı."
+                tavla_prune_dead_dice(r,player)
+                if not r["dice"]:
+                    tavla_advance_turn(r)
+                    tavla_broadcast(r)
+                    continue
+                tavla_broadcast(r)
+            socketio.sleep(0.7)
+            r=TAVLA_ROOMS.get(code)
+            if not r or not tavla_next_is_bot(r): return
+            if not r["dice"]: continue
+            chosen_die=None; moves=[]
+            for d in set(r["dice"]):
+                mv=tavla_legal_moves(r,player,d)
+                if mv: chosen_die=d; moves=mv; break
+            if chosen_die is None:
+                r["dice"]=[]
+                tavla_advance_turn(r)
+                tavla_broadcast(r)
+                continue
+            move=tavla_bot_pick_move(r,player,moves)
+            tavla_apply_move(r,player,move)
+            r["dice"].remove(chosen_die)
+            r["log"]=f"{u}: hamle yaptı."
+            if r["off"][player]==15:
+                r["stage"]="finished"; r["winner"]=u; r["log"]=u+" kazandı! 🏆"
+                tavla_broadcast(r); return
+            tavla_prune_dead_dice(r,player)
+            if not r["dice"]:
+                tavla_advance_turn(r)
+            tavla_broadcast(r)
+    finally:
+        r=TAVLA_ROOMS.get(code)
+        if r: r["botTaskRunning"]=False
+
+def tavla_run_bots(code):
+    r=TAVLA_ROOMS.get(code)
+    if not r or not tavla_next_is_bot(r): return
+    if r.get("botTaskRunning"): return
+    r["botTaskRunning"]=True
+    socketio.start_background_task(tavla_run_bot_turns,code)
+
+
 # === CLEAN ROUTES MONTENOIR / METROPOLY ===
 
 # === ROUTES PROPRES MONTENOIR / METROPOLY ===
@@ -7356,7 +7682,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <a class="card" href="/codenames">🎯 Codenames VIP</a>
 <a class="card" href="/metropoly">🏛️ Metropoly Luxe</a>
 <a class="card" href="/poker">♠ Poker</a>
-<a class="card" href="/coming-soon/tavla">🎲 Tavla</a>
+<a class="card" href="/tavla">🎲 Tavla</a>
 <a class="card" href="/okey">🀄 Okey</a>
 <a class="card" href="/101">💯 101</a>
 <a class="card" href="/ludo">🎮 Ludo</a>
@@ -7392,6 +7718,10 @@ def ludo_page():
 @app.route("/101")
 def r101_page():
     return render_template("101.html")
+
+@app.route("/tavla")
+def tavla_page():
+    return render_template("tavla.html")
 
 
 # =========================
