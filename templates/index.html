@@ -114,6 +114,7 @@
     <div class="top-nav">
       <a href="/register" class="text-register">📝 <span>Register</span></a>
       <a href="/login" class="text-login">👤 <span>Login</span></a>
+      <a href="/profil" class="text-profile">🖼️ <span>Profile</span></a>
       <a href="/premium" class="text-premium">💎 <span>Premium</span></a>
     </div>
     <div class="bottom-nav">
@@ -128,6 +129,7 @@
       en: {
         register: 'Register',
         login: 'Login',
+        profile: 'Profile',
         premium: 'Premium',
         games: 'GAMES',
         tarot: 'TAROT & RITUAL'
@@ -135,6 +137,7 @@
       fr: {
         register: 'Inscription',
         login: 'Connexion',
+        profile: 'Profil',
         premium: 'Premium',
         games: 'JEUX',
         tarot: 'TAROT & RITUEL'
@@ -142,6 +145,7 @@
       es: {
         register: 'Registro',
         login: 'Iniciar sesión',
+        profile: 'Perfil',
         premium: 'Premium',
         games: 'JUEGOS',
         tarot: 'TAROT Y RITUAL'
@@ -149,6 +153,7 @@
       de: {
         register: 'Registrierung',
         login: 'Anmelden',
+        profile: 'Profil',
         premium: 'Premium',
         games: 'SPIELE',
         tarot: 'TAROT & RITUAL'
@@ -156,6 +161,7 @@
       it: {
         register: 'Registrazione',
         login: 'Accedi',
+        profile: 'Profilo',
         premium: 'Premium',
         games: 'GIOCHI',
         tarot: 'TAROCCHI E RITUALE'
@@ -163,6 +169,7 @@
       nl: {
         register: 'Registreren',
         login: 'Inloggen',
+        profile: 'Profiel',
         premium: 'Premium',
         games: 'SPELLEN',
         tarot: 'TAROT & RITUAAL'
@@ -170,6 +177,7 @@
       ru: {
         register: 'Регистрация',
         login: 'Вход',
+        profile: 'Профиль',
         premium: 'Premium',
         games: 'ИГРЫ',
         tarot: 'ТАРО И РИТУАЛ'
@@ -177,6 +185,7 @@
       ar: {
         register: 'تسجيل',
         login: 'دخول',
+        profile: 'الملف الشخصي',
         premium: 'Premium',
         games: 'ألعاب',
         tarot: 'التارو والطقس'
@@ -184,6 +193,7 @@
       pt: {
         register: 'Registrar',
         login: 'Entrar',
+        profile: 'Perfil',
         premium: 'Premium',
         games: 'JOGOS',
         tarot: 'TARÔ E RITUAL'
@@ -191,6 +201,7 @@
       pl: {
         register: 'Rejestracja',
         login: 'Zaloguj się',
+        profile: 'Profil',
         premium: 'Premium',
         games: 'GRY',
         tarot: 'TAROT I RYTUAŁ'
@@ -198,6 +209,7 @@
       tr: {
         register: 'Kayıt Ol',
         login: 'Giriş Yap',
+        profile: 'Profil',
         premium: 'Premium',
         games: 'OYUNLAR',
         tarot: 'TAROT VE RITÜEL'
@@ -205,6 +217,7 @@
       ja: {
         register: '登録',
         login: 'ログイン',
+        profile: 'プロフィール',
         premium: 'Premium',
         games: 'ゲーム',
         tarot: 'タロット&儀式'
@@ -212,6 +225,7 @@
       zh: {
         register: '注册',
         login: '登录',
+        profile: '资料',
         premium: 'Premium',
         games: '游戏',
         tarot: '塔罗和仪式'
@@ -219,6 +233,7 @@
       ko: {
         register: '등록',
         login: '로그인',
+        profile: '프로필',
         premium: 'Premium',
         games: '게임',
         tarot: '타로 & 의식'
@@ -229,6 +244,7 @@
       const t = translations[lang] || translations.en;
       document.querySelector('.text-register span').textContent = t.register;
       document.querySelector('.text-login span').textContent = t.login;
+      document.querySelector('.text-profile span').textContent = t.profile;
       document.querySelector('.text-premium span').textContent = t.premium;
       document.querySelector('.text-games span').textContent = t.games;
       document.querySelector('.text-tarot span').textContent = t.tarot;
