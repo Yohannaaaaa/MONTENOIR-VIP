@@ -5743,6 +5743,13 @@ METROPOLY_CELLS=[
 ("Tokyo","property",180,20,"red")
 ]
 
+def group_cells_for(group):
+    return [i for i,c in enumerate(METROPOLY_CELLS) if c[1]=="property" and c[4]==group]
+
+def owns_full_group(room, username, group):
+    cells=group_cells_for(group)
+    return bool(cells) and all(room["owners"].get(str(i))==username for i in cells)
+
 def m_room(code,owner):
     return {"code":code,"owner":owner,"started":False,"turnIndex":0,"players":{},"owners":{},"houses":{},"hotels":{},"mortgages":{},"lastLog":"Oda hazır.","lastDice":None}
 
@@ -5790,7 +5797,9 @@ def mr(data):
     if typ in ["property","transport","utility"]:
         owner=r["owners"].get(str(new))
         if owner and owner!=u:
-            pay=rent+int(r["houses"].get(str(new),0))*15; p["money"]-=pay; r["players"][owner]["money"]+=pay; log+=f" {owner} sahibine {pay}€ kira ödedi."
+            pay=rent+int(r["houses"].get(str(new),0))*15
+            if r.get("hotels",{}).get(str(new)): pay=rent*5
+            p["money"]-=pay; r["players"][owner]["money"]+=pay; log+=f" {owner} sahibine {pay}€ kira ödedi."
         elif not owner: pending=True; log+=f" Satın alınabilir: {price}€."
     elif typ=="tax": p["money"]-=200; log+=" Vergi: -200€."
     elif typ=="bank": b=random.choice([50,75,100,150]); p["money"]+=b; log+=f" Banka: +{b}€."
@@ -5798,8 +5807,9 @@ def mr(data):
     elif typ=="jail": p["jailed"]=1; log+=" Prison."
     if p["money"]<0: p["bankrupt"]=True; log+=" İflas."
     names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
-    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
-    r["lastDice"]=d; r["lastLog"]=log; emit("monopoly_animate_move",{"username":u,"from":old,"to":new,"dice1":d1,"dice2":d2,"state":m_public(r),"pendingBuy":pending},room=c)
+    if names2 and not pending: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
+    r["lastDice"]=d; r["lastLog"]=log
+    emit("monopoly_animate_move",{"username":u,"from":old,"to":new,"dice1":d1,"dice2":d2,"cellName":name,"cellPrice":price,"cellType":typ,"cellGroup":grp,"state":m_public(r),"pendingBuy":pending},room=c)
 
 @socketio.on("monopoly_buy_property")
 def mb(data):
@@ -5807,7 +5817,19 @@ def mb(data):
     if not r or u not in r["players"]: return
     p=r["players"][u]; pos=p["position"]; name,typ,price,rent,grp=METROPOLY_CELLS[pos]
     if typ not in ["property","transport","utility"] or str(pos) in r["owners"] or p["money"]<price: emit("monopoly_error",{"msg":"Satın alınamaz."}); return
-    p["money"]-=price; r["owners"][str(pos)]=u; r["lastLog"]=f"{u}, {name} aldı."; emit("monopoly_room_state",m_public(r),room=c)
+    p["money"]-=price; r["owners"][str(pos)]=u; r["lastLog"]=f"{u}, {name} aldı."
+    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
+    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
+    emit("monopoly_room_state",m_public(r),room=c)
+
+@socketio.on("monopoly_skip_buy")
+def monopoly_skip_buy(data):
+    c=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip(); r=METROPOLY_ROOMS.get(c)
+    if not r: return
+    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
+    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
+    r["lastLog"]=u+" achète pas."
+    emit("monopoly_room_state",m_public(r),room=c)
 
 
 @socketio.on("monopoly_end_turn")
@@ -5854,22 +5876,39 @@ def monopoly_add_house(data):
         return
     r.setdefault("houses",{})
     r.setdefault("hotels",{})
+    try:
+        idx=int(cell)
+    except ValueError:
+        return
+    if idx<0 or idx>=len(METROPOLY_CELLS):
+        return
+    name,typ,price,rent,grp=METROPOLY_CELLS[idx]
+    if typ!="property":
+        emit("monopoly_error",{"msg":"On ne construit que sur une propriété (pas une gare/compagnie)."})
+        return
     if r.get("owners",{}).get(cell)!=u:
-        emit("monopoly_error",{"msg":"Bu mülk senin değil."})
+        emit("monopoly_error",{"msg":"Cette propriété n'est pas à toi."})
+        return
+    if not owns_full_group(r,u,grp):
+        emit("monopoly_error",{"msg":"Il faut posséder toutes les propriétés de cette couleur avant de construire."})
         return
     if r["hotels"].get(cell):
-        emit("monopoly_error",{"msg":"Bu mülkte zaten otel var."})
+        emit("monopoly_error",{"msg":"Il y a déjà un hôtel ici."})
         return
     count=int(r["houses"].get(cell,0))
     if count>=4:
-        emit("monopoly_error",{"msg":"4 evden sonra otel almalısın."})
+        emit("monopoly_error",{"msg":"4 maisons déjà construites, passe à l'hôtel."})
+        return
+    group_counts=[int(r["houses"].get(str(i),0)) for i in group_cells_for(grp) if not r["hotels"].get(str(i))]
+    if group_counts and count>min(group_counts):
+        emit("monopoly_error",{"msg":"Construction équilibrée : construis d'abord sur les autres propriétés du groupe."})
         return
     if r["players"][u]["money"]<50:
-        emit("monopoly_error",{"msg":"Ev için para yetmiyor."})
+        emit("monopoly_error",{"msg":"Pas assez d'argent pour une maison (50€)."})
         return
     r["players"][u]["money"]-=50
     r["houses"][cell]=count+1
-    r["lastLog"]=u+" ev aldı."
+    r["lastLog"]=u+" a construit une maison sur "+name+"."
     emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_add_hotel")
@@ -5882,19 +5921,35 @@ def monopoly_add_hotel(data):
         return
     r.setdefault("houses",{})
     r.setdefault("hotels",{})
+    try:
+        idx=int(cell)
+    except ValueError:
+        return
+    if idx<0 or idx>=len(METROPOLY_CELLS):
+        return
+    name,typ,price,rent,grp=METROPOLY_CELLS[idx]
+    if typ!="property":
+        emit("monopoly_error",{"msg":"On ne construit que sur une propriété (pas une gare/compagnie)."})
+        return
     if r.get("owners",{}).get(cell)!=u:
-        emit("monopoly_error",{"msg":"Bu mülk senin değil."})
+        emit("monopoly_error",{"msg":"Cette propriété n'est pas à toi."})
+        return
+    if not owns_full_group(r,u,grp):
+        emit("monopoly_error",{"msg":"Il faut posséder toutes les propriétés de cette couleur avant de construire."})
+        return
+    if r["hotels"].get(cell):
+        emit("monopoly_error",{"msg":"Il y a déjà un hôtel ici."})
         return
     if int(r["houses"].get(cell,0))<4:
-        emit("monopoly_error",{"msg":"Otel için önce 4 ev gerekir."})
+        emit("monopoly_error",{"msg":"Il faut 4 maisons avant l'hôtel."})
         return
     if r["players"][u]["money"]<100:
-        emit("monopoly_error",{"msg":"Otel için para yetmiyor."})
+        emit("monopoly_error",{"msg":"Pas assez d'argent pour un hôtel (100€)."})
         return
     r["players"][u]["money"]-=100
     r["houses"][cell]=0
     r["hotels"][cell]=1
-    r["lastLog"]=u+" otel aldı."
+    r["lastLog"]=u+" a construit un hôtel sur "+name+"."
     emit("monopoly_room_state",m_public(r),room=c)
 
 
@@ -5925,7 +5980,7 @@ def jeux():
 @app.route("/metropoly", endpoint="force_metropoly_3d")
 @app.route("/monopoly", endpoint="force_monopoly_alias_to_metropoly")
 def force_metropoly_3d():
-    return render_template("metropoly.html")
+    return render_template("metropoly.html", cells=METROPOLY_CELLS)
 
 
 # =========================
