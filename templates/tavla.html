@@ -43,7 +43,9 @@
   .swatch.white { background: radial-gradient(circle at 35% 30%, #fff, #ccc); border: 1px solid #888; }
   .swatch.black { background: radial-gradient(circle at 35% 30%, #555, #111); border: 1px solid #000; }
 
-  .board { display: flex; flex-direction: column; gap: 8px; background: #3a2410; border: 8px solid #1a1006; border-radius: 10px; padding: 12px; box-shadow: 0 15px 40px rgba(0,0,0,.7); }
+  .board-wrap { padding: 6px 0 26px; position: relative; }
+  .board-wrap::before { content: ''; position: absolute; left: 8%; right: 8%; bottom: 6px; height: 26px; background: radial-gradient(ellipse, rgba(0,0,0,.65), transparent 75%); z-index: -1; }
+  .board { display: flex; flex-direction: column; gap: 8px; background: linear-gradient(160deg, #4a2f15, #2e1c0b 60%, #3a2410); border: 8px solid #1a1006; border-radius: 10px; padding: 12px; box-shadow: 0 4px 0 #241606, 0 22px 45px rgba(0,0,0,.8), inset 0 2px 4px rgba(255,220,150,.15); }
   .board-row { display: flex; gap: 3px; height: 160px; }
   .point { flex: 1; position: relative; display: flex; align-items: center; }
   .point.top { flex-direction: column; justify-content: flex-start; }
@@ -51,17 +53,17 @@
   .triangle { position: absolute; inset: 0; z-index: 0; }
   .point.top .triangle { clip-path: polygon(0 0, 100% 0, 50% 100%); }
   .point.bottom .triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-  .point.light .triangle { background: #c9a869; }
-  .point.dark .triangle { background: #7a4a25; }
+  .point.light .triangle { background: linear-gradient(180deg, #e0c48a, #c9a869 55%, #ab8a52); }
+  .point.dark .triangle { background: linear-gradient(180deg, #90593a, #7a4a25 55%, #5e3618); }
   .point.highlight { cursor: pointer; }
   .point.highlight .triangle { box-shadow: inset 0 0 0 3px #3a9d6d; }
   .bar-gap { width: 24px; background: #241608; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6px 0; cursor: default; }
   .bar-gap.highlight { box-shadow: inset 0 0 0 3px #3a9d6d; cursor: pointer; }
   .bar-half { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .checker { width: 26px; height: 26px; border-radius: 50%; z-index: 1; box-shadow: 0 3px 6px rgba(0,0,0,.6); margin-top: -12px; position: relative; }
+  .checker { width: 26px; height: 26px; border-radius: 50%; z-index: 1; box-shadow: 0 4px 8px rgba(0,0,0,.7), inset 0 -3px 5px rgba(0,0,0,.35), inset 0 3px 4px rgba(255,255,255,.5); margin-top: -12px; position: relative; }
   .checker:first-child { margin-top: 0; }
-  .checker.white { background: radial-gradient(circle at 35% 30%, #fff, #ccc); border: 2px solid #888; }
-  .checker.black { background: radial-gradient(circle at 35% 30%, #555, #111); border: 2px solid #000; }
+  .checker.white { background: radial-gradient(circle at 35% 28%, #fff, #d8d8d8 55%, #aaa); border: 2px solid #888; }
+  .checker.black { background: radial-gradient(circle at 35% 28%, #666, #222 55%, #000); border: 2px solid #000; }
   .checker .count-badge { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #a83232; }
   .off-trays { display: flex; justify-content: space-between; margin-top: 8px; width: 100%; max-width: 700px; }
   .off-tray { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: #ffe08a; }
@@ -70,9 +72,24 @@
 
   .side-panel { max-width: 960px; margin: 10px auto 0; background: rgba(26,26,26,0.9); border: 2px solid #d4af37; border-radius: 16px; padding: 14px 18px; }
   .turn-indicator { text-align: center; color: #d4af37; font-weight: bold; margin-bottom: 8px; min-height: 20px; }
-  .dice-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
-  .die-chip { width: 46px; height: 46px; background: linear-gradient(160deg,#fff,#e8e8e8); border: 2px solid #333; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #111; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,.6); }
-  .die-chip.armed { border-color: #3a9d6d; box-shadow: 0 0 14px rgba(58,157,109,.9); transform: translateY(-4px); }
+  .dice-row { display: flex; gap: 18px; justify-content: center; align-items: center; margin-bottom: 10px; min-height: 64px; perspective: 500px; }
+  .dice-container { width: 52px; height: 52px; position: relative; transform-style: preserve-3d; cursor: pointer; transition: filter .25s, transform .25s; }
+  .dice-container.armed { filter: drop-shadow(0 0 10px rgba(58,157,109,.95)); transform: translateY(-5px); }
+  .dice-container.placeholder { cursor: default; opacity: .5; }
+  .dice-3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.8s ease-out; }
+  .dice-3d.rolling { animation: tavlaSpin 0.65s cubic-bezier(0.25,0.46,0.45,0.94); }
+  @keyframes tavlaSpin {
+    0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+    100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
+  }
+  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(160deg,#fff,#e2e2e2); border: 2px solid #2a2a2a; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: inset -3px -3px 7px rgba(0,0,0,.3), inset 3px 3px 8px rgba(255,255,255,.9); }
+  .pip-dot { position: absolute; width: 7px; height: 7px; background: radial-gradient(circle at 35% 35%, #333, #000); border-radius: 50%; box-shadow: inset 0 1px 2px rgba(0,0,0,.9); }
+  .face-1 { transform: translateZ(26px); }
+  .face-2 { transform: rotateY(180deg) translateZ(26px); }
+  .face-3 { transform: rotateY(90deg) translateZ(26px); }
+  .face-4 { transform: rotateY(-90deg) translateZ(26px); }
+  .face-5 { transform: rotateX(90deg) translateZ(26px); }
+  .face-6 { transform: rotateX(-90deg) translateZ(26px); }
   .action-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; }
   .action-bar .btn { width: auto; padding: 10px 20px; margin-top: 0; }
   .action-log { color: #d4af37; font-size: 12px; text-align: center; margin-top: 10px; min-height: 16px; opacity: .9; }
@@ -123,9 +140,11 @@
     <button id="leaveTableBtn" data-i18n="btn_leave">🚪 Quitter</button>
   </div>
   <div class="players-row" id="playersRow"></div>
-  <div class="board">
-    <div class="board-row" id="topRow"></div>
-    <div class="board-row" id="bottomRow"></div>
+  <div class="board-wrap">
+    <div class="board">
+      <div class="board-row" id="topRow"></div>
+      <div class="board-row" id="bottomRow"></div>
+    </div>
   </div>
   <div class="off-trays">
     <div class="off-tray"><span data-i18n="off_white">Sorties blanches</span><div class="off-checkers" id="offWhite"></div></div>
@@ -149,10 +168,23 @@
 
 <script>
 const socket = io();
-let user = '', avatar = '⚪', room = '', lastState = null, isOwner = false, armedDie = null;
+let user = '', avatar = '⚪', room = '', lastState = null, isOwner = false, armedDie = null, prevDiceLen = 0;
 
 const TOP_ORDER = [12,13,14,15,16,17,18,19,20,21,22,23];
 const BOTTOM_ORDER = [11,10,9,8,7,6,5,4,3,2,1,0];
+
+const DIE_FACES = `
+  <div class="die-face face-1"><div class="pip-dot" style="top:50%;left:50%;transform:translate(-50%,-50%);"></div></div>
+  <div class="die-face face-2"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+  <div class="die-face face-3"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:50%;left:50%;transform:translate(-50%,-50%);"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+  <div class="die-face face-4"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:22%;right:22%;"></div><div class="pip-dot" style="bottom:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+  <div class="die-face face-5"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:22%;right:22%;"></div><div class="pip-dot" style="top:50%;left:50%;transform:translate(-50%,-50%);"></div><div class="pip-dot" style="bottom:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+  <div class="die-face face-6"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:22%;right:22%;"></div><div class="pip-dot" style="top:50%;left:22%;"></div><div class="pip-dot" style="top:50%;right:22%;"></div><div class="pip-dot" style="bottom:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+`;
+function setDice(el, val) {
+  const rot = {1: 'rotateX(0) rotateY(0)', 2: 'rotateX(0) rotateY(180deg)', 3: 'rotateX(0) rotateY(-90deg)', 4: 'rotateX(0) rotateY(90deg)', 5: 'rotateX(-90deg) rotateY(0)', 6: 'rotateX(90deg) rotateY(0)'};
+  el.style.transform = rot[val] || 'rotateX(0) rotateY(0)';
+}
 
 const I18N = {
   fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🎨 Choisis ton avatar',
@@ -346,7 +378,13 @@ function leaveTable() {
   show('loginScreen');
 }
 document.getElementById('nextGameBtn').addEventListener('click', () => socket.emit('tavla_next_game', {code: room}));
-document.getElementById('rollBtn').addEventListener('click', () => socket.emit('tavla_roll_dice', {code: room, username: user}));
+document.getElementById('rollBtn').addEventListener('click', () => {
+  const btn = document.getElementById('rollBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  document.querySelectorAll('#diceRow .dice-3d').forEach(el => el.classList.add('rolling'));
+  setTimeout(() => socket.emit('tavla_roll_dice', {code: room, username: user}), 550);
+});
 
 function renderCheckerStack(idx, count, color) {
   const abs = Math.min(Math.abs(count), 5);
@@ -440,18 +478,38 @@ function render(state) {
     (myTurn ? (state.dice.length ? t('move_hint') : t('turn_mine')) : (state.turn ? t('turn_other', {name: state.turn}) : ''));
   document.getElementById('actionLog').textContent = state.log || '';
 
-  document.getElementById('diceRow').innerHTML = (state.dice || []).map((d, i) =>
-    `<div class="die-chip${armedDie === d ? ' armed' : ''}" data-die="${d}" data-die-idx="${i}">${d}</div>`
-  ).join('');
-  document.querySelectorAll('.die-chip').forEach(el => {
-    el.addEventListener('click', () => {
-      const d = parseInt(el.dataset.die, 10);
-      armedDie = (armedDie === d) ? null : d;
-      render(lastState);
+  const diceArr = state.dice || [];
+  const freshRoll = diceArr.length > 0 && prevDiceLen === 0;
+  prevDiceLen = diceArr.length;
+  const showPlaceholder = myTurn && diceArr.length === 0 && state.stage === 'playing';
+  if (diceArr.length > 0) {
+    document.getElementById('diceRow').innerHTML = diceArr.map((d, i) =>
+      `<div class="dice-container${armedDie === d ? ' armed' : ''}" data-die="${d}" data-die-idx="${i}">
+        <div class="dice-3d" id="tavlaDie${i}">${DIE_FACES}</div>
+      </div>`
+    ).join('');
+    document.querySelectorAll('#diceRow .dice-3d').forEach((el, i) => setDice(el, diceArr[i]));
+    document.querySelectorAll('.dice-container').forEach(el => {
+      el.addEventListener('click', () => {
+        const d = parseInt(el.dataset.die, 10);
+        armedDie = (armedDie === d) ? null : d;
+        render(lastState);
+      });
     });
-  });
+  } else if (showPlaceholder) {
+    document.getElementById('diceRow').innerHTML = [0, 1].map(i =>
+      `<div class="dice-container placeholder"><div class="dice-3d" id="tavlaDie${i}">${DIE_FACES}</div></div>`
+    ).join('');
+    document.querySelectorAll('#diceRow .dice-3d').forEach(el => setDice(el, 1));
+  } else {
+    document.getElementById('diceRow').innerHTML = '';
+  }
+  if (freshRoll) {
+    document.getElementById('rollBtn').disabled = false;
+  }
 
-  document.getElementById('rollBtn').style.display = (myTurn && state.dice.length === 0) ? 'inline-block' : 'none';
+  document.getElementById('rollBtn').style.display = (myTurn && diceArr.length === 0 && state.stage === 'playing') ? 'inline-block' : 'none';
+  if (showPlaceholder) document.getElementById('rollBtn').disabled = false;
 
   const over = state.stage === 'finished';
   document.getElementById('roundOverBar').style.display = over ? 'flex' : 'none';
