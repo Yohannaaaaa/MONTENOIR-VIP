@@ -6739,7 +6739,7 @@ def ludo_valid_moves_for(r,u,roll):
         positions=r["players"][owner]["positions"]
         for idx,d in enumerate(positions):
             if d==0:
-                if roll==6:
+                if roll==6 or roll==1:
                     moves.append({"owner":owner,"color":color,"index":idx,"newDist":1})
             elif d<57:
                 nd=d+roll
