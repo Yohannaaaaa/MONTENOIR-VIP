@@ -233,7 +233,9 @@ function show(s) {
   document.getElementById(s).classList.add('active');
 }
 
-function placeToken(u, p, jump) {
+const TOKEN_OFFSETS = [{dx:0,dy:0},{dx:-16,dy:-16},{dx:16,dy:-16},{dx:-16,dy:16},{dx:16,dy:16},{dx:0,dy:-22},{dx:0,dy:22}];
+
+function placeToken(u, p, jump, offsetIndex, offsetCount) {
   let el = document.querySelector(`[data-u="${u}"]`);
   if (!el) {
     el = document.createElement('div');
@@ -243,8 +245,9 @@ function placeToken(u, p, jump) {
     document.getElementById('tokensLayer').appendChild(el);
   }
   const {x, y} = POS[p % N_CELLS];
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
+  const off = (offsetCount && offsetCount > 1) ? TOKEN_OFFSETS[offsetIndex % TOKEN_OFFSETS.length] : {dx: 0, dy: 0};
+  el.style.left = (x + off.dx) + 'px';
+  el.style.top = (y + off.dy) + 'px';
   if (jump) {
     el.classList.remove('landing');
     void el.offsetWidth;
@@ -252,10 +255,33 @@ function placeToken(u, p, jump) {
   }
 }
 
-function moveToken(u, f, t) {
+function relayoutTokens(players) {
+  const groups = {};
+  Object.keys(players).forEach(u => {
+    const pos = players[u].position || 0;
+    groups[pos] = groups[pos] || [];
+    groups[pos].push(u);
+  });
+  Object.keys(groups).forEach(pos => {
+    groups[pos].forEach((u, i) => placeToken(u, Number(pos), false, i, groups[pos].length));
+  });
+}
+
+function moveToken(u, f, t, players) {
   const steps = (t - f + N_CELLS) % N_CELLS || 1;
   let s = 0;
-  const anim = () => { placeToken(u, (f + s) % N_CELLS, true); s++; if (s <= steps) setTimeout(anim, 350); };
+  const anim = () => {
+    const pos = (f + s) % N_CELLS;
+    if (s === steps && players) {
+      relayoutTokens(players);
+      const el = document.querySelector(`[data-u="${u}"]`);
+      if (el) { el.classList.remove('landing'); void el.offsetWidth; el.classList.add('landing'); }
+    } else {
+      placeToken(u, pos, true);
+    }
+    s++;
+    if (s <= steps) setTimeout(anim, 350);
+  };
   anim();
 }
 
@@ -371,7 +397,7 @@ socket.on('monopoly_room_state', (state) => {
     show('gameScreen');
     setDice(document.getElementById('dice1'), 1);
     setDice(document.getElementById('dice2'), 1);
-    Object.keys(state.players).forEach(u => placeToken(u, state.players[u].position || 0));
+    relayoutTokens(state.players);
     document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${u}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
     document.getElementById('buyBox').style.display = 'none';
     document.getElementById('diceTotalBadge').style.display = 'none';
@@ -389,7 +415,7 @@ socket.on('monopoly_animate_move', (data) => {
   const badge = document.getElementById('diceTotalBadge');
   badge.textContent = dice1 + dice2;
   badge.style.display = 'flex';
-  setTimeout(() => moveToken(username, from, to), 700);
+  setTimeout(() => moveToken(username, from, to, state.players), 700);
   document.getElementById('lastAction').textContent = `🎲 ${username}\n${dice1} + ${dice2} = ${dice1+dice2}\n↪ Case ${to}`;
   isRolling = false;
   document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${u}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
