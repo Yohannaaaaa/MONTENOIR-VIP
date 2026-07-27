@@ -52,6 +52,9 @@
   .okey-tile.wild { box-shadow: 0 0 10px 2px rgba(212,175,55,0.9), 0 4px 10px rgba(0,0,0,0.6); }
   .okey-tile.hand-tile { cursor: pointer; transition: transform .15s; }
   .okey-tile.hand-tile:hover { transform: translateY(-8px); }
+  .rack .okey-tile { touch-action: none; user-select: none; cursor: grab; }
+  .rack .okey-tile.dragging { opacity: .65; transform: scale(1.1); z-index: 50; box-shadow: 0 0 16px rgba(212,175,55,0.9); }
+  .rack .okey-tile.drop-target { box-shadow: 0 0 0 3px #3a9d6d; }
 
   .seat { position: absolute; width: 140px; transform: translate(-50%,-50%); text-align: center; z-index: 4; }
   .seat-box { background: rgba(10,10,10,0.88); border: 2px solid #6a5a2a; border-radius: 14px; padding: 8px 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.6); }
@@ -144,6 +147,9 @@
       <div class="rack-row" id="handRowTop"></div>
       <div class="rack-row" id="handRowBottom"></div>
     </div>
+    <div class="action-bar" id="rackToolbar" style="margin-bottom:8px;">
+      <button class="btn grey" id="sortHandBtn" data-i18n="btn_sort_hand" style="width:auto;padding:8px 16px;margin-top:0;font-size:12px;">🔀 Trier</button>
+    </div>
     <div class="action-bar" id="actionBar" style="display:none;">
       <button class="btn green" id="finishBtn" data-i18n="btn_finish">🎉 Bitti !</button>
     </div>
@@ -160,13 +166,13 @@
 
 <script>
 const socket = io();
-let user = '', avatar = '🀄', room = '', myHand = [], lastState = null, isOwner = false;
+let user = '', avatar = '🀄', room = '', myHand = [], myOrder = [], lastState = null, isOwner = false;
 
 const I18N = {
   fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🀄 Choisis ton avatar',
     btn_create:'➕ Créer une table', label_or_join:'OU REJOIGNEZ', placeholder_room_code:'Code de la table', btn_join:'🔗 Rejoindre',
     title_lobby:'OKEY', label_room_code:'CODE DE LA TABLE', label_players:'👥 Joueurs',
-    btn_start:'🚀 Démarrer la partie', btn_add_bot:'🤖 Ajouter un bot IA', btn_leave:'🚪 Quitter', btn_finish:'🎉 Bitti !', btn_next_hand:'▶️ Main suivante',
+    btn_start:'🚀 Démarrer la partie', btn_add_bot:'🤖 Ajouter un bot IA', btn_leave:'🚪 Quitter', btn_finish:'🎉 Bitti !', btn_sort_hand:'🔀 Trier', btn_next_hand:'▶️ Main suivante',
     indicator_label:'GÖSTERGE', deck_label:'PIOCHE', discard_label:'DÉFAUSSE',
     turn_mine:'✅ À toi de jouer !', turn_other:'⏳ Tour de {name}', must_draw_hint:'Pioche un tas ou la défausse.',
     must_discard_hint:'Clique une tuile pour la défausser, ou déclare "Bitti !".',
@@ -178,7 +184,7 @@ const I18N = {
   en: { label_username:'🎮 Your Nickname', placeholder_username:'Enter your name', label_avatar:'🀄 Choose your avatar',
     btn_create:'➕ Create a table', label_or_join:'OR JOIN', placeholder_room_code:'Table code', btn_join:'🔗 Join',
     title_lobby:'OKEY', label_room_code:'TABLE CODE', label_players:'👥 Players',
-    btn_start:'🚀 Start game', btn_add_bot:'🤖 Add AI bot', btn_leave:'🚪 Leave', btn_finish:'🎉 Finish!', btn_next_hand:'▶️ Next hand',
+    btn_start:'🚀 Start game', btn_add_bot:'🤖 Add AI bot', btn_leave:'🚪 Leave', btn_finish:'🎉 Finish!', btn_sort_hand:'🔀 Sort', btn_next_hand:'▶️ Next hand',
     indicator_label:'INDICATOR', deck_label:'DECK', discard_label:'DISCARD',
     turn_mine:'✅ Your turn!', turn_other:"⏳ {name}'s turn", must_draw_hint:'Draw from the deck or the discard pile.',
     must_discard_hint:'Click a tile to discard it, or declare "Finish!".',
@@ -190,7 +196,7 @@ const I18N = {
   es: { label_username:'🎮 Tu Apodo', placeholder_username:'Escribe tu nombre', label_avatar:'🀄 Elige tu avatar',
     btn_create:'➕ Crear una mesa', label_or_join:'O ÚNETE', placeholder_room_code:'Código de la mesa', btn_join:'🔗 Unirse',
     title_lobby:'OKEY', label_room_code:'CÓDIGO DE LA MESA', label_players:'👥 Jugadores',
-    btn_start:'🚀 Empezar partida', btn_add_bot:'🤖 Añadir un bot IA', btn_leave:'🚪 Salir', btn_finish:'🎉 ¡Terminé!', btn_next_hand:'▶️ Siguiente mano',
+    btn_start:'🚀 Empezar partida', btn_add_bot:'🤖 Añadir un bot IA', btn_leave:'🚪 Salir', btn_finish:'🎉 ¡Terminé!', btn_sort_hand:'🔀 Ordenar', btn_next_hand:'▶️ Siguiente mano',
     indicator_label:'INDICADOR', deck_label:'MAZO', discard_label:'DESCARTE',
     turn_mine:'✅ ¡Es tu turno!', turn_other:'⏳ Turno de {name}', must_draw_hint:'Roba del mazo o del descarte.',
     must_discard_hint:'Toca una ficha para descartarla, o declara "¡Terminé!".',
@@ -202,7 +208,7 @@ const I18N = {
   de: { label_username:'🎮 Dein Spitzname', placeholder_username:'Gib deinen Namen ein', label_avatar:'🀄 Wähle deinen Avatar',
     btn_create:'➕ Tisch erstellen', label_or_join:'ODER BEITRETEN', placeholder_room_code:'Tischcode', btn_join:'🔗 Beitreten',
     title_lobby:'OKEY', label_room_code:'TISCHCODE', label_players:'👥 Spieler',
-    btn_start:'🚀 Spiel starten', btn_add_bot:'🤖 KI-Bot hinzufügen', btn_leave:'🚪 Verlassen', btn_finish:'🎉 Fertig!', btn_next_hand:'▶️ Nächste Runde',
+    btn_start:'🚀 Spiel starten', btn_add_bot:'🤖 KI-Bot hinzufügen', btn_leave:'🚪 Verlassen', btn_finish:'🎉 Fertig!', btn_sort_hand:'🔀 Sortieren', btn_next_hand:'▶️ Nächste Runde',
     indicator_label:'ANZEIGER', deck_label:'STAPEL', discard_label:'ABLAGE',
     turn_mine:'✅ Du bist dran!', turn_other:'⏳ {name} ist dran', must_draw_hint:'Ziehe vom Stapel oder von der Ablage.',
     must_discard_hint:'Klicke einen Stein zum Ablegen, oder erkläre "Fertig!".',
@@ -214,7 +220,7 @@ const I18N = {
   it: { label_username:'🎮 Il tuo soprannome', placeholder_username:'Inserisci il tuo nome', label_avatar:'🀄 Scegli il tuo avatar',
     btn_create:'➕ Crea un tavolo', label_or_join:'O UNISCITI', placeholder_room_code:'Codice del tavolo', btn_join:'🔗 Unisciti',
     title_lobby:'OKEY', label_room_code:'CODICE DEL TAVOLO', label_players:'👥 Giocatori',
-    btn_start:'🚀 Inizia partita', btn_add_bot:'🤖 Aggiungi un bot IA', btn_leave:'🚪 Esci', btn_finish:'🎉 Finito!', btn_next_hand:'▶️ Mano successiva',
+    btn_start:'🚀 Inizia partita', btn_add_bot:'🤖 Aggiungi un bot IA', btn_leave:'🚪 Esci', btn_finish:'🎉 Finito!', btn_sort_hand:'🔀 Ordina', btn_next_hand:'▶️ Mano successiva',
     indicator_label:'INDICATORE', deck_label:'MAZZO', discard_label:'SCARTI',
     turn_mine:'✅ Tocca a te!', turn_other:'⏳ Turno di {name}', must_draw_hint:'Pesca dal mazzo o dagli scarti.',
     must_discard_hint:'Clicca una tessera per scartarla, oppure dichiara "Finito!".',
@@ -226,7 +232,7 @@ const I18N = {
   nl: { label_username:'🎮 Jouw Bijnaam', placeholder_username:'Voer je naam in', label_avatar:'🀄 Kies je avatar',
     btn_create:'➕ Tafel aanmaken', label_or_join:'OF DOE MEE', placeholder_room_code:'Tafelcode', btn_join:'🔗 Meedoen',
     title_lobby:'OKEY', label_room_code:'TAFELCODE', label_players:'👥 Spelers',
-    btn_start:'🚀 Spel starten', btn_add_bot:'🤖 AI-bot toevoegen', btn_leave:'🚪 Verlaten', btn_finish:'🎉 Klaar!', btn_next_hand:'▶️ Volgende ronde',
+    btn_start:'🚀 Spel starten', btn_add_bot:'🤖 AI-bot toevoegen', btn_leave:'🚪 Verlaten', btn_finish:'🎉 Klaar!', btn_sort_hand:'🔀 Sorteren', btn_next_hand:'▶️ Volgende ronde',
     indicator_label:'INDICATOR', deck_label:'STAPEL', discard_label:'AFLEG',
     turn_mine:'✅ Jij bent aan de beurt!', turn_other:'⏳ Beurt van {name}', must_draw_hint:'Trek van de stapel of de afleg.',
     must_discard_hint:'Klik op een steen om af te leggen, of verklaar "Klaar!".',
@@ -238,7 +244,7 @@ const I18N = {
   ru: { label_username:'🎮 Твой ник', placeholder_username:'Введите ваше имя', label_avatar:'🀄 Выберите аватар',
     btn_create:'➕ Создать стол', label_or_join:'ИЛИ ПРИСОЕДИНИТЬСЯ', placeholder_room_code:'Код стола', btn_join:'🔗 Присоединиться',
     title_lobby:'ОКЕЙ', label_room_code:'КОД СТОЛА', label_players:'👥 Игроки',
-    btn_start:'🚀 Начать игру', btn_add_bot:'🤖 Добавить ИИ-бота', btn_leave:'🚪 Выйти', btn_finish:'🎉 Финиш!', btn_next_hand:'▶️ Следующая раздача',
+    btn_start:'🚀 Начать игру', btn_add_bot:'🤖 Добавить ИИ-бота', btn_leave:'🚪 Выйти', btn_finish:'🎉 Финиш!', btn_sort_hand:'🔀 Сортировать', btn_next_hand:'▶️ Следующая раздача',
     indicator_label:'ИНДИКАТОР', deck_label:'КОЛОДА', discard_label:'СБРОС',
     turn_mine:'✅ Твой ход!', turn_other:'⏳ Ход игрока {name}', must_draw_hint:'Возьми из колоды или сброса.',
     must_discard_hint:'Кликни камень чтобы сбросить, или объяви "Финиш!".',
@@ -250,7 +256,7 @@ const I18N = {
   ar: { label_username:'🎮 اسمك المستعار', placeholder_username:'أدخل اسمك', label_avatar:'🀄 اختر صورتك الرمزية',
     btn_create:'➕ إنشاء طاولة', label_or_join:'أو انضم', placeholder_room_code:'رمز الطاولة', btn_join:'🔗 انضمام',
     title_lobby:'أوكي', label_room_code:'رمز الطاولة', label_players:'👥 اللاعبون',
-    btn_start:'🚀 ابدأ اللعبة', btn_add_bot:'🤖 إضافة بوت ذكاء اصطناعي', btn_leave:'🚪 مغادرة', btn_finish:'🎉 انتهيت!', btn_next_hand:'▶️ الجولة التالية',
+    btn_start:'🚀 ابدأ اللعبة', btn_add_bot:'🤖 إضافة بوت ذكاء اصطناعي', btn_leave:'🚪 مغادرة', btn_finish:'🎉 انتهيت!', btn_sort_hand:'🔀 ترتيب', btn_next_hand:'▶️ الجولة التالية',
     indicator_label:'المؤشر', deck_label:'الحزمة', discard_label:'النبذ',
     turn_mine:'✅ دورك الآن!', turn_other:'⏳ دور {name}', must_draw_hint:'اسحب من الحزمة أو من النبذ.',
     must_discard_hint:'انقر على قطعة لنبذها، أو أعلن "انتهيت!".',
@@ -262,7 +268,7 @@ const I18N = {
   pt: { label_username:'🎮 Seu Apelido', placeholder_username:'Digite seu nome', label_avatar:'🀄 Escolha seu avatar',
     btn_create:'➕ Criar uma mesa', label_or_join:'OU ENTRAR', placeholder_room_code:'Código da mesa', btn_join:'🔗 Entrar',
     title_lobby:'OKEY', label_room_code:'CÓDIGO DA MESA', label_players:'👥 Jogadores',
-    btn_start:'🚀 Iniciar jogo', btn_add_bot:'🤖 Adicionar bot de IA', btn_leave:'🚪 Sair', btn_finish:'🎉 Terminei!', btn_next_hand:'▶️ Próxima rodada',
+    btn_start:'🚀 Iniciar jogo', btn_add_bot:'🤖 Adicionar bot de IA', btn_leave:'🚪 Sair', btn_finish:'🎉 Terminei!', btn_sort_hand:'🔀 Ordenar', btn_next_hand:'▶️ Próxima rodada',
     indicator_label:'INDICADOR', deck_label:'BARALHO', discard_label:'DESCARTE',
     turn_mine:'✅ É a sua vez!', turn_other:'⏳ Vez de {name}', must_draw_hint:'Compre do baralho ou do descarte.',
     must_discard_hint:'Clique numa peça para descartar, ou declare "Terminei!".',
@@ -274,7 +280,7 @@ const I18N = {
   pl: { label_username:'🎮 Twój Pseudonim', placeholder_username:'Wpisz swoje imię', label_avatar:'🀄 Wybierz awatar',
     btn_create:'➕ Utwórz stół', label_or_join:'LUB DOŁĄCZ', placeholder_room_code:'Kod stołu', btn_join:'🔗 Dołącz',
     title_lobby:'OKEY', label_room_code:'KOD STOŁU', label_players:'👥 Gracze',
-    btn_start:'🚀 Rozpocznij grę', btn_add_bot:'🤖 Dodaj bota AI', btn_leave:'🚪 Opuść', btn_finish:'🎉 Koniec!', btn_next_hand:'▶️ Następna runda',
+    btn_start:'🚀 Rozpocznij grę', btn_add_bot:'🤖 Dodaj bota AI', btn_leave:'🚪 Opuść', btn_finish:'🎉 Koniec!', btn_sort_hand:'🔀 Sortuj', btn_next_hand:'▶️ Następna runda',
     indicator_label:'WSKAŹNIK', deck_label:'STOS', discard_label:'ODRZUTY',
     turn_mine:'✅ Twoja kolej!', turn_other:'⏳ Kolej gracza {name}', must_draw_hint:'Dobierz ze stosu lub z odrzutów.',
     must_discard_hint:'Kliknij kamień aby go odrzucić, albo zadeklaruj "Koniec!".',
@@ -286,7 +292,7 @@ const I18N = {
   tr: { label_username:'🎮 Takma Adın', placeholder_username:'Adını gir', label_avatar:'🀄 Avatarını seç',
     btn_create:'➕ Masa kur', label_or_join:'YA DA KATIL', placeholder_room_code:'Masa kodu', btn_join:'🔗 Katıl',
     title_lobby:'OKEY', label_room_code:'MASA KODU', label_players:'👥 Oyuncular',
-    btn_start:'🚀 Oyunu başlat', btn_add_bot:'🤖 Yapay zeka botu ekle', btn_leave:'🚪 Ayrıl', btn_finish:'🎉 Bitti!', btn_next_hand:'▶️ Sonraki el',
+    btn_start:'🚀 Oyunu başlat', btn_add_bot:'🤖 Yapay zeka botu ekle', btn_leave:'🚪 Ayrıl', btn_finish:'🎉 Bitti!', btn_sort_hand:'🔀 Sırala', btn_next_hand:'▶️ Sonraki el',
     indicator_label:'GÖSTERGE', deck_label:'DESTE', discard_label:'ISKARTA',
     turn_mine:'✅ Sıra sende!', turn_other:'⏳ Sıra: {name}', must_draw_hint:'Desteden veya ıskartadan çek.',
     must_discard_hint:'Atmak için bir taşa tıkla, ya da "Bitti!" de.',
@@ -298,7 +304,7 @@ const I18N = {
   ja: { label_username:'🎮 ニックネーム', placeholder_username:'名前を入力', label_avatar:'🀄 アバターを選択',
     btn_create:'➕ テーブルを作成', label_or_join:'または参加', placeholder_room_code:'テーブルコード', btn_join:'🔗 参加',
     title_lobby:'オケイ', label_room_code:'テーブルコード', label_players:'👥 プレイヤー',
-    btn_start:'🚀 ゲーム開始', btn_add_bot:'🤖 AIボットを追加', btn_leave:'🚪 退出', btn_finish:'🎉 上がり！', btn_next_hand:'▶️ 次の局',
+    btn_start:'🚀 ゲーム開始', btn_add_bot:'🤖 AIボットを追加', btn_leave:'🚪 退出', btn_finish:'🎉 上がり！', btn_sort_hand:'🔀 並べ替え', btn_next_hand:'▶️ 次の局',
     indicator_label:'インジケーター', deck_label:'山札', discard_label:'捨て札',
     turn_mine:'✅ あなたの番です！', turn_other:'⏳ {name}の番', must_draw_hint:'山札か捨て札から引いてください。',
     must_discard_hint:'牌をクリックして捨てるか、「上がり！」を宣言してください。',
@@ -310,7 +316,7 @@ const I18N = {
   zh: { label_username:'🎮 你的昵称', placeholder_username:'输入你的名字', label_avatar:'🀄 选择你的头像',
     btn_create:'➕ 创建牌桌', label_or_join:'或加入', placeholder_room_code:'牌桌代码', btn_join:'🔗 加入',
     title_lobby:'OKEY', label_room_code:'牌桌代码', label_players:'👥 玩家',
-    btn_start:'🚀 开始游戏', btn_add_bot:'🤖 添加AI机器人', btn_leave:'🚪 离开', btn_finish:'🎉 胡了！', btn_next_hand:'▶️ 下一局',
+    btn_start:'🚀 开始游戏', btn_add_bot:'🤖 添加AI机器人', btn_leave:'🚪 离开', btn_finish:'🎉 胡了！', btn_sort_hand:'🔀 排序', btn_next_hand:'▶️ 下一局',
     indicator_label:'指示牌', deck_label:'牌堆', discard_label:'弃牌',
     turn_mine:'✅ 轮到你了！', turn_other:'⏳ 轮到 {name}', must_draw_hint:'从牌堆或弃牌堆摸牌。',
     must_discard_hint:'点击一张牌弃掉，或者宣布"胡了！"。',
@@ -322,7 +328,7 @@ const I18N = {
   ko: { label_username:'🎮 닉네임', placeholder_username:'이름을 입력하세요', label_avatar:'🀄 아바타를 선택하세요',
     btn_create:'➕ 테이블 만들기', label_or_join:'또는 참가하기', placeholder_room_code:'테이블 코드', btn_join:'🔗 참가',
     title_lobby:'오케이', label_room_code:'테이블 코드', label_players:'👥 플레이어',
-    btn_start:'🚀 게임 시작', btn_add_bot:'🤖 AI 봇 추가', btn_leave:'🚪 나가기', btn_finish:'🎉 끝났어요!', btn_next_hand:'▶️ 다음 판',
+    btn_start:'🚀 게임 시작', btn_add_bot:'🤖 AI 봇 추가', btn_leave:'🚪 나가기', btn_finish:'🎉 끝났어요!', btn_sort_hand:'🔀 정렬', btn_next_hand:'▶️ 다음 판',
     indicator_label:'인디케이터', deck_label:'더미', discard_label:'버림패',
     turn_mine:'✅ 당신의 차례입니다!', turn_other:'⏳ {name}의 차례', must_draw_hint:'더미나 버림패에서 가져오세요.',
     must_discard_hint:'패를 클릭해서 버리거나, "끝났어요!"를 선언하세요.',
@@ -388,7 +394,7 @@ document.getElementById('leaveLobbyBtn').addEventListener('click', leaveTable);
 document.getElementById('leaveTableBtn').addEventListener('click', leaveTable);
 function leaveTable() {
   socket.emit('okey_leave_room', {code: room, username: user});
-  room = ''; lastState = null; myHand = [];
+  room = ''; lastState = null; myHand = []; myOrder = [];
   show('loginScreen');
 }
 
@@ -429,6 +435,58 @@ function tileHtml(tile, opts) {
   }
   return `<div class="${cls.join(' ')}" data-tile-id="${tile.id}" style="color:${COLOR_MAP[tile.color]}">${tile.number}</div>`;
 }
+
+function attachTileDrag(el, tileId, discardable) {
+  let startX = 0, startY = 0, moved = false, active = false, hoverTile = null, hoverBefore = true;
+  el.addEventListener('pointerdown', (e) => {
+    startX = e.clientX; startY = e.clientY; moved = false; active = true; hoverTile = null;
+    el.setPointerCapture(e.pointerId);
+    el.classList.add('dragging');
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!active) return;
+    if (!moved && (Math.abs(e.clientX - startX) > 6 || Math.abs(e.clientY - startY) > 6)) moved = true;
+    if (!moved) return;
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    const targetTile = target && target.closest('.rack .okey-tile[data-tile-id]');
+    document.querySelectorAll('.rack .okey-tile.drop-target').forEach(x => x.classList.remove('drop-target'));
+    if (targetTile && targetTile !== el) {
+      hoverTile = targetTile;
+      const rect = targetTile.getBoundingClientRect();
+      hoverBefore = e.clientX < rect.left + rect.width / 2;
+      targetTile.classList.add('drop-target');
+    } else {
+      hoverTile = null;
+    }
+  });
+  el.addEventListener('pointerup', (e) => {
+    if (!active) return;
+    active = false;
+    el.classList.remove('dragging');
+    document.querySelectorAll('.rack .okey-tile.drop-target').forEach(x => x.classList.remove('drop-target'));
+    if (moved && hoverTile) {
+      const targetId = parseInt(hoverTile.dataset.tileId, 10);
+      const fromIdx = myOrder.indexOf(tileId);
+      if (fromIdx !== -1) {
+        myOrder.splice(fromIdx, 1);
+        let toIdx = myOrder.indexOf(targetId);
+        if (toIdx !== -1) {
+          myOrder.splice(hoverBefore ? toIdx : toIdx + 1, 0, tileId);
+          if (lastState) render(lastState);
+        } else {
+          myOrder.splice(fromIdx, 0, tileId);
+        }
+      }
+    } else if (!moved && discardable) {
+      socket.emit('okey_discard', {code: room, username: user, tileId});
+    }
+  });
+}
+
+document.getElementById('sortHandBtn').addEventListener('click', () => {
+  myOrder = sortHand(myHand).map(t => t.id);
+  if (lastState) render(lastState);
+});
 
 function seatPositions(n) {
   const cx = 490, cy = 250, rx = 420, ry = 195, pts = [];
@@ -486,18 +544,15 @@ function render(state) {
     : (state.turn ? t('turn_other', {name: state.turn}) : '');
   document.getElementById('actionLog').textContent = state.log || '';
 
-  const sorted = sortHand(myHand);
-  const mid = Math.ceil(sorted.length / 2);
+  const byId = Object.fromEntries(myHand.map(t => [t.id, t]));
+  const orderedHand = myOrder.map(id => byId[id]).filter(Boolean);
+  const mid = Math.ceil(orderedHand.length / 2);
   const clickable = myTurn && state.mustDiscard;
-  document.getElementById('handRowTop').innerHTML = sorted.slice(0, mid).map(tile => tileHtml(tile, {clickable})).join('');
-  document.getElementById('handRowBottom').innerHTML = sorted.slice(mid).map(tile => tileHtml(tile, {clickable})).join('');
-  if (clickable) {
-    document.querySelectorAll('.rack .hand-tile').forEach(el => {
-      el.addEventListener('click', () => {
-        socket.emit('okey_discard', {code: room, username: user, tileId: parseInt(el.dataset.tileId, 10)});
-      });
-    });
-  }
+  document.getElementById('handRowTop').innerHTML = orderedHand.slice(0, mid).map(tile => tileHtml(tile, {clickable})).join('');
+  document.getElementById('handRowBottom').innerHTML = orderedHand.slice(mid).map(tile => tileHtml(tile, {clickable})).join('');
+  document.querySelectorAll('.rack .okey-tile[data-tile-id]').forEach(el => {
+    attachTileDrag(el, parseInt(el.dataset.tileId, 10), clickable);
+  });
 
   document.getElementById('deckPileBtn').disabled = !(myTurn && !state.mustDiscard);
   document.getElementById('discardPileBtn').disabled = !(myTurn && !state.mustDiscard) || !state.discardTop;
@@ -517,7 +572,14 @@ function render(state) {
 }
 
 socket.on('okey_state', render);
-socket.on('okey_your_hand', (d) => { myHand = d.hand || []; if (lastState) render(lastState); });
+socket.on('okey_your_hand', (d) => {
+  myHand = d.hand || [];
+  const newIds = new Set(myHand.map(t => t.id));
+  myOrder = myOrder.filter(id => newIds.has(id));
+  const known = new Set(myOrder);
+  sortHand(myHand).forEach(t => { if (!known.has(t.id)) myOrder.push(t.id); });
+  if (lastState) render(lastState);
+});
 socket.on('okey_error', (d) => {
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
