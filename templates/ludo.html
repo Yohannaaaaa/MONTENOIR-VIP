@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ludo VIP</title>
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="/static/js/site_lang.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
+  .screen { display: none; width: 100%; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+  .screen.active { display: flex; }
+  h1 { font-size: 50px; font-weight: bold; color: #d4af37; text-shadow: 0 0 30px rgba(212,175,55,0.8); margin-bottom: 26px; letter-spacing: 6px; text-align: center; }
+  .card-box { background: rgba(26,26,26,0.98); border: 3px solid #d4af37; border-radius: 20px; padding: 40px; max-width: 460px; width: 100%; box-shadow: 0 0 50px rgba(212,175,55,0.4); }
+  .label { display: block; color: #d4af37; font-weight: bold; margin-top: 18px; margin-bottom: 10px; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+  .input { width: 100%; padding: 14px; background: #0a0a0a; border: 2px solid #d4af37; color: #f5e6d3; border-radius: 10px; font-size: 15px; }
+  .input:focus { outline: none; box-shadow: 0 0 20px rgba(212,175,55,0.6); }
+  .avatar-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin: 14px 0; }
+  .avatar-btn { aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 3px solid #3a2f1a; transition: all .25s; }
+  .avatar-btn.selected { border-color: #d4af37; box-shadow: 0 0 18px #d4af37; transform: scale(1.08); }
+  .checkbox-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: #f5e6d3; font-size: 13px; }
+  .checkbox-row input { width: 18px; height: 18px; }
+  .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #d4af37, #a0860d); color: #1a1a1a; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: all .25s; margin-top: 14px; letter-spacing: 1px; text-transform: uppercase; }
+  .btn:hover { transform: scale(1.02); box-shadow: 0 0 25px rgba(212,175,55,0.6); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn.green { background: linear-gradient(135deg, #2d7a56, #1f5a42); color: #fff; }
+  .btn.grey { background: #444; color: #f5e6d3; }
+  .error { color: #ff6b6b; text-align: center; margin-top: 14px; font-size: 14px; min-height: 20px; }
+  .lang-switch { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 480px; }
+  .lang-btn { padding: 7px 12px; background: rgba(40,40,40,0.8); border: 2px solid #d4af37; color: #f5e6d3; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+  .lang-btn.selected { background: #d4af37; color: #1a1a1a; box-shadow: 0 0 15px #d4af37; }
+  .room-code { font-size: 40px; color: #d4af37; font-weight: bold; margin: 22px 0; letter-spacing: 3px; text-shadow: 0 0 20px rgba(212,175,55,0.6); text-align: center; }
+  .players-list { background: rgba(10,10,10,0.8); border: 1px solid #d4af37; border-radius: 10px; padding: 14px; margin: 14px 0; max-height: 200px; overflow-y: auto; min-height: 60px; }
+  .player-item { padding: 9px 4px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .player-item:last-child { border-bottom: none; }
+  .swatch { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 8px; vertical-align: middle; }
+
+  #gameScreen { padding: 14px; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 640px; margin: 0 auto 8px; font-size: 12px; color: #d4af37; }
+  .top-bar button { background: none; border: 1px solid #d4af37; color: #d4af37; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .board-wrap { width: min(600px, 94vw); aspect-ratio: 1; margin: 0 auto; position: relative; border: 6px solid #3a2f1a; border-radius: 10px; background: #efe6cf; box-shadow: 0 15px 40px rgba(0,0,0,.7); }
+  .board-grid, .tokens-layer { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(15,1fr); grid-template-rows: repeat(15,1fr); }
+  .tokens-layer { pointer-events: none; }
+  .cell { border: 1px solid rgba(0,0,0,0.06); }
+  .cell.path { background: #fff; }
+  .cell.path.safe { background: #fff3c4; }
+  .cell.deco { background: #efe6cf; }
+  .cell.center { background: conic-gradient(from -45deg, #e0559b 0deg 90deg, #e0b400 90deg 180deg, #2a6fd6 180deg 270deg, #d33 270deg 360deg); }
+  .cell.corner-tl { background: linear-gradient(135deg, #e0559b 50%, #d33 50%); }
+  .cell.corner-tr { background: linear-gradient(225deg, #e0559b 50%, #e0b400 50%); }
+  .cell.corner-br { background: linear-gradient(315deg, #e0b400 50%, #2a6fd6 50%); }
+  .cell.corner-bl { background: linear-gradient(45deg, #d33 50%, #2a6fd6 50%); }
+  .cell.yard-red { background: #f6d3d3; }
+  .cell.yard-yellow { background: #f8ecc0; }
+  .cell.yard-pink { background: #f8d6e9; }
+  .cell.yard-blue { background: #d3e0f6; }
+  .cell.home-red { background: #e88; }
+  .cell.home-yellow { background: #e0c14a; }
+  .cell.home-pink { background: #e888c0; }
+  .cell.home-blue { background: #7fa3e8; }
+  .yard-slot { position: relative; width: 60%; height: 60%; margin: auto; border-radius: 50%; background: rgba(255,255,255,0.55); border: 2px dashed rgba(0,0,0,0.15); }
+  .token { position: relative; width: 62%; height: 62%; margin: auto; border-radius: 50%; border: 2px solid rgba(0,0,0,0.4); box-shadow: 0 3px 6px rgba(0,0,0,.5); pointer-events: auto; transition: all .25s; }
+  .token.selectable { box-shadow: 0 0 0 3px #fff, 0 0 14px 4px rgba(212,175,55,0.9); cursor: pointer; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+  .dice-box { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 14px auto 4px; }
+  .die { width: 62px; height: 62px; background: linear-gradient(160deg,#fff,#e8e8e8); border-radius: 12px; border: 2px solid #333; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); padding: 8px; gap: 2px; box-shadow: 0 8px 16px rgba(0,0,0,.6); }
+  .die.rolling { animation: shake .5s ease-in-out; }
+  @keyframes shake { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-15deg)} 75%{transform:rotate(15deg)} }
+  .pip { border-radius: 50%; background: #222; align-self: center; justify-self: center; width: 60%; height: 60%; visibility: hidden; }
+  .side-panel { max-width: 640px; margin: 10px auto 0; background: rgba(26,26,26,0.9); border: 2px solid #d4af37; border-radius: 16px; padding: 14px 18px; }
+  .turn-indicator { text-align: center; color: #d4af37; font-weight: bold; margin-bottom: 8px; min-height: 20px; }
+  .players-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .player-chip { display: flex; align-items: center; gap: 6px; background: rgba(10,10,10,.8); border: 2px solid #444; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
+  .player-chip.turn { border-color: #d4af37; box-shadow: 0 0 12px rgba(212,175,55,.7); }
+  .action-log { color: #d4af37; font-size: 12px; text-align: center; margin-top: 8px; min-height: 16px; opacity: .9; }
+  .winner-box { text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="screen active">
+  <div class="lang-switch" id="langSwitch"></div>
+  <h1>🔴 LUDO 🔵</h1>
+  <div class="card-box">
+    <label class="label" data-i18n="label_username">🎮 Ton Pseudo</label>
+    <input type="text" id="username" class="input" data-i18n-placeholder="placeholder_username" placeholder="Entre ton nom">
+    <label class="label" data-i18n="label_avatar">🎨 Choisis ton avatar</label>
+    <div class="avatar-grid">
+      <button class="avatar-btn selected" data-avatar="🔴" style="background:#d33;"></button>
+      <button class="avatar-btn" data-avatar="🟡" style="background:#e0b400;"></button>
+      <button class="avatar-btn" data-avatar="🩷" style="background:#e0559b;"></button>
+      <button class="avatar-btn" data-avatar="🔵" style="background:#2a6fd6;"></button>
+    </div>
+    <button class="btn" id="createBtn" data-i18n="btn_create">➕ Créer une table</button>
+    <label class="label" data-i18n="label_or_join">OU REJOIGNEZ</label>
+    <input type="text" id="roomCode" class="input" data-i18n-placeholder="placeholder_room_code" placeholder="Code de la table">
+    <button class="btn" id="joinBtn" data-i18n="btn_join">🔗 Rejoindre</button>
+    <div class="error" id="errorMsg"></div>
+  </div>
+</div>
+
+<div id="lobbyScreen" class="screen">
+  <h1 data-i18n="title_lobby">LUDO</h1>
+  <div class="card-box">
+    <div style="text-align:center;color:#d4af37;margin-bottom:8px;font-weight:bold;" data-i18n="label_room_code">CODE DE LA TABLE</div>
+    <div class="room-code" id="roomCodeDisplay">LUD-XXXX</div>
+    <div style="text-align:center;font-size:13px;color:#f5e6d3;" id="lobbyInfo"></div>
+    <label class="label" data-i18n="label_players">👥 Joueurs</label>
+    <div class="players-list" id="lobbyPlayersList"></div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="teamModeChk">
+      <label for="teamModeChk" data-i18n="label_team_mode">🤝 Mode équipe (2 contre 2, à 4 joueurs)</label>
+    </div>
+    <button class="btn green" id="startBtn" data-i18n="btn_start">🚀 Démarrer la partie</button>
+    <button class="btn grey" id="addBotBtn" data-i18n="btn_add_bot">🤖 Ajouter un bot IA</button>
+    <button class="btn grey" id="leaveLobbyBtn" data-i18n="btn_leave">🚪 Quitter</button>
+  </div>
+</div>
+
+<div id="gameScreen" class="screen">
+  <div class="top-bar">
+    <span id="tableInfo"></span>
+    <button id="leaveTableBtn" data-i18n="btn_leave">🚪 Quitter</button>
+  </div>
+  <div class="board-wrap">
+    <div class="board-grid" id="boardGrid"></div>
+    <div class="tokens-layer" id="tokensLayer"></div>
+  </div>
+  <div class="side-panel">
+    <div class="players-row" id="playersRow"></div>
+    <div class="turn-indicator" id="turnIndicator"></div>
+    <div class="dice-box">
+      <div class="die" id="die">
+        <div class="pip" data-p="1"></div><div class="pip" data-p="2"></div><div class="pip" data-p="3"></div>
+        <div class="pip" data-p="4"></div><div class="pip" data-p="5"></div><div class="pip" data-p="6"></div>
+        <div class="pip" data-p="7"></div><div class="pip" data-p="8"></div><div class="pip" data-p="9"></div>
+      </div>
+      <button class="btn green" id="rollBtn" style="width:auto;padding:10px 26px;margin-top:0;" data-i18n="btn_roll">🎲 Lancer</button>
+    </div>
+    <div class="action-bar" id="roundOverBar" style="display:none;text-align:center;">
+      <div class="winner-box">
+        <div id="winnerMsg" style="color:#d4af37;font-weight:bold;margin-bottom:8px;"></div>
+      </div>
+    </div>
+    <div class="action-log" id="actionLog"></div>
+  </div>
+</div>
+
+<script>
+const socket = io();
+let user = '', avatar = '🔴', room = '', lastState = null, isOwner = false, isRolling = false;
+
+const COLOR_HEX = {red:'#d33', yellow:'#e0b400', pink:'#e0559b', blue:'#2a6fd6'};
+const PATH_CELLS = [[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0],[6,0]];
+const HOME_STRETCH = {
+  red: [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],
+  pink: [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],
+  yellow: [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],
+  blue: [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
+};
+const YARD_SLOTS = {
+  red: [[2,2],[2,3],[3,2],[3,3]],
+  pink: [[2,11],[2,12],[3,11],[3,12]],
+  yellow: [[11,11],[11,12],[12,11],[12,12]],
+  blue: [[11,2],[11,3],[12,2],[12,3]]
+};
+const CENTER_CELL = [7,7];
+const START_OFFSET = {red:0, yellow:26, pink:13, blue:39};
+const SAFE_RING_IDX = new Set([0,13,26,39,8,21,34,47]);
+
+function cellForToken(color, distance, tokenIndex) {
+  if (distance === 0) return YARD_SLOTS[color][tokenIndex];
+  if (distance <= 51) return PATH_CELLS[(START_OFFSET[color] + distance - 1) % 52];
+  if (distance <= 57) return HOME_STRETCH[color][distance - 52];
+  return CENTER_CELL;
+}
+
+const I18N = {
+  fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🎨 Choisis ton avatar',
+    btn_create:'➕ Créer une table', label_or_join:'OU REJOIGNEZ', placeholder_room_code:'Code de la table', btn_join:'🔗 Rejoindre',
+    title_lobby:'LUDO', label_room_code:'CODE DE LA TABLE', label_players:'👥 Joueurs', label_team_mode:'🤝 Mode équipe (2 contre 2, à 4 joueurs)',
+    btn_start:'🚀 Démarrer la partie', btn_add_bot:'🤖 Ajouter un bot IA', btn_leave:'🚪 Quitter', btn_roll:'🎲 Lancer',
+    waiting_players:'En attente de joueurs (min. 2)…', turn_mine:'✅ À toi de jouer !', turn_other:'⏳ Tour de {name}',
+    must_choose_move:'👉 Choisis le pion à déplacer.', no_moves:'Aucun coup possible avec ce {roll}.', three_six:'Trois 6 de suite — tour perdu !',
+    win_msg:'{name} a gagné la partie ! 🏆', you_label:'Toi', alert_prefix:'❌ ', err_generic:'Erreur',
+    err_room_not_found:'Table introuvable.', err_table_full:'Table complète (max 4).', err_need_players:'Il faut au moins 2 joueurs.',
+    err_not_your_turn:"Ce n'est pas ton tour.", err_must_move:"Choisis d'abord ton pion.", err_invalid_move:'Coup invalide.',
+    err_cannot_add_bot:'Impossible d\'ajouter un bot maintenant.' },
+  en: { label_username:'🎮 Your Nickname', placeholder_username:'Enter your name', label_avatar:'🎨 Choose your avatar',
+    btn_create:'➕ Create a table', label_or_join:'OR JOIN', placeholder_room_code:'Table code', btn_join:'🔗 Join',
+    title_lobby:'LUDO', label_room_code:'TABLE CODE', label_players:'👥 Players', label_team_mode:'🤝 Team mode (2 vs 2, at 4 players)',
+    btn_start:'🚀 Start game', btn_add_bot:'🤖 Add AI bot', btn_leave:'🚪 Leave', btn_roll:'🎲 Roll',
+    waiting_players:'Waiting for players (min. 2)…', turn_mine:'✅ Your turn!', turn_other:"⏳ {name}'s turn",
+    must_choose_move:'👉 Choose the token to move.', no_moves:'No possible move with this {roll}.', three_six:'Three 6s in a row — turn lost!',
+    win_msg:'{name} won the game! 🏆', you_label:'You', alert_prefix:'❌ ', err_generic:'Error',
+    err_room_not_found:'Table not found.', err_table_full:'Table full (max 4).', err_need_players:'Need at least 2 players.',
+    err_not_your_turn:"It's not your turn.", err_must_move:'Choose your token first.', err_invalid_move:'Invalid move.',
+    err_cannot_add_bot:'Cannot add a bot right now.' },
+  es: { label_username:'🎮 Tu Apodo', placeholder_username:'Escribe tu nombre', label_avatar:'🎨 Elige tu avatar',
+    btn_create:'➕ Crear una mesa', label_or_join:'O ÚNETE', placeholder_room_code:'Código de la mesa', btn_join:'🔗 Unirse',
+    title_lobby:'LUDO', label_room_code:'CÓDIGO DE LA MESA', label_players:'👥 Jugadores', label_team_mode:'🤝 Modo equipo (2 contra 2, con 4 jugadores)',
+    btn_start:'🚀 Empezar partida', btn_add_bot:'🤖 Añadir un bot IA', btn_leave:'🚪 Salir', btn_roll:'🎲 Lanzar',
+    waiting_players:'Esperando jugadores (mín. 2)…', turn_mine:'✅ ¡Es tu turno!', turn_other:'⏳ Turno de {name}',
+    must_choose_move:'👉 Elige la ficha a mover.', no_moves:'Ningún movimiento posible con este {roll}.', three_six:'¡Tres 6 seguidos, turno perdido!',
+    win_msg:'¡{name} ganó la partida! 🏆', you_label:'Tú', alert_prefix:'❌ ', err_generic:'Error',
+    err_room_not_found:'Mesa no encontrada.', err_table_full:'Mesa completa (máx 4).', err_need_players:'Se necesitan al menos 2 jugadores.',
+    err_not_your_turn:'No es tu turno.', err_must_move:'Elige primero tu ficha.', err_invalid_move:'Movimiento inválido.',
+    err_cannot_add_bot:'No se puede añadir un bot ahora.' },
+  de: { label_username:'🎮 Dein Spitzname', placeholder_username:'Gib deinen Namen ein', label_avatar:'🎨 Wähle deinen Avatar',
+    btn_create:'➕ Tisch erstellen', label_or_join:'ODER BEITRETEN', placeholder_room_code:'Tischcode', btn_join:'🔗 Beitreten',
+    title_lobby:'LUDO', label_room_code:'TISCHCODE', label_players:'👥 Spieler', label_team_mode:'🤝 Team-Modus (2 gegen 2, bei 4 Spielern)',
+    btn_start:'🚀 Spiel starten', btn_add_bot:'🤖 KI-Bot hinzufügen', btn_leave:'🚪 Verlassen', btn_roll:'🎲 Würfeln',
+    waiting_players:'Warten auf Spieler (min. 2)…', turn_mine:'✅ Du bist dran!', turn_other:'⏳ {name} ist dran',
+    must_choose_move:'👉 Wähle die zu bewegende Figur.', no_moves:'Kein möglicher Zug mit dieser {roll}.', three_six:'Dreimal 6 hintereinander — Zug verloren!',
+    win_msg:'{name} hat das Spiel gewonnen! 🏆', you_label:'Du', alert_prefix:'❌ ', err_generic:'Fehler',
+    err_room_not_found:'Tisch nicht gefunden.', err_table_full:'Tisch voll (max 4).', err_need_players:'Mindestens 2 Spieler nötig.',
+    err_not_your_turn:'Du bist nicht dran.', err_must_move:'Wähle zuerst deine Figur.', err_invalid_move:'Ungültiger Zug.',
+    err_cannot_add_bot:'Jetzt kann kein Bot hinzugefügt werden.' },
+  it: { label_username:'🎮 Il tuo soprannome', placeholder_username:'Inserisci il tuo nome', label_avatar:'🎨 Scegli il tuo avatar',
+    btn_create:'➕ Crea un tavolo', label_or_join:'O UNISCITI', placeholder_room_code:'Codice del tavolo', btn_join:'🔗 Unisciti',
+    title_lobby:'LUDO', label_room_code:'CODICE DEL TAVOLO', label_players:'👥 Giocatori', label_team_mode:'🤝 Modalità squadra (2 contro 2, con 4 giocatori)',
+    btn_start:'🚀 Inizia partita', btn_add_bot:'🤖 Aggiungi un bot IA', btn_leave:'🚪 Esci', btn_roll:'🎲 Lancia',
+    waiting_players:'In attesa di giocatori (min. 2)…', turn_mine:'✅ Tocca a te!', turn_other:'⏳ Turno di {name}',
+    must_choose_move:'👉 Scegli la pedina da muovere.', no_moves:'Nessuna mossa possibile con questo {roll}.', three_six:'Tre 6 di fila — turno perso!',
+    win_msg:'{name} ha vinto la partita! 🏆', you_label:'Tu', alert_prefix:'❌ ', err_generic:'Errore',
+    err_room_not_found:'Tavolo non trovato.', err_table_full:'Tavolo pieno (max 4).', err_need_players:'Servono almeno 2 giocatori.',
+    err_not_your_turn:'Non è il tuo turno.', err_must_move:'Scegli prima la tua pedina.', err_invalid_move:'Mossa non valida.',
+    err_cannot_add_bot:'Impossibile aggiungere un bot ora.' },
+  nl: { label_username:'🎮 Jouw Bijnaam', placeholder_username:'Voer je naam in', label_avatar:'🎨 Kies je avatar',
+    btn_create:'➕ Tafel aanmaken', label_or_join:'OF DOE MEE', placeholder_room_code:'Tafelcode', btn_join:'🔗 Meedoen',
+    title_lobby:'LUDO', label_room_code:'TAFELCODE', label_players:'👥 Spelers', label_team_mode:'🤝 Teammodus (2 tegen 2, bij 4 spelers)',
+    btn_start:'🚀 Spel starten', btn_add_bot:'🤖 AI-bot toevoegen', btn_leave:'🚪 Verlaten', btn_roll:'🎲 Gooien',
+    waiting_players:'Wachten op spelers (min. 2)…', turn_mine:'✅ Jij bent aan de beurt!', turn_other:'⏳ Beurt van {name}',
+    must_choose_move:'👉 Kies het te verplaatsen pion.', no_moves:'Geen mogelijke zet met deze {roll}.', three_six:'Drie keer 6 op rij — beurt verloren!',
+    win_msg:'{name} heeft het spel gewonnen! 🏆', you_label:'Jij', alert_prefix:'❌ ', err_generic:'Fout',
+    err_room_not_found:'Tafel niet gevonden.', err_table_full:'Tafel vol (max 4).', err_need_players:'Minimaal 2 spelers nodig.',
+    err_not_your_turn:'Jij bent niet aan de beurt.', err_must_move:'Kies eerst je pion.', err_invalid_move:'Ongeldige zet.',
+    err_cannot_add_bot:'Kan nu geen bot toevoegen.' },
+  ru: { label_username:'🎮 Твой ник', placeholder_username:'Введите ваше имя', label_avatar:'🎨 Выберите аватар',
+    btn_create:'➕ Создать стол', label_or_join:'ИЛИ ПРИСОЕДИНИТЬСЯ', placeholder_room_code:'Код стола', btn_join:'🔗 Присоединиться',
+    title_lobby:'ЛУДО', label_room_code:'КОД СТОЛА', label_players:'👥 Игроки', label_team_mode:'🤝 Командный режим (2 на 2, при 4 игроках)',
+    btn_start:'🚀 Начать игру', btn_add_bot:'🤖 Добавить ИИ-бота', btn_leave:'🚪 Выйти', btn_roll:'🎲 Бросить',
+    waiting_players:'Ожидание игроков (мин. 2)…', turn_mine:'✅ Твой ход!', turn_other:'⏳ Ход игрока {name}',
+    must_choose_move:'👉 Выбери фишку для хода.', no_moves:'Нет возможного хода с этим {roll}.', three_six:'Три шестёрки подряд — ход потерян!',
+    win_msg:'{name} выиграл партию! 🏆', you_label:'Ты', alert_prefix:'❌ ', err_generic:'Ошибка',
+    err_room_not_found:'Стол не найден.', err_table_full:'Стол заполнен (макс 4).', err_need_players:'Нужно минимум 2 игрока.',
+    err_not_your_turn:'Сейчас не твой ход.', err_must_move:'Сначала выбери фишку.', err_invalid_move:'Недопустимый ход.',
+    err_cannot_add_bot:'Сейчас нельзя добавить бота.' },
+  ar: { label_username:'🎮 اسمك المستعار', placeholder_username:'أدخل اسمك', label_avatar:'🎨 اختر صورتك الرمزية',
+    btn_create:'➕ إنشاء طاولة', label_or_join:'أو انضم', placeholder_room_code:'رمز الطاولة', btn_join:'🔗 انضمام',
+    title_lobby:'لودو', label_room_code:'رمز الطاولة', label_players:'👥 اللاعبون', label_team_mode:'🤝 وضع الفريق (2 ضد 2، مع 4 لاعبين)',
+    btn_start:'🚀 ابدأ اللعبة', btn_add_bot:'🤖 إضافة بوت ذكاء اصطناعي', btn_leave:'🚪 مغادرة', btn_roll:'🎲 ارمِ',
+    waiting_players:'في انتظار اللاعبين (٢ على الأقل)…', turn_mine:'✅ دورك الآن!', turn_other:'⏳ دور {name}',
+    must_choose_move:'👉 اختر القطعة لتحريكها.', no_moves:'لا توجد حركة ممكنة بهذا {roll}.', three_six:'ثلاث مرات 6 متتالية — خسرت الدور!',
+    win_msg:'فاز {name} بالمباراة! 🏆', you_label:'أنت', alert_prefix:'❌ ', err_generic:'خطأ',
+    err_room_not_found:'الطاولة غير موجودة.', err_table_full:'الطاولة ممتلئة (٤ كحد أقصى).', err_need_players:'يلزم لاعبان على الأقل.',
+    err_not_your_turn:'ليس دورك.', err_must_move:'اختر قطعتك أولاً.', err_invalid_move:'حركة غير صالحة.',
+    err_cannot_add_bot:'لا يمكن إضافة بوت الآن.' },
+  pt: { label_username:'🎮 Seu Apelido', placeholder_username:'Digite seu nome', label_avatar:'🎨 Escolha seu avatar',
+    btn_create:'➕ Criar uma mesa', label_or_join:'OU ENTRAR', placeholder_room_code:'Código da mesa', btn_join:'🔗 Entrar',
+    title_lobby:'LUDO', label_room_code:'CÓDIGO DA MESA', label_players:'👥 Jogadores', label_team_mode:'🤝 Modo equipe (2 contra 2, com 4 jogadores)',
+    btn_start:'🚀 Iniciar jogo', btn_add_bot:'🤖 Adicionar bot de IA', btn_leave:'🚪 Sair', btn_roll:'🎲 Lançar',
+    waiting_players:'Aguardando jogadores (mín. 2)…', turn_mine:'✅ É a sua vez!', turn_other:'⏳ Vez de {name}',
+    must_choose_move:'👉 Escolha a peça para mover.', no_moves:'Nenhum movimento possível com este {roll}.', three_six:'Três 6 seguidos — turno perdido!',
+    win_msg:'{name} venceu a partida! 🏆', you_label:'Você', alert_prefix:'❌ ', err_generic:'Erro',
+    err_room_not_found:'Mesa não encontrada.', err_table_full:'Mesa cheia (máx 4).', err_need_players:'É necessário pelo menos 2 jogadores.',
+    err_not_your_turn:'Não é a sua vez.', err_must_move:'Escolha sua peça primeiro.', err_invalid_move:'Movimento inválido.',
+    err_cannot_add_bot:'Não é possível adicionar um bot agora.' },
+  pl: { label_username:'🎮 Twój Pseudonim', placeholder_username:'Wpisz swoje imię', label_avatar:'🎨 Wybierz awatar',
+    btn_create:'➕ Utwórz stół', label_or_join:'LUB DOŁĄCZ', placeholder_room_code:'Kod stołu', btn_join:'🔗 Dołącz',
+    title_lobby:'LUDO', label_room_code:'KOD STOŁU', label_players:'👥 Gracze', label_team_mode:'🤝 Tryb drużynowy (2 na 2, przy 4 graczach)',
+    btn_start:'🚀 Rozpocznij grę', btn_add_bot:'🤖 Dodaj bota AI', btn_leave:'🚪 Opuść', btn_roll:'🎲 Rzuć',
+    waiting_players:'Oczekiwanie na graczy (min. 2)…', turn_mine:'✅ Twoja kolej!', turn_other:'⏳ Kolej gracza {name}',
+    must_choose_move:'👉 Wybierz pionek do ruchu.', no_moves:'Brak możliwego ruchu z tym {roll}.', three_six:'Trzy szóstki z rzędu — utrata kolejki!',
+    win_msg:'{name} wygrał grę! 🏆', you_label:'Ty', alert_prefix:'❌ ', err_generic:'Błąd',
+    err_room_not_found:'Nie znaleziono stołu.', err_table_full:'Stół pełny (maks 4).', err_need_players:'Potrzeba co najmniej 2 graczy.',
+    err_not_your_turn:'To nie twoja kolej.', err_must_move:'Najpierw wybierz swój pionek.', err_invalid_move:'Nieprawidłowy ruch.',
+    err_cannot_add_bot:'Nie można teraz dodać bota.' },
+  tr: { label_username:'🎮 Takma Adın', placeholder_username:'Adını gir', label_avatar:'🎨 Avatarını seç',
+    btn_create:'➕ Masa kur', label_or_join:'YA DA KATIL', placeholder_room_code:'Masa kodu', btn_join:'🔗 Katıl',
+    title_lobby:'LUDO', label_room_code:'MASA KODU', label_players:'👥 Oyuncular', label_team_mode:'🤝 Takım modu (2\'ye 2, 4 oyuncuda)',
+    btn_start:'🚀 Oyunu başlat', btn_add_bot:'🤖 Yapay zeka botu ekle', btn_leave:'🚪 Ayrıl', btn_roll:'🎲 Zar at',
+    waiting_players:'Oyuncular bekleniyor (min. 2)…', turn_mine:'✅ Sıra sende!', turn_other:'⏳ Sıra: {name}',
+    must_choose_move:'👉 Oynatacağın piyonu seç.', no_moves:'Bu {roll} ile oynanabilecek hamle yok.', three_six:'Üst üste üç kere 6 — sıra kaybedildi!',
+    win_msg:'{name} oyunu kazandı! 🏆', you_label:'Sen', alert_prefix:'❌ ', err_generic:'Hata',
+    err_room_not_found:'Masa bulunamadı.', err_table_full:'Masa dolu (maks 4).', err_need_players:'En az 2 oyuncu gerekli.',
+    err_not_your_turn:'Sıra sende değil.', err_must_move:'Önce piyonunu seç.', err_invalid_move:'Geçersiz hamle.',
+    err_cannot_add_bot:'Şu anda bot eklenemez.' },
+  ja: { label_username:'🎮 ニックネーム', placeholder_username:'名前を入力', label_avatar:'🎨 アバターを選択',
+    btn_create:'➕ テーブルを作成', label_or_join:'または参加', placeholder_room_code:'テーブルコード', btn_join:'🔗 参加',
+    title_lobby:'ルド', label_room_code:'テーブルコード', label_players:'👥 プレイヤー', label_team_mode:'🤝 チームモード（4人時に2対2）',
+    btn_start:'🚀 ゲーム開始', btn_add_bot:'🤖 AIボットを追加', btn_leave:'🚪 退出', btn_roll:'🎲 振る',
+    waiting_players:'プレイヤーを待っています（最低2人）…', turn_mine:'✅ あなたの番です！', turn_other:'⏳ {name}の番',
+    must_choose_move:'👉 動かす駒を選んでください。', no_moves:'この{roll}では動かせる駒がありません。', three_six:'3回連続で6が出たため、ターンを失いました！',
+    win_msg:'{name}がゲームに勝ちました！🏆', you_label:'あなた', alert_prefix:'❌ ', err_generic:'エラー',
+    err_room_not_found:'テーブルが見つかりません。', err_table_full:'テーブルは満席です（最大4人）。', err_need_players:'最低2人のプレイヤーが必要です。',
+    err_not_your_turn:'あなたの番ではありません。', err_must_move:'先に駒を選んでください。', err_invalid_move:'無効な移動です。',
+    err_cannot_add_bot:'今はボットを追加できません。' },
+  zh: { label_username:'🎮 你的昵称', placeholder_username:'输入你的名字', label_avatar:'🎨 选择你的头像',
+    btn_create:'➕ 创建牌桌', label_or_join:'或加入', placeholder_room_code:'牌桌代码', btn_join:'🔗 加入',
+    title_lobby:'飞行棋', label_room_code:'牌桌代码', label_players:'👥 玩家', label_team_mode:'🤝 组队模式（4人时2对2）',
+    btn_start:'🚀 开始游戏', btn_add_bot:'🤖 添加AI机器人', btn_leave:'🚪 离开', btn_roll:'🎲 掷骰子',
+    waiting_players:'等待玩家中（至少2人）…', turn_mine:'✅ 轮到你了！', turn_other:'⏳ 轮到 {name}',
+    must_choose_move:'👉 选择要移动的棋子。', no_moves:'这个{roll}没有可行的走法。', three_six:'连续三次掷出6 — 回合作废！',
+    win_msg:'{name}赢得了游戏！🏆', you_label:'你', alert_prefix:'❌ ', err_generic:'错误',
+    err_room_not_found:'未找到牌桌。', err_table_full:'牌桌已满（最多4人）。', err_need_players:'至少需要2名玩家。',
+    err_not_your_turn:'还没轮到你。', err_must_move:'请先选择你的棋子。', err_invalid_move:'无效的走法。',
+    err_cannot_add_bot:'现在无法添加机器人。' },
+  ko: { label_username:'🎮 닉네임', placeholder_username:'이름을 입력하세요', label_avatar:'🎨 아바타를 선택하세요',
+    btn_create:'➕ 테이블 만들기', label_or_join:'또는 참가하기', placeholder_room_code:'테이블 코드', btn_join:'🔗 참가',
+    title_lobby:'루도', label_room_code:'테이블 코드', label_players:'👥 플레이어', label_team_mode:'🤝 팀 모드 (4인일 때 2대2)',
+    btn_start:'🚀 게임 시작', btn_add_bot:'🤖 AI 봇 추가', btn_leave:'🚪 나가기', btn_roll:'🎲 굴리기',
+    waiting_players:'플레이어를 기다리는 중 (최소 2명)…', turn_mine:'✅ 당신의 차례입니다!', turn_other:'⏳ {name}의 차례',
+    must_choose_move:'👉 움직일 말을 선택하세요.', no_moves:'이 {roll}로는 가능한 이동이 없습니다.', three_six:'연속 3번 6이 나와 차례를 잃었습니다!',
+    win_msg:'{name}이(가) 게임에서 승리했습니다! 🏆', you_label:'당신', alert_prefix:'❌ ', err_generic:'오류',
+    err_room_not_found:'테이블을 찾을 수 없습니다.', err_table_full:'테이블이 가득 찼습니다 (최대 4명).', err_need_players:'최소 2명의 플레이어가 필요합니다.',
+    err_not_your_turn:'당신의 차례가 아닙니다.', err_must_move:'먼저 말을 선택하세요.', err_invalid_move:'잘못된 이동입니다.',
+    err_cannot_add_bot:'지금은 봇을 추가할 수 없습니다.' }
+};
+const LUDO_LANGS = ['fr','en','es','de','it','nl','ru','ar','pt','pl','tr','ja','zh','ko'];
+let lang = LUDO_LANGS.includes(getSiteLang()) ? getSiteLang() : 'fr';
+
+function t(key, params) {
+  const dict = I18N[lang] || I18N.fr;
+  let str = dict[key] !== undefined ? dict[key] : (I18N.fr[key] !== undefined ? I18N.fr[key] : key);
+  if (params) Object.keys(params).forEach(k => { str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), params[k]); });
+  return str;
+}
+
+function applyStaticI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+}
+
+buildLangSelector(document.getElementById('langSwitch'), (code) => { lang = code; applyStaticI18n(); if (lastState) render(lastState); }, LUDO_LANGS);
+applyStaticI18n();
+
+function show(s) {
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.getElementById(s).classList.add('active');
+}
+
+document.querySelectorAll('.avatar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    avatar = btn.dataset.avatar;
+  });
+});
+
+document.getElementById('createBtn').addEventListener('click', () => {
+  user = document.getElementById('username').value.trim();
+  if (!user) return document.getElementById('errorMsg').textContent = t('err_generic');
+  socket.emit('ludo_create_room', {username: user, token: avatar});
+});
+
+document.getElementById('joinBtn').addEventListener('click', () => {
+  user = document.getElementById('username').value.trim();
+  room = document.getElementById('roomCode').value.trim().toUpperCase();
+  if (!user || !room) return document.getElementById('errorMsg').textContent = t('err_generic');
+  socket.emit('ludo_join_room', {username: user, token: avatar, code: room});
+});
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  socket.emit('ludo_start_game', {code: room});
+});
+document.getElementById('addBotBtn').addEventListener('click', () => {
+  socket.emit('ludo_add_bot', {code: room});
+});
+document.getElementById('teamModeChk').addEventListener('change', (e) => {
+  socket.emit('ludo_set_team_mode', {code: room, teamMode: e.target.checked});
+});
+
+document.getElementById('leaveLobbyBtn').addEventListener('click', leaveTable);
+document.getElementById('leaveTableBtn').addEventListener('click', leaveTable);
+function leaveTable() {
+  socket.emit('ludo_leave_room', {code: room, username: user});
+  room = ''; lastState = null;
+  show('loginScreen');
+}
+
+document.getElementById('rollBtn').addEventListener('click', () => {
+  if (isRolling) return;
+  isRolling = true;
+  document.getElementById('die').classList.add('rolling');
+  document.getElementById('rollBtn').disabled = true;
+  setTimeout(() => {
+    socket.emit('ludo_roll_dice', {code: room, username: user});
+  }, 400);
+});
+
+function setDiePips(n) {
+  const layout = {
+    1: [5], 2: [1,9], 3: [1,5,9], 4: [1,3,7,9], 5: [1,3,5,7,9], 6: [1,3,4,6,7,9]
+  };
+  const on = new Set((layout[n] || []).map(String));
+  document.querySelectorAll('#die .pip').forEach(p => { p.style.visibility = on.has(p.dataset.p) ? 'visible' : 'hidden'; });
+}
+
+let boardBuilt = false;
+function buildBoardOnce() {
+  if (boardBuilt) return;
+  boardBuilt = true;
+  const roles = Array.from({length:15}, () => Array(15).fill('deco'));
+  const yardBlocks = {red:[0,5,0,5], pink:[0,5,9,14], yellow:[9,14,9,14], blue:[9,14,0,5]};
+  Object.entries(yardBlocks).forEach(([color,[r1,r2,c1,c2]]) => {
+    for (let r=r1;r<=r2;r++) for (let c=c1;c<=c2;c++) roles[r][c] = 'yard-'+color;
+  });
+  PATH_CELLS.forEach((rc,i) => { roles[rc[0]][rc[1]] = 'path' + (SAFE_RING_IDX.has(i) ? ' safe' : ''); });
+  Object.entries(HOME_STRETCH).forEach(([color,cells]) => { cells.forEach(rc => { roles[rc[0]][rc[1]] = 'home-'+color; }); });
+  roles[7][7] = 'center';
+  roles[6][6] = 'corner-tl'; roles[6][8] = 'corner-tr'; roles[8][6] = 'corner-bl'; roles[8][8] = 'corner-br';
+  let html = '';
+  for (let r=0;r<15;r++) for (let c=0;c<15;c++) {
+    html += `<div class="cell ${roles[r][c]}" style="grid-row:${r+1};grid-column:${c+1};"></div>`;
+  }
+  document.getElementById('boardGrid').innerHTML = html;
+  let slotsHtml = '';
+  Object.values(YARD_SLOTS).forEach(slots => {
+    slots.forEach(([r,c]) => { slotsHtml += `<div class="yard-slot" style="grid-row:${r+1};grid-column:${c+1};"></div>`; });
+  });
+  document.getElementById('boardGrid').insertAdjacentHTML('beforeend', slotsHtml);
+}
+
+function render(state) {
+  lastState = state;
+  room = state.code;
+  isOwner = state.owner === user;
+  document.getElementById('tableInfo').textContent = `${state.code}${state.teamMode ? ' — 🤝' : ''}`;
+
+  if (!state.started) {
+    show('lobbyScreen');
+    document.getElementById('roomCodeDisplay').textContent = state.code;
+    document.getElementById('lobbyInfo').textContent = t('waiting_players');
+    document.getElementById('lobbyPlayersList').innerHTML = state.players.map(p =>
+      `<div class="player-item"><span><span class="swatch" style="background:${COLOR_HEX[p.color]}"></span>${p.token || ''} ${p.name}</span></div>`
+    ).join('');
+    document.getElementById('startBtn').style.display = isOwner ? 'block' : 'none';
+    document.getElementById('addBotBtn').style.display = (isOwner && state.players.length < 4) ? 'block' : 'none';
+    document.getElementById('teamModeChk').checked = state.teamMode;
+    document.getElementById('teamModeChk').disabled = !isOwner || state.players.length !== 4;
+    return;
+  }
+  show('gameScreen');
+  buildBoardOnce();
+
+  document.getElementById('playersRow').innerHTML = state.players.map(p => {
+    const cls = 'player-chip' + (state.turn === p.name ? ' turn' : '');
+    return `<div class="${cls}"><span class="swatch" style="background:${COLOR_HEX[p.color]}"></span>${p.name === user ? t('you_label') : p.name} (${p.finished}/4)</div>`;
+  }).join('');
+
+  const layer = document.getElementById('tokensLayer');
+  const groups = {};
+  state.players.forEach(p => {
+    p.positions.forEach((d, idx) => {
+      const [r,c] = cellForToken(p.color, d, idx);
+      const key = r + '_' + c;
+      groups[key] = groups[key] || [];
+      groups[key].push({owner: p.name, color: p.color, index: idx, row: r, col: c});
+    });
+  });
+
+  const myTurn = state.turn === user && state.stage === 'playing';
+  const pending = state.pendingMoves || [];
+  const canSelect = (owner, idx) => myTurn && pending.some(m => m.owner === owner && m.index === idx);
+
+  let html = '';
+  Object.values(groups).forEach(list => {
+    list.forEach((tok, i) => {
+      const sel = canSelect(tok.owner, tok.index);
+      const offset = list.length > 1 ? (i - (list.length - 1) / 2) * 8 : 0;
+      html += `<div class="token${sel ? ' selectable' : ''}" data-owner="${tok.owner}" data-index="${tok.index}"
+        style="grid-row:${tok.row + 1};grid-column:${tok.col + 1};background:${COLOR_HEX[tok.color]};transform:translateX(${offset}px);"></div>`;
+    });
+  });
+  layer.innerHTML = html;
+  if (pending.length) {
+    layer.querySelectorAll('.token.selectable').forEach(el => {
+      el.addEventListener('click', () => {
+        socket.emit('ludo_move_token', {code: room, username: user, owner: el.dataset.owner, index: parseInt(el.dataset.index, 10)});
+      });
+    });
+  }
+
+  if (state.lastRoll) setDiePips(state.lastRoll);
+  document.getElementById('die').classList.remove('rolling');
+  isRolling = false;
+
+  const rollBtn = document.getElementById('rollBtn');
+  rollBtn.disabled = !myTurn || pending.length > 0;
+  rollBtn.style.display = pending.length ? 'none' : 'inline-block';
+
+  document.getElementById('turnIndicator').textContent = state.stage === 'finished' ? '' :
+    (myTurn ? (pending.length ? t('must_choose_move') : t('turn_mine')) : (state.turn ? t('turn_other', {name: state.turn}) : ''));
+  document.getElementById('actionLog').textContent = state.log || '';
+
+  const over = state.stage === 'finished';
+  document.getElementById('roundOverBar').style.display = over ? 'block' : 'none';
+  if (over && state.winner) {
+    document.getElementById('winnerMsg').textContent = t('win_msg', {name: state.winner});
+  }
+}
+
+socket.on('ludo_state', render);
+socket.on('ludo_error', (d) => {
+  const msg = d.code ? t('err_' + d.code) : t('err_generic');
+  document.getElementById('errorMsg').textContent = msg;
+  isRolling = false;
+  document.getElementById('die').classList.remove('rolling');
+  alert(t('alert_prefix') + msg);
+});
+</script>
+
+</body>
+</html>

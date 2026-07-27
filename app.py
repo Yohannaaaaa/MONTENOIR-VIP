@@ -1887,7 +1887,7 @@ html,body{margin:0;width:100%;min-height:100%;font-family:Arial,Helvetica,sans-s
       <a href="/codenames">👑 Codenames VIP</a><a href="/poker">♠️ Poker</a>
       <a href="/coming-soon/Tavla">🎲 Tavla</a><a href="/okey">🀄 Okey</a>
       <a href="/coming-soon/101">💎 101</a><a href="/monopoly">🏙️ Metropoly</a>
-      <a href="/coming-soon/Ludo">🔴 Ludo</a><a href="/coming-soon/Bowling">🎳 Bowling</a>
+      <a href="/ludo">🔴 Ludo</a><a href="/coming-soon/Bowling">🎳 Bowling</a>
     </div>
   </section>
 
@@ -6703,6 +6703,269 @@ def okey_declare_finish(data):
     okey_broadcast(r)
 
 
+# =========================
+# LUDO (Kızma Birader)
+# =========================
+LUDO_ROOMS={}
+LUDO_COLORS=["red","yellow","pink","blue"]
+LUDO_START_OFFSET={"red":0,"yellow":26,"pink":13,"blue":39}
+LUDO_SAFE_CELLS={0,13,26,39,8,21,34,47}
+LUDO_TEAM_PARTNER={"red":"yellow","yellow":"red","pink":"blue","blue":"pink"}
+
+def ludo_code():
+    while True:
+        c="LUD-"+"".join(random.choices(string.digits,k=4))
+        if c not in LUDO_ROOMS:
+            return c
+
+def ludo_new_room(code,owner,teamMode):
+    return {"code":code,"owner":owner,"started":False,"teamMode":bool(teamMode),
+            "players":{},"seatOrder":[],"order":[],"turnIdx":0,"lastRoll":None,"sixCount":0,
+            "pendingMoves":[],"stage":"waiting","log":"Masa hazır.","winner":None,"botCount":0}
+
+def ludo_ring_cell(color,distance):
+    return (LUDO_START_OFFSET[color]+distance-1)%52
+
+def ludo_valid_moves_for(r,u,roll):
+    p=r["players"][u]
+    colorsToCheck=[(u,p["color"])]
+    if r["teamMode"] and len(r["seatOrder"])==4:
+        partnerColor=LUDO_TEAM_PARTNER[p["color"]]
+        partnerUser=next((n for n in r["seatOrder"] if r["players"][n]["color"]==partnerColor),None)
+        if partnerUser: colorsToCheck.append((partnerUser,partnerColor))
+    moves=[]
+    for owner,color in colorsToCheck:
+        positions=r["players"][owner]["positions"]
+        for idx,d in enumerate(positions):
+            if d==0:
+                if roll==6:
+                    moves.append({"owner":owner,"color":color,"index":idx,"newDist":1})
+            elif d<57:
+                nd=d+roll
+                if nd<=57:
+                    moves.append({"owner":owner,"color":color,"index":idx,"newDist":nd})
+    return moves
+
+def ludo_apply_move(r,move):
+    owner=move["owner"]; color=move["color"]; idx=move["index"]; newDist=move["newDist"]
+    r["players"][owner]["positions"][idx]=newDist
+    log=f"{owner} — pion {idx+1} → {newDist}."
+    if 1<=newDist<=51:
+        cell=ludo_ring_cell(color,newDist)
+        if cell not in LUDO_SAFE_CELLS:
+            for other in r["seatOrder"]:
+                if other==owner: continue
+                oc=r["players"][other]["color"]
+                if r["teamMode"] and len(r["seatOrder"])==4 and LUDO_TEAM_PARTNER.get(color)==oc:
+                    continue
+                op=r["players"][other]["positions"]
+                for j,od in enumerate(op):
+                    if 1<=od<=51 and ludo_ring_cell(oc,od)==cell:
+                        op[j]=0
+                        log+=f" {other} piyonunu kırdı!"
+    r["log"]=log
+    if all(d==57 for d in r["players"][owner]["positions"]):
+        r["winner"]=owner
+        r["stage"]="finished"
+        r["log"]=owner+" — Kazandı! 🏆"
+        return True
+    return False
+
+def ludo_advance_turn(r):
+    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+    r["sixCount"]=0
+
+def ludo_public(r):
+    players=[]
+    for u in r["seatOrder"]:
+        p=r["players"][u]
+        players.append({"name":u,"token":p.get("token","🔴"),"color":p["color"],
+                         "positions":p["positions"],"finished":sum(1 for d in p["positions"] if d==57)})
+    return {"code":r["code"],"started":r["started"],"teamMode":r["teamMode"],"stage":r["stage"],
+            "turn":r["order"][r["turnIdx"]] if r.get("order") else None,
+            "lastRoll":r["lastRoll"],"pendingMoves":r.get("pendingMoves",[]),
+            "players":players,"log":r["log"],"owner":r["owner"],"winner":r.get("winner")}
+
+def ludo_broadcast(r):
+    emit("ludo_state",ludo_public(r),room=r["code"])
+
+def ludo_move_captures(move,r):
+    if not (1<=move["newDist"]<=51): return False
+    cell=ludo_ring_cell(move["color"],move["newDist"])
+    if cell in LUDO_SAFE_CELLS: return False
+    for other in r["seatOrder"]:
+        if other==move["owner"]: continue
+        oc=r["players"][other]["color"]
+        if r["teamMode"] and len(r["seatOrder"])==4 and LUDO_TEAM_PARTNER.get(move["color"])==oc: continue
+        for od in r["players"][other]["positions"]:
+            if 1<=od<=51 and ludo_ring_cell(oc,od)==cell: return True
+    return False
+
+def ludo_bot_pick_move(moves,r):
+    cap=[m for m in moves if ludo_move_captures(m,r)]
+    if cap: return cap[0]
+    out=[m for m in moves if m["newDist"]==1]
+    if out: return out[0]
+    return max(moves,key=lambda m: m["newDist"])
+
+def ludo_run_bots(r):
+    for _ in range(100):
+        if r["stage"]!="playing" or not r.get("order"): break
+        u=r["order"][r["turnIdx"]]
+        p=r["players"].get(u)
+        if not p or not p.get("isBot"): break
+        roll=random.randint(1,6)
+        r["lastRoll"]=roll
+        r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
+        if r["sixCount"]>=3:
+            r["log"]=u+" üç kere 6 attı, sıra geçti."
+            ludo_advance_turn(r)
+            ludo_broadcast(r); time.sleep(0.8)
+            continue
+        moves=ludo_valid_moves_for(r,u,roll)
+        if not moves:
+            r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
+            ludo_broadcast(r); time.sleep(0.7)
+            if roll!=6:
+                ludo_advance_turn(r)
+                ludo_broadcast(r); time.sleep(0.4)
+            continue
+        move=ludo_bot_pick_move(moves,r)
+        won=ludo_apply_move(r,move)
+        ludo_broadcast(r); time.sleep(0.8)
+        if won: break
+        if roll!=6:
+            ludo_advance_turn(r)
+            ludo_broadcast(r); time.sleep(0.4)
+
+@socketio.on("ludo_create_room")
+def ludo_create_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","🔴")
+    teamMode=bool((data or {}).get("teamMode",False))
+    code=ludo_code(); r=ludo_new_room(code,u,teamMode); LUDO_ROOMS[code]=r; join_room(code)
+    color=LUDO_COLORS[0]
+    r["players"][u]={"name":u,"token":t,"sid":request.sid,"color":color,"positions":[0,0,0,0]}
+    r["seatOrder"].append(u)
+    r["log"]=u+" a créé la table."
+    ludo_broadcast(r)
+
+@socketio.on("ludo_join_room")
+def ludo_join_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","🔴")
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=LUDO_ROOMS.get(code)
+    if not r: emit("ludo_error",{"code":"room_not_found"}); return
+    if u not in r["players"] and len(r["seatOrder"])>=4:
+        emit("ludo_error",{"code":"table_full"}); return
+    join_room(code)
+    if u in r["players"]:
+        r["players"][u]["sid"]=request.sid
+    else:
+        color=LUDO_COLORS[len(r["seatOrder"])]
+        r["players"][u]={"name":u,"token":t,"sid":request.sid,"color":color,"positions":[0,0,0,0]}
+        r["seatOrder"].append(u)
+    r["log"]=u+" a rejoint la table."
+    ludo_broadcast(r)
+
+@socketio.on("ludo_add_bot")
+def ludo_add_bot(data):
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=LUDO_ROOMS.get(code)
+    if not r or r["started"]: emit("ludo_error",{"code":"cannot_add_bot"}); return
+    if len(r["seatOrder"])>=4: emit("ludo_error",{"code":"table_full"}); return
+    r["botCount"]=r.get("botCount",0)+1
+    name=f"Bot {r['botCount']}"
+    color=LUDO_COLORS[len(r["seatOrder"])]
+    r["players"][name]={"name":name,"token":"🤖","sid":None,"color":color,"positions":[0,0,0,0],"isBot":True}
+    r["seatOrder"].append(name)
+    r["log"]=name+" a rejoint la table."
+    ludo_broadcast(r)
+
+@socketio.on("ludo_leave_room")
+def ludo_leave_room(data):
+    u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
+    r=LUDO_ROOMS.get(code)
+    if not r or u not in r["players"]: return
+    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+    del r["players"][u]
+    r["log"]=u+" a quitté la table."
+    if not r["players"]:
+        del LUDO_ROOMS[code]; return
+    if r["stage"]=="playing":
+        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    ludo_broadcast(r)
+
+@socketio.on("ludo_set_team_mode")
+def ludo_set_team_mode(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=LUDO_ROOMS.get(code)
+    if not r or r["started"]: return
+    r["teamMode"]=bool((data or {}).get("teamMode",False))
+    ludo_broadcast(r)
+
+@socketio.on("ludo_start_game")
+def ludo_start_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=LUDO_ROOMS.get(code)
+    if not r or len(r["seatOrder"])<2: emit("ludo_error",{"code":"need_players"}); return
+    r["started"]=True; r["stage"]="playing"; r["order"]=list(r["seatOrder"]); r["turnIdx"]=0
+    r["sixCount"]=0; r["pendingMoves"]=[]; r["winner"]=None; r["lastRoll"]=None
+    r["log"]="Oyun başladı — "+r["order"][0]+" başlıyor."
+    ludo_run_bots(r)
+    ludo_broadcast(r)
+
+@socketio.on("ludo_roll_dice")
+def ludo_roll_dice(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    r=LUDO_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("ludo_error",{"code":"not_your_turn"}); return
+    if r.get("pendingMoves"): emit("ludo_error",{"code":"must_move"}); return
+    roll=random.randint(1,6)
+    r["lastRoll"]=roll
+    r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
+    if r["sixCount"]>=3:
+        r["log"]=u+" üç kere 6 attı, sıra geçti."
+        ludo_advance_turn(r)
+        ludo_run_bots(r)
+        ludo_broadcast(r)
+        return
+    moves=ludo_valid_moves_for(r,u,roll)
+    if not moves:
+        r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
+        if roll!=6:
+            ludo_advance_turn(r)
+        ludo_run_bots(r)
+        ludo_broadcast(r)
+        return
+    if len(moves)==1:
+        won=ludo_apply_move(r,moves[0])
+        if not won and roll!=6:
+            ludo_advance_turn(r)
+        ludo_run_bots(r)
+        ludo_broadcast(r)
+        return
+    r["pendingMoves"]=moves
+    ludo_broadcast(r)
+
+@socketio.on("ludo_move_token")
+def ludo_move_token(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    ownerSel=(data or {}).get("owner",""); idxSel=(data or {}).get("index",-1)
+    r=LUDO_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if not r.get("order") or r["order"][r["turnIdx"]]!=u: return
+    moves=r.get("pendingMoves") or []
+    match=next((m for m in moves if m["owner"]==ownerSel and m["index"]==int(idxSel)),None)
+    if not match: emit("ludo_error",{"code":"invalid_move"}); return
+    r["pendingMoves"]=[]
+    won=ludo_apply_move(r,match)
+    if not won and r["lastRoll"]!=6:
+        ludo_advance_turn(r)
+    ludo_run_bots(r)
+    ludo_broadcast(r)
+
+
 # === CLEAN ROUTES MONTENOIR / METROPOLY ===
 
 # === ROUTES PROPRES MONTENOIR / METROPOLY ===
@@ -6751,7 +7014,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <a class="card" href="/coming-soon/tavla">🎲 Tavla</a>
 <a class="card" href="/okey">🀄 Okey</a>
 <a class="card" href="/coming-soon/101">💯 101</a>
-<a class="card" href="/coming-soon/ludo">🎮 Ludo</a>
+<a class="card" href="/ludo">🎮 Ludo</a>
 <a class="card" href="/coming-soon/bowling">🎳 Bowling</a>
 </div>
 <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
@@ -6776,6 +7039,10 @@ def poker_page():
 @app.route("/okey")
 def okey_page():
     return render_template("okey.html")
+
+@app.route("/ludo")
+def ludo_page():
+    return render_template("ludo.html")
 
 
 # =========================
