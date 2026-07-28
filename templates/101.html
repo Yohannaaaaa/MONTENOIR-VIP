@@ -6,6 +6,7 @@
 <title>101 Okey VIP</title>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
+<script src="/static/js/site_sfx.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -167,7 +168,7 @@
 
 <script>
 const socket = io();
-let user = '', avatar = '💯', room = '', myHand = [], myOrder = [], lastState = null, isOwner = false;
+let user = '', avatar = '💯', room = '', myHand = [], myOrder = [], lastState = null, isOwner = false, prevMyTurn = false, prevStage = null;
 let selectedTileIds = new Set(), stagedGroups = [];
 
 const I18N = {
@@ -420,8 +421,8 @@ function leaveTable() {
   show('loginScreen');
 }
 document.getElementById('nextHandBtn').addEventListener('click', () => socket.emit('r101_next_hand', {code: room}));
-document.getElementById('deckPileBtn').addEventListener('click', () => socket.emit('r101_draw', {code: room, username: user, source: 'deck'}));
-document.getElementById('discardPileBtn').addEventListener('click', () => socket.emit('r101_draw', {code: room, username: user, source: 'discard'}));
+document.getElementById('deckPileBtn').addEventListener('click', () => { if (window.SFX) SFX.cardFlip(); socket.emit('r101_draw', {code: room, username: user, source: 'deck'}); });
+document.getElementById('discardPileBtn').addEventListener('click', () => { if (window.SFX) SFX.cardFlip(); socket.emit('r101_draw', {code: room, username: user, source: 'discard'}); });
 
 const COLOR_MAP = {red:'#c0272d', yellow:'#c99a10', black:'#111', blue:'#1f5fbf'};
 const COLOR_ORDER = {black:0, blue:1, red:2, yellow:3, joker:4};
@@ -507,11 +508,13 @@ document.getElementById('stageGroupBtn').addEventListener('click', () => {
 
 document.getElementById('openBtn').addEventListener('click', () => {
   if (!stagedGroups.length) return;
+  if (window.SFX) SFX.move();
   socket.emit('r101_open', {code: room, username: user, groups: stagedGroups});
 });
 
 document.getElementById('discardBtn').addEventListener('click', () => {
   if (selectedTileIds.size !== 1) return;
+  if (window.SFX) SFX.move();
   const tileId = [...selectedTileIds][0];
   socket.emit('r101_discard', {code: room, username: user, tileId});
   selectedTileIds = new Set();
@@ -519,6 +522,7 @@ document.getElementById('discardBtn').addEventListener('click', () => {
 
 function meldClickHandler(meldIdx) {
   if (selectedTileIds.size !== 1) return;
+  if (window.SFX) SFX.move();
   const tileId = [...selectedTileIds][0];
   socket.emit('r101_add_to_meld', {code: room, username: user, tileId, meldIndex: meldIdx});
   selectedTileIds = new Set();
@@ -544,6 +548,12 @@ function render(state) {
   const me = state.players.find(p => p.name === user);
   const myTurn = state.turn === user && state.stage === 'playing';
   const opened = !!(me && me.opened);
+  if (window.SFX) {
+    if (myTurn && !prevMyTurn) SFX.turn();
+    if (state.stage === 'round_over' && prevStage !== 'round_over') SFX.win();
+  }
+  prevMyTurn = myTurn;
+  prevStage = state.stage;
 
   document.getElementById('playersRow').innerHTML = state.players.map(p => {
     const cls = ['player-chip'];
@@ -617,6 +627,7 @@ socket.on('r101_your_hand', (d) => {
   if (lastState) render(lastState);
 });
 socket.on('r101_error', (d) => {
+  if (window.SFX) SFX.error();
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
   alert(t('alert_prefix') + msg);
