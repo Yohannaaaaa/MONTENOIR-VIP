@@ -66,6 +66,13 @@
       [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.28, 'triangle', 0.18, i * 0.11));
     },
     cardFlip() { noiseBurst(0.05, 0.12, 0, 3000); },
+    // Bowling ball rolling down the lane then crashing into pins
+    bowl() {
+      noiseBurst(0.5, 0.1, 0, 250);
+      noiseBurst(0.35, 0.35, 0.45, 900 + Math.random() * 400);
+      noiseBurst(0.25, 0.22, 0.48, 1800 + Math.random() * 600);
+      tone(90, 0.2, 'sawtooth', 0.12, 0.45);
+    },
     chip() {
       tone(900, 0.05, 'square', 0.08);
       tone(1200, 0.05, 'square', 0.06, 0.03);
