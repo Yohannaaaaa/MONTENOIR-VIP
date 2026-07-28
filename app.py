@@ -5705,7 +5705,7 @@ def kasa_page():
         f'<div class="pkg-card"><div class="pkg-chips">🪙 {p["chips"]}</div>'
         f'<div class="pkg-price">£{p["price_gbp"]:.2f}</div>'
         f'<button class="submit buy-pkg-btn" data-idx="{i}" style="margin-top:12px;">'
-        f'<span data-common-i18n="kasa_buy_btn">Acheter (démo)</span></button></div>'
+        f'<span data-common-i18n="kasa_buy_btn">Acheter</span></button></div>'
         for i, p in enumerate(CHIP_PACKAGES)
     )
     stripe_ready_js = "true" if stripe_configured() else "false"
