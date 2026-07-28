@@ -41,23 +41,34 @@
   .player-chip { display: flex; align-items: center; gap: 6px; background: rgba(10,10,10,.8); border: 2px solid #444; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
   .player-chip.turn { border-color: #d4af37; box-shadow: 0 0 12px rgba(212,175,55,.7); }
 
-  .lane-wrap { perspective: 1100px; margin-bottom: 12px; padding: 10px 0 34px; }
-  .lane { display: flex; flex-direction: column; align-items: center; width: 280px; margin: 0 auto; background: linear-gradient(180deg, #6b4a1e 0%, #4a3013 55%, #2e1c0b 100%); border: 8px solid #1a1006; border-radius: 14px; padding: 26px 16px 34px; box-shadow: 0 4px 0 #241606, 0 30px 55px rgba(0,0,0,.85), inset 0 2px 4px rgba(255,220,150,.15), inset 0 0 0 3px rgba(212,175,55,.45); transform: rotateX(40deg); transform-origin: bottom center; position: relative; }
-  .lane::before { content: ''; position: absolute; left: 10%; right: 10%; top: 10px; bottom: 10px; border-radius: 8px; background: repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 1px, transparent 1px 20px); pointer-events: none; }
-  .pin-rack { display: grid; grid-template-columns: repeat(4, 22px); grid-template-rows: repeat(4, 24px); justify-content: center; align-items: end; gap: 5px; margin-bottom: 22px; position: relative; z-index: 1; }
-  .pin { width: 15px; height: 30px; position: relative; justify-self: center; filter: drop-shadow(0 4px 3px rgba(0,0,0,.55)); transition: opacity .4s, transform .4s; }
-  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 50% 50% 35% 35% / 65% 65% 30% 30%; background: linear-gradient(100deg, #a99878 0%, #fffdf5 18%, #fffdf5 68%, #b8a678 100%); border: 1px solid #8a6c2a; }
-  .pin::after { content: ''; position: absolute; left: -1px; right: -1px; top: 26%; height: 15%; background: linear-gradient(100deg, #7a1620, #c0272d 40%, #c0272d 60%, #7a1620); border-top: 1px solid #8a6c2a; border-bottom: 1px solid #8a6c2a; }
-  .pin.down { opacity: .2; transform: rotate(75deg) translateY(8px) scale(.85); }
+  .lane-wrap { width: 100%; margin-bottom: 12px; }
+  .lane-scene { position: relative; width: 100%; max-width: 640px; height: 46vh; min-height: 320px; max-height: 480px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c; box-shadow: 0 25px 55px rgba(0,0,0,.85), inset 0 0 0 3px rgba(212,175,55,.4); }
+  .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #1a2a52, #0a1226); box-shadow: 0 0 30px rgba(90,140,255,.55); z-index: 2; }
+  .lane-gutter { position: absolute; top: 12%; bottom: 0; background: linear-gradient(180deg, #333, #0a0a0a); }
+  .lane-gutter.left { left: 0; width: 50%; clip-path: polygon(0 100%, 33% 100%, 46.5% 0, 0 0); }
+  .lane-gutter.right { right: 0; width: 50%; clip-path: polygon(100% 100%, 67% 100%, 53.5% 0, 100% 0); }
+  .lane-gutter::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(150,180,255,.15), transparent 30%); }
+  .lane-floor { position: absolute; top: 12%; bottom: 0; left: 0; right: 0; clip-path: polygon(9% 100%, 91% 100%, 55% 0, 45% 0); background: repeating-conic-gradient(from 205deg at 50% 0%, #caa06a 0deg 2.1deg, #a97c4d 2.1deg 4.2deg); }
+  .lane-floor::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.1), transparent 35%); }
+  .target-arrows { position: absolute; top: 33%; left: 0; right: 0; height: 4%; z-index: 1; }
+  .arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid rgba(180,20,20,.8); transform: translateX(-50%); }
+  .pin-rack { position: absolute; top: 13.5%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 11px); grid-template-rows: repeat(4, 12px); gap: 2px; align-items: end; justify-content: center; z-index: 1; }
+  .pin { width: 7px; height: 15px; position: relative; justify-self: center; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .4s, transform .4s; }
+  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 50% 50% 35% 35% / 65% 65% 30% 30%; background: linear-gradient(100deg, #a99878 0%, #fffdf5 18%, #fffdf5 68%, #b8a678 100%); border: 0.5px solid #8a6c2a; }
+  .pin::after { content: ''; position: absolute; left: -0.5px; right: -0.5px; top: 26%; height: 15%; background: linear-gradient(100deg, #7a1620, #c0272d 40%, #c0272d 60%, #7a1620); }
+  .pin.down { opacity: .15; transform: rotate(75deg) translateY(5px) scale(.8); }
   .pin-1 { grid-column: 2 / span 1; grid-row: 1; }
   .pin-2 { grid-column: 1; grid-row: 2; } .pin-3 { grid-column: 3; grid-row: 2; }
   .pin-4 { grid-column: 1; grid-row: 3; } .pin-5 { grid-column: 2; grid-row: 3; } .pin-6 { grid-column: 3; grid-row: 3; }
   .pin-7 { grid-column: 1; grid-row: 4; } .pin-8 { grid-column: 2; grid-row: 4; } .pin-9 { grid-column: 3; grid-row: 4; } .pin-10 { grid-column: 4; grid-row: 4; }
-  .ball { width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle at 32% 26%, #8a7cff, #4a3ccf 45%, #2a1f6e 75%, #140f38 100%); box-shadow: 0 8px 16px rgba(0,0,0,.75), inset 0 -6px 10px rgba(0,0,0,.5), inset 0 6px 8px rgba(255,255,255,.3); position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); }
-  .ball::before, .ball::after, .ball .hole3 { content: ''; position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #0a0620; box-shadow: inset 0 0 3px #000, 0 1px 1px rgba(255,255,255,.15); }
-  .ball::before { top: 16px; left: 18px; }
-  .ball::after { top: 16px; left: 27px; }
-  .ball .hole3 { top: 24px; left: 22px; width: 5px; height: 5px; }
+  .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 130px; background: repeating-linear-gradient(100deg, #caa06a 0 26px, #b88f5c 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+  .pins-up-label { position: absolute; top: 8px; right: 16px; color: #ffe08a; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+  .ball { width: 76px; height: 76px; border-radius: 50%; background: radial-gradient(circle at 32% 26%, #ff6b6b, #c0272d 45%, #7a1620 75%, #3d0d0d 100%); box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -8px 12px rgba(0,0,0,.5), inset 0 8px 10px rgba(255,255,255,.35); position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); }
+  .ball::before, .ball::after, .ball .hole3 { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #1a0505; box-shadow: inset 0 0 4px #000, 0 1px 1px rgba(255,255,255,.15); }
+  .ball::before { top: 24px; left: 26px; }
+  .ball::after { top: 24px; left: 40px; }
+  .ball .hole3 { top: 36px; left: 33px; width: 7px; height: 7px; }
+  @media (max-width: 500px) { .lane-scene { height: 38vh; min-height: 260px; } .lane-foreground { height: 100px; } .ball { width: 60px; height: 60px; } }
   .pins-up-label { color: #ffe08a; font-size: 13px; margin-bottom: 4px; letter-spacing: 1px; }
 
   .scoreboard { width: 100%; max-width: 960px; margin: 0 auto 12px; overflow-x: auto; }
@@ -127,9 +138,17 @@
   <div class="scoreboard"><table class="score-table" id="scoreTable"></table></div>
 
   <div class="lane-wrap">
-    <div class="lane">
-      <div class="pins-up-label" id="pinsUpLabel"></div>
+    <div class="lane-scene">
+      <div class="lane-backwall"></div>
+      <div class="lane-gutter left"></div>
+      <div class="lane-gutter right"></div>
+      <div class="lane-floor">
+        <div class="target-arrows" id="targetArrows"></div>
+      </div>
       <div class="pin-rack" id="pinRack"></div>
+    </div>
+    <div class="lane-foreground">
+      <div class="pins-up-label" id="pinsUpLabel"></div>
       <div class="ball"><span class="hole3"></span></div>
     </div>
   </div>
@@ -274,6 +293,11 @@ function show(s) {
   document.getElementById(s).classList.add('active');
 }
 
+const ARROW_POSITIONS = [22, 32.5, 43, 50, 57, 67.5, 78];
+document.getElementById('targetArrows').innerHTML = ARROW_POSITIONS.map(pct =>
+  `<div class="arrow" style="left:${pct}%;"></div>`
+).join('');
+
 document.querySelectorAll('.avatar-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
@@ -310,10 +334,10 @@ document.getElementById('rollBtn').addEventListener('click', () => {
   isRolling = true;
   if (window.SFX) SFX.bowl();
   const ball = document.querySelector('.ball');
-  ball.style.transform = 'translateY(-190px) translateZ(60px) scale(.4) rotate(720deg)';
+  ball.style.transform = 'translateY(-140px) scale(.25) rotate(720deg)';
   setTimeout(() => {
     ball.style.transition = 'none';
-    ball.style.transform = 'translateY(0) translateZ(0) scale(1) rotate(0)';
+    ball.style.transform = 'translateY(0) scale(1) rotate(0)';
     void ball.offsetWidth;
     ball.style.transition = 'transform .5s cubic-bezier(.55,0,.85,.35)';
     socket.emit('bowling_roll', {code: room, username: user});
