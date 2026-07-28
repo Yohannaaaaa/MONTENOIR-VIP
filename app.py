@@ -1887,7 +1887,7 @@ html,body{margin:0;width:100%;min-height:100%;font-family:Arial,Helvetica,sans-s
       <a href="/codenames">👑 Codenames VIP</a><a href="/poker">♠️ Poker</a>
       <a href="/tavla">🎲 Tavla</a><a href="/okey">🀄 Okey</a>
       <a href="/101">💎 101</a><a href="/monopoly">🏙️ Metropoly</a>
-      <a href="/ludo">🔴 Ludo</a><a href="/coming-soon/Bowling">🎳 Bowling</a>
+      <a href="/ludo">🔴 Ludo</a><a href="/bowling">🎳 Bowling</a>
     </div>
   </section>
 
@@ -7668,6 +7668,259 @@ def tavla_run_bots(code):
     socketio.start_background_task(tavla_run_bot_turns,code)
 
 
+# =========================
+# BOWLING
+# =========================
+BOWLING_ROOMS={}
+
+def bowling_code():
+    while True:
+        c="BOW-"+"".join(random.choices(string.digits,k=4))
+        if c not in BOWLING_ROOMS:
+            return c
+
+def bowling_new_room(code,owner):
+    return {"code":code,"owner":owner,"started":False,"players":{},"seatOrder":[],"order":[],"turnIdx":0,
+            "stage":"waiting","log":"Salon hazır.","botCount":0,"botTaskRunning":False,
+            "winner":None,"gameNo":0}
+
+def bowling_new_player(name,token,sid,is_bot):
+    return {"name":name,"token":token,"sid":sid,"isBot":is_bot,
+            "curFrame":0,"frameRolls":[],"pinsUp":10,"frames":[]}
+
+def bowling_apply_roll(p,pins):
+    fr=p["frameRolls"]
+    fr.append(pins)
+    cur=p["curFrame"]
+    if cur<9:
+        if len(fr)==1:
+            if pins==10:
+                p["frames"].append(fr[:]); p["curFrame"]+=1; p["frameRolls"]=[]; p["pinsUp"]=10
+            else:
+                p["pinsUp"]-=pins
+        else:
+            p["frames"].append(fr[:]); p["curFrame"]+=1; p["frameRolls"]=[]; p["pinsUp"]=10
+    else:
+        if len(fr)==1:
+            p["pinsUp"]=10 if pins==10 else p["pinsUp"]-pins
+        elif len(fr)==2:
+            r0,r1=fr
+            if r0==10:
+                p["pinsUp"]=10 if r1==10 else 10-r1
+            elif r0+r1==10:
+                p["pinsUp"]=10
+            else:
+                p["frames"].append(fr[:]); p["curFrame"]=10; p["frameRolls"]=[]
+        else:
+            p["frames"].append(fr[:]); p["curFrame"]=10; p["frameRolls"]=[]
+
+def bowling_roll_pins(pins_up):
+    if pins_up==10:
+        return 10 if random.random()<0.3 else random.randint(0,9)
+    return pins_up if random.random()<0.45 else random.randint(0,pins_up)
+
+def bowling_all_rolls(p):
+    return [pin for frame in p["frames"] for pin in frame]+p["frameRolls"]
+
+def bowling_score_progressive(rolls):
+    score=0; i=0; cums=[]
+    for _ in range(10):
+        if i>=len(rolls):
+            cums.append(None); continue
+        if rolls[i]==10:
+            if len(rolls)<i+3:
+                cums.append(None); i+=1; continue
+            score+=10+rolls[i+1]+rolls[i+2]; i+=1
+        elif i+1<len(rolls) and rolls[i]+rolls[i+1]==10:
+            if len(rolls)<i+3:
+                cums.append(None); i+=2; continue
+            score+=10+rolls[i+2]; i+=2
+        elif i+1<len(rolls):
+            score+=rolls[i]+rolls[i+1]; i+=2
+        else:
+            cums.append(None); i+=1; continue
+        cums.append(score)
+    return score,cums
+
+def bowling_check_finished(r):
+    return all(r["players"][u]["curFrame"]>=10 for u in r["order"])
+
+def bowling_finish_game(r):
+    r["stage"]="finished"
+    best=None; best_score=-1
+    for u in r["order"]:
+        total,_=bowling_score_progressive(bowling_all_rolls(r["players"][u]))
+        if total>best_score:
+            best_score=total; best=u
+    r["winner"]=best
+    r["log"]=f"{best} kazandı! 🏆 ({best_score} puan)"
+
+def bowling_advance_turn(r):
+    n=len(r["order"])
+    for _ in range(n):
+        r["turnIdx"]=(r["turnIdx"]+1)%n
+        u=r["order"][r["turnIdx"]]
+        if r["players"][u]["curFrame"]<10:
+            return
+
+def bowling_deal(r):
+    order=list(r["seatOrder"])
+    for u in order:
+        p=r["players"][u]
+        p["curFrame"]=0; p["frameRolls"]=[]; p["pinsUp"]=10; p["frames"]=[]
+    r["order"]=order
+    r["gameNo"]=r.get("gameNo",0)+1
+    r["turnIdx"]=(r["gameNo"]-1)%len(order)
+    r["stage"]="playing"; r["winner"]=None
+    r["log"]=f"Oyun #{r['gameNo']} — {order[r['turnIdx']]} başlıyor."
+
+def bowling_public(r):
+    players=[]
+    for u in r["seatOrder"]:
+        p=r["players"][u]
+        rolls=bowling_all_rolls(p)
+        total,cums=bowling_score_progressive(rolls)
+        frames_display=p.get("frames",[])+([p["frameRolls"]] if p.get("frameRolls") else [])
+        players.append({"name":u,"token":p.get("token","⚪"),"isBot":p.get("isBot",False),
+                         "frames":frames_display,"cumScores":cums,"total":total,
+                         "curFrame":p.get("curFrame",0),"pinsUp":p.get("pinsUp",10)})
+    turn=r["order"][r["turnIdx"]] if r.get("order") else None
+    return {"code":r["code"],"started":r["started"],"stage":r["stage"],"turn":turn,
+            "players":players,"log":r["log"],"owner":r["owner"],"winner":r.get("winner"),"gameNo":r.get("gameNo",0)}
+
+def bowling_broadcast(r):
+    socketio.emit("bowling_state",bowling_public(r),room=r["code"])
+
+@socketio.on("bowling_create_room")
+def bowling_create_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","⚪")
+    code=bowling_code(); r=bowling_new_room(code,u); BOWLING_ROOMS[code]=r; join_room(code)
+    r["players"][u]=bowling_new_player(u,t,request.sid,False)
+    r["seatOrder"].append(u)
+    r["log"]=u+" a créé le salon."
+    bowling_broadcast(r)
+
+@socketio.on("bowling_join_room")
+def bowling_join_room(data):
+    u=(data or {}).get("username","Misafir").strip() or "Misafir"
+    t=(data or {}).get("token","⚪")
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=BOWLING_ROOMS.get(code)
+    if not r: emit("bowling_error",{"code":"room_not_found"}); return
+    if u not in r["players"] and len(r["seatOrder"])>=4:
+        emit("bowling_error",{"code":"table_full"}); return
+    join_room(code)
+    if u in r["players"]:
+        r["players"][u]["sid"]=request.sid
+    else:
+        r["players"][u]=bowling_new_player(u,t,request.sid,False)
+        r["seatOrder"].append(u)
+    r["log"]=u+" a rejoint le salon."
+    bowling_broadcast(r)
+
+@socketio.on("bowling_add_bot")
+def bowling_add_bot(data):
+    code=((data or {}).get("code","") or "").strip().upper()
+    r=BOWLING_ROOMS.get(code)
+    if not r or r["started"]: emit("bowling_error",{"code":"cannot_add_bot"}); return
+    if len(r["seatOrder"])>=4: emit("bowling_error",{"code":"table_full"}); return
+    r["botCount"]=r.get("botCount",0)+1
+    name=f"Bot {r['botCount']}"
+    r["players"][name]=bowling_new_player(name,"🤖",None,True)
+    r["seatOrder"].append(name)
+    r["log"]=name+" a rejoint le salon."
+    bowling_broadcast(r)
+
+@socketio.on("bowling_leave_room")
+def bowling_leave_room(data):
+    u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
+    r=BOWLING_ROOMS.get(code)
+    if not r or u not in r["players"]: return
+    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+    del r["players"][u]
+    r["log"]=u+" a quitté le salon."
+    if not r["players"]:
+        del BOWLING_ROOMS[code]; return
+    if r["stage"]=="playing":
+        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    bowling_broadcast(r)
+
+@socketio.on("bowling_start_game")
+def bowling_start_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
+    if not r or len(r["seatOrder"])<2: emit("bowling_error",{"code":"need_players"}); return
+    r["started"]=True
+    bowling_deal(r)
+    bowling_run_bots(r["code"])
+    bowling_broadcast(r)
+
+@socketio.on("bowling_next_game")
+def bowling_next_game(data):
+    code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
+    if not r or not r["started"] or r["stage"]=="playing": return
+    bowling_deal(r)
+    bowling_run_bots(r["code"])
+    bowling_broadcast(r)
+
+@socketio.on("bowling_roll")
+def bowling_roll(data):
+    code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
+    r=BOWLING_ROOMS.get(code)
+    if not r or r["stage"]!="playing" or u not in r["players"]: return
+    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("bowling_error",{"code":"not_your_turn"}); return
+    p=r["players"][u]
+    if p["curFrame"]>=10: emit("bowling_error",{"code":"frame_done"}); return
+    pins=bowling_roll_pins(p["pinsUp"])
+    frame_before=p["curFrame"]
+    bowling_apply_roll(p,pins)
+    r["log"]=f"{u}: {pins} lobut devirdi."
+    if p["curFrame"]!=frame_before:
+        if bowling_check_finished(r):
+            bowling_finish_game(r)
+        else:
+            bowling_advance_turn(r)
+            bowling_run_bots(r["code"])
+    bowling_broadcast(r)
+
+def bowling_next_is_bot(r):
+    if r["stage"]!="playing" or not r.get("order"): return False
+    p=r["players"].get(r["order"][r["turnIdx"]])
+    return bool(p and p.get("isBot"))
+
+def bowling_run_bot_turns(code):
+    try:
+        while True:
+            r=BOWLING_ROOMS.get(code)
+            if not r or not bowling_next_is_bot(r): return
+            socketio.sleep(1.3)
+            r=BOWLING_ROOMS.get(code)
+            if not r or not bowling_next_is_bot(r): return
+            u=r["order"][r["turnIdx"]]
+            p=r["players"][u]
+            pins=bowling_roll_pins(p["pinsUp"])
+            frame_before=p["curFrame"]
+            bowling_apply_roll(p,pins)
+            r["log"]=f"{u}: {pins} lobut devirdi."
+            if p["curFrame"]!=frame_before:
+                if bowling_check_finished(r):
+                    bowling_finish_game(r)
+                    bowling_broadcast(r)
+                    return
+                bowling_advance_turn(r)
+            bowling_broadcast(r)
+    finally:
+        r=BOWLING_ROOMS.get(code)
+        if r: r["botTaskRunning"]=False
+
+def bowling_run_bots(code):
+    r=BOWLING_ROOMS.get(code)
+    if not r or not bowling_next_is_bot(r): return
+    if r.get("botTaskRunning"): return
+    r["botTaskRunning"]=True
+    socketio.start_background_task(bowling_run_bot_turns,code)
+
+
 # === CLEAN ROUTES MONTENOIR / METROPOLY ===
 
 # === ROUTES PROPRES MONTENOIR / METROPOLY ===
@@ -7717,7 +7970,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <a class="card" href="/okey">🀄 Okey</a>
 <a class="card" href="/101">💯 101</a>
 <a class="card" href="/ludo">🎮 Ludo</a>
-<a class="card" href="/coming-soon/bowling">🎳 Bowling</a>
+<a class="card" href="/bowling">🎳 Bowling</a>
 </div>
 <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
 </div>
@@ -7753,6 +8006,10 @@ def r101_page():
 @app.route("/tavla")
 def tavla_page():
     return render_template("tavla.html")
+
+@app.route("/bowling")
+def bowling_page():
+    return render_template("bowling.html")
 
 
 # =========================
