@@ -1,12 +1,16 @@
 import string
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template_string, request, redirect, render_template
+from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
 import random, string, os, json, hashlib, time, smtplib, ssl, itertools
 try:
     import psycopg2
 except Exception:
     psycopg2 = None
+try:
+    import stripe
+except Exception:
+    stripe = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'codenamesvip'
@@ -90,6 +94,40 @@ Londres_I18N_SCRIPT = """
 
 USERS_FILE = os.path.join(os.environ.get("DATA_DIR", "."), "users.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+STRIPE_PROCESSED_FILE = os.path.join(os.environ.get("DATA_DIR", "."), "stripe_processed_sessions.json")
+
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
+if stripe and STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
+
+CHIP_PACKAGES = [
+    {"chips": 500, "price_gbp": 4.99},
+    {"chips": 1200, "price_gbp": 9.99},
+    {"chips": 3000, "price_gbp": 19.99},
+    {"chips": 8000, "price_gbp": 39.99},
+    {"chips": 20000, "price_gbp": 89.99},
+]
+
+def stripe_configured():
+    return bool(stripe and STRIPE_SECRET_KEY)
+
+def load_processed_stripe_sessions():
+    try:
+        with open(STRIPE_PROCESSED_FILE, "r", encoding="utf-8") as f:
+            return set(json.load(f))
+    except Exception:
+        return set()
+
+def mark_stripe_session_processed(session_id):
+    ids = load_processed_stripe_sessions()
+    ids.add(session_id)
+    data_dir = os.path.dirname(STRIPE_PROCESSED_FILE)
+    if data_dir and not os.path.exists(data_dir):
+        os.makedirs(data_dir, exist_ok=True)
+    with open(STRIPE_PROCESSED_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(ids), f)
 
 def db_enabled():
     return bool(DATABASE_URL) and psycopg2 is not None
@@ -5663,7 +5701,201 @@ def premium_page_dup2():
 
 @app.route("/kasa")
 def kasa_page():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='kasa_title'>🪙 Londres Kasası</h1><p data-common-i18n='kasa_desc'>Jeton paketleri ve ödeme sistemi burada olacak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
+    packages_html = "".join(
+        f'<div class="pkg-card"><div class="pkg-chips">🪙 {p["chips"]}</div>'
+        f'<div class="pkg-price">£{p["price_gbp"]:.2f}</div>'
+        f'<button class="submit buy-pkg-btn" data-idx="{i}" style="margin-top:12px;">'
+        f'<span data-common-i18n="kasa_buy_btn">Acheter (démo)</span></button></div>'
+        for i, p in enumerate(CHIP_PACKAGES)
+    )
+    stripe_ready_js = "true" if stripe_configured() else "false"
+    return render_template_string(AUTH_PAGE_STYLE + """
+    <style>
+      .card.kasa-card{max-width:640px;}
+      .balance-box{text-align:center;margin-bottom:18px;}
+      .balance-box .amount{font-size:32px;color:#d4af37;font-weight:bold;text-shadow:0 0 15px rgba(212,175,55,.6);}
+      .pkg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;}
+      .pkg-card{background:rgba(10,10,10,.85);border:2px solid #d4af37;border-radius:14px;padding:18px 12px;text-align:center;}
+      .pkg-chips{font-size:20px;font-weight:bold;color:#f5e6d3;}
+      .pkg-price{color:#8a7550;font-size:13px;margin-top:4px;}
+      .buy-pkg-btn{padding:10px;font-size:12px;}
+      .stripe-off-note{text-align:center;color:#ff6b6b;font-size:12px;margin-top:16px;}
+    </style>
+    <div class="lang-selector" id="langSelector"></div>
+    <h1 data-common-i18n="kasa_title">🪙 Caisse Montenoir</h1>
+    <div class="card" id="notLoggedCard" style="display:none;">
+      <p data-common-i18n="kasa_login_required">Connecte-toi pour acheter des jetons.</p>
+      <a class="switch-link" href="/login" data-common-i18n="go_to_login_btn" style="display:block;text-align:center;">Se connecter</a>
+    </div>
+    <div class="card kasa-card" id="kasaCard" style="display:none;">
+      <div class="balance-box">
+        <div data-common-i18n="kasa_balance_label" style="font-size:12px;color:#8a7550;text-transform:uppercase;letter-spacing:1px;">Solde actuel</div>
+        <div class="amount"><span id="balanceAmount">-</span> 🪙</div>
+      </div>
+      <div class="pkg-grid">""" + packages_html + """</div>
+      <div class="msg" id="kasaMsg"></div>
+      """ + ('' if stripe_configured() else '<p class="stripe-off-note">Paiement Stripe non configuré (clé API manquante côté serveur).</p>') + """
+    </div>
+    <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
+    <script src="/static/js/site_lang.js"></script>
+    <script>
+    buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+    applyCommonI18n();
+    const STRIPE_READY = """ + stripe_ready_js + """;
+    const kasaUser = localStorage.getItem('montenoirUser') || localStorage.getItem('loggedUser') || '';
+    const msgEl = document.getElementById('kasaMsg');
+
+    function refreshBalance() {
+      fetch('/api/auth/profile?username=' + encodeURIComponent(kasaUser)).then(r => r.json()).then(d => {
+        if (d.ok && d.profile) document.getElementById('balanceAmount').textContent = d.profile.chips;
+      });
+    }
+
+    if (!kasaUser) {
+      document.getElementById('notLoggedCard').style.display = 'block';
+    } else {
+      document.getElementById('kasaCard').style.display = 'block';
+      refreshBalance();
+
+      document.querySelectorAll('.buy-pkg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!STRIPE_READY) { msgEl.className = 'msg error'; msgEl.textContent = 'Paiement indisponible pour le moment.'; return; }
+          btn.disabled = true;
+          fetch('/api/chips/checkout', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username: kasaUser, package: parseInt(btn.dataset.idx, 10)})
+          }).then(r => r.json()).then(d => {
+            if (d.ok && d.url) { window.location.href = d.url; }
+            else { btn.disabled = false; msgEl.className = 'msg error'; msgEl.textContent = 'Erreur : ' + (d.error || 'inconnue'); }
+          }).catch(() => { btn.disabled = false; msgEl.className = 'msg error'; msgEl.textContent = 'Erreur réseau.'; });
+        });
+      });
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') && params.get('session_id')) {
+        msgEl.className = 'msg success'; msgEl.textContent = 'Paiement en cours de confirmation...';
+        fetch('/api/chips/confirm?session_id=' + encodeURIComponent(params.get('session_id'))).then(r => r.json()).then(d => {
+          if (d.ok && d.chips_added) {
+            msgEl.textContent = '✅ +' + d.chips_added + ' 🪙 ajoutés !';
+            refreshBalance();
+          } else if (d.ok) {
+            msgEl.textContent = '✅ Paiement déjà confirmé.';
+            refreshBalance();
+          } else {
+            msgEl.className = 'msg error'; msgEl.textContent = 'Paiement non confirmé pour le moment.';
+          }
+        });
+        window.history.replaceState({}, '', '/kasa');
+      } else if (params.get('canceled')) {
+        msgEl.className = 'msg error'; msgEl.textContent = 'Paiement annulé.';
+        window.history.replaceState({}, '', '/kasa');
+      }
+    }
+    </script>
+    """)
+
+@app.route("/api/chips/checkout", methods=["POST"])
+def api_chips_checkout():
+    if not stripe_configured():
+        return jsonify({"ok": False, "error": "stripe_not_configured"}), 503
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    if not username:
+        return jsonify({"ok": False, "error": "no_user"}), 400
+    users = load_users()
+    if not find_user_key(users, username):
+        return jsonify({"ok": False, "error": "user_not_found"}), 404
+    try:
+        idx = int(data.get("package"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "invalid_package"}), 400
+    if idx < 0 or idx >= len(CHIP_PACKAGES):
+        return jsonify({"ok": False, "error": "invalid_package"}), 400
+    pkg = CHIP_PACKAGES[idx]
+    base_url = request.url_root.rstrip("/")
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "gbp",
+                    "unit_amount": int(round(pkg["price_gbp"] * 100)),
+                    "product_data": {"name": f"{pkg['chips']} jetons Montenoir VIP"},
+                },
+                "quantity": 1,
+            }],
+            metadata={"username": username, "chips": str(pkg["chips"])},
+            success_url=base_url + "/kasa?success=1&session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=base_url + "/kasa?canceled=1",
+        )
+    except Exception as e:
+        return jsonify({"ok": False, "error": "stripe_error", "detail": str(e)}), 502
+    return jsonify({"ok": True, "url": session.url})
+
+def credit_chips_for_stripe_session(session_id):
+    """Shared by the webhook and the success-page fallback confirm call. Idempotent."""
+    if session_id in load_processed_stripe_sessions():
+        return None
+    session = stripe.checkout.Session.retrieve(session_id)
+    if session.get("payment_status") != "paid":
+        return None
+    metadata = session.get("metadata") or {}
+    username = metadata.get("username")
+    try:
+        chips = int(metadata.get("chips", 0))
+    except (TypeError, ValueError):
+        chips = 0
+    if not username or chips <= 0:
+        return None
+    users = load_users()
+    key = find_user_key(users, username)
+    if not key:
+        return None
+    users[key]["chips"] = int(users[key].get("chips", 1000)) + chips
+    save_users(users)
+    mark_stripe_session_processed(session_id)
+    return {"username": username, "chips_added": chips, "new_balance": users[key]["chips"]}
+
+@app.route("/api/chips/confirm")
+def api_chips_confirm():
+    if not stripe_configured():
+        return jsonify({"ok": False, "error": "stripe_not_configured"}), 503
+    session_id = (request.args.get("session_id") or "").strip()
+    if not session_id:
+        return jsonify({"ok": False, "error": "no_session"}), 400
+    try:
+        result = credit_chips_for_stripe_session(session_id)
+    except Exception as e:
+        return jsonify({"ok": False, "error": "stripe_error", "detail": str(e)}), 502
+    if result:
+        return jsonify({"ok": True, **result})
+    # Either already processed earlier (e.g. by the webhook), or not paid yet.
+    already = session_id in load_processed_stripe_sessions()
+    return jsonify({"ok": already, "alreadyProcessed": already})
+
+@app.route("/webhook/stripe", methods=["POST"])
+def webhook_stripe():
+    if not stripe_configured():
+        return "", 503
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature", "")
+    try:
+        if STRIPE_WEBHOOK_SECRET:
+            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        else:
+            event = json.loads(payload)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    if event.get("type") == "checkout.session.completed":
+        session_id = event["data"]["object"].get("id")
+        if session_id:
+            try:
+                credit_chips_for_stripe_session(session_id)
+            except Exception as e:
+                print("Stripe webhook credit error:", e, flush=True)
+    return jsonify({"received": True})
 
 @app.route("/turnuvalar")
 def turnuvalar_page():
