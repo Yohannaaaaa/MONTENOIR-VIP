@@ -6,6 +6,7 @@
 <title>Tavla VIP</title>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
+<script src="/static/js/site_sfx.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -174,7 +175,7 @@
 
 <script>
 const socket = io();
-let user = '', avatar = '⚪', room = '', lastState = null, isOwner = false, armedDie = null, prevDiceLen = 0, selectedSrc = null;
+let user = '', avatar = '⚪', room = '', lastState = null, isOwner = false, armedDie = null, prevDiceLen = 0, selectedSrc = null, prevMyTurn = false, prevStage = null;
 
 const TOP_ORDER = [12,13,14,15,16,17,18,19,20,21,22,23];
 const BOTTOM_ORDER = [11,10,9,8,7,6,5,4,3,2,1,0];
@@ -388,6 +389,7 @@ document.getElementById('rollBtn').addEventListener('click', () => {
   const btn = document.getElementById('rollBtn');
   if (btn.disabled) return;
   btn.disabled = true;
+  if (window.SFX) SFX.diceRoll();
   document.querySelectorAll('#diceRow .dice-3d').forEach(el => el.classList.add('rolling'));
   setTimeout(() => socket.emit('tavla_roll_dice', {code: room, username: user}), 550);
 });
@@ -427,6 +429,7 @@ function pickDieFor(src, legalMoves) {
 function attemptMove(src, legalMoves) {
   const die = pickDieFor(src, legalMoves);
   if (die !== null) {
+    if (window.SFX) SFX.move();
     socket.emit('tavla_move', {code: room, username: user, from: src, die});
     armedDie = null; selectedSrc = null;
     return;
@@ -470,6 +473,12 @@ function render(state) {
 
   const myTurn = state.turn === user && state.stage === 'playing';
   const legalMoves = state.legalMoves || {};
+  if (window.SFX) {
+    if (myTurn && !prevMyTurn) SFX.turn();
+    if (state.stage === 'finished' && prevStage !== 'finished') SFX.win();
+  }
+  prevMyTurn = myTurn;
+  prevStage = state.stage;
 
   document.getElementById('playersRow').innerHTML = state.players.map(p => {
     const cls = 'player-chip' + (state.turn === p.name ? ' turn' : '');
@@ -529,6 +538,7 @@ function render(state) {
       el.addEventListener('click', () => {
         const d = parseInt(el.dataset.die, 10);
         if (selectedSrc !== null && (legalMoves[d] || []).includes(selectedSrc)) {
+          if (window.SFX) SFX.move();
           socket.emit('tavla_move', {code: room, username: user, from: selectedSrc, die: d});
           armedDie = null; selectedSrc = null;
           return;
@@ -570,6 +580,7 @@ function barGapHtml(rowClass) {
 
 socket.on('tavla_state', render);
 socket.on('tavla_error', (d) => {
+  if (window.SFX) SFX.error();
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
   alert(t('alert_prefix') + msg);

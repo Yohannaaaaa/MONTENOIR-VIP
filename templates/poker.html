@@ -6,6 +6,7 @@
 <title>Poker VIP</title>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
+<script src="/static/js/site_sfx.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -153,7 +154,7 @@
 
 <script>
 const socket = io();
-let user = '', avatar = '🎩', room = '', myHole = [], lastState = null, isOwner = false;
+let user = '', avatar = '🎩', room = '', myHole = [], lastState = null, isOwner = false, prevMyTurn = false, prevStage = null;
 
 const I18N = {
   fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🃏 Choisis ton avatar',
@@ -405,18 +406,20 @@ document.getElementById('nextHandBtn').addEventListener('click', () => {
   socket.emit('poker_next_hand', {code: room});
 });
 
-document.getElementById('foldBtn').addEventListener('click', () => socket.emit('poker_action', {code: room, username: user, action: 'fold'}));
+document.getElementById('foldBtn').addEventListener('click', () => { if (window.SFX) SFX.click(); socket.emit('poker_action', {code: room, username: user, action: 'fold'}); });
 document.getElementById('checkCallBtn').addEventListener('click', () => {
   if (!lastState) return;
+  if (window.SFX) SFX.chip();
   const me = lastState.players.find(p => p.name === user);
   const action = (me && me.bet === lastState.currentBet) ? 'check' : 'call';
   socket.emit('poker_action', {code: room, username: user, action});
 });
 document.getElementById('raiseBtn').addEventListener('click', () => {
+  if (window.SFX) SFX.chip();
   const amount = parseInt(document.getElementById('raiseAmount').value, 10) || 0;
   socket.emit('poker_action', {code: room, username: user, action: 'raise', amount});
 });
-document.getElementById('allinBtn').addEventListener('click', () => socket.emit('poker_action', {code: room, username: user, action: 'allin'}));
+document.getElementById('allinBtn').addEventListener('click', () => { if (window.SFX) SFX.chip(); socket.emit('poker_action', {code: room, username: user, action: 'allin'}); });
 
 function suitInfo(card) {
   const suit = card[card.length - 1];
@@ -488,6 +491,12 @@ function render(state) {
 
   const me = players.find(p => p.name === user);
   const myTurn = state.turn === user;
+  if (window.SFX) {
+    if (myTurn && !prevMyTurn) SFX.turn();
+    if (state.stage === 'showdown' && prevStage !== 'showdown') SFX.win();
+  }
+  prevMyTurn = myTurn;
+  prevStage = state.stage;
   document.getElementById('turnIndicator').textContent = myTurn ? t('turn_mine') : (state.turn ? t('turn_other', {name: state.turn}) : '');
   document.getElementById('actionBar').style.display = myTurn ? 'flex' : 'none';
   document.getElementById('nextHandBar').style.display = (state.stage === 'showdown' || state.stage === 'waiting') ? 'flex' : 'none';
@@ -510,6 +519,7 @@ function render(state) {
 socket.on('poker_state', render);
 socket.on('poker_your_hand', (d) => { myHole = d.hole || []; if (lastState) render(lastState); });
 socket.on('poker_error', (d) => {
+  if (window.SFX) SFX.error();
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
   alert(t('alert_prefix') + msg);

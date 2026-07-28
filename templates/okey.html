@@ -6,6 +6,7 @@
 <title>Okey VIP</title>
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
+<script src="/static/js/site_sfx.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -166,7 +167,7 @@
 
 <script>
 const socket = io();
-let user = '', avatar = '🀄', room = '', myHand = [], myOrder = [], lastState = null, isOwner = false;
+let user = '', avatar = '🀄', room = '', myHand = [], myOrder = [], lastState = null, isOwner = false, prevMyTurn = false, prevStage = null;
 
 const I18N = {
   fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🀄 Choisis ton avatar',
@@ -405,9 +406,11 @@ document.getElementById('finishBtn').addEventListener('click', () => {
   socket.emit('okey_declare_finish', {code: room, username: user});
 });
 document.getElementById('deckPileBtn').addEventListener('click', () => {
+  if (window.SFX) SFX.cardFlip();
   socket.emit('okey_draw', {code: room, username: user, source: 'deck'});
 });
 document.getElementById('discardPileBtn').addEventListener('click', () => {
+  if (window.SFX) SFX.cardFlip();
   socket.emit('okey_draw', {code: room, username: user, source: 'discard'});
 });
 
@@ -478,6 +481,7 @@ function attachTileDrag(el, tileId, discardable) {
         }
       }
     } else if (!moved && discardable) {
+      if (window.SFX) SFX.move();
       socket.emit('okey_discard', {code: room, username: user, tileId});
     }
   });
@@ -539,6 +543,12 @@ function render(state) {
 
   const me = players.find(p => p.name === user);
   const myTurn = state.turn === user && state.stage === 'playing';
+  if (window.SFX) {
+    if (myTurn && !prevMyTurn) SFX.turn();
+    if (state.stage === 'round_over' && prevStage !== 'round_over') SFX.win();
+  }
+  prevMyTurn = myTurn;
+  prevStage = state.stage;
   document.getElementById('turnIndicator').textContent = myTurn
     ? (state.mustDiscard ? t('must_discard_hint') : t('must_draw_hint'))
     : (state.turn ? t('turn_other', {name: state.turn}) : '');
@@ -581,6 +591,7 @@ socket.on('okey_your_hand', (d) => {
   if (lastState) render(lastState);
 });
 socket.on('okey_error', (d) => {
+  if (window.SFX) SFX.error();
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
   alert(t('alert_prefix') + msg);
