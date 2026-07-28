@@ -5766,7 +5766,7 @@ def kasa_page():
             body: JSON.stringify({username: kasaUser, package: parseInt(btn.dataset.idx, 10)})
           }).then(r => r.json()).then(d => {
             if (d.ok && d.url) { window.location.href = d.url; }
-            else { btn.disabled = false; msgEl.className = 'msg error'; msgEl.textContent = 'Erreur : ' + (d.error || 'inconnue'); }
+            else { btn.disabled = false; msgEl.className = 'msg error'; msgEl.textContent = 'Erreur : ' + (d.error || 'inconnue') + (d.detail ? ' — ' + d.detail : ''); }
           }).catch(() => { btn.disabled = false; msgEl.className = 'msg error'; msgEl.textContent = 'Erreur réseau.'; });
         });
       });
