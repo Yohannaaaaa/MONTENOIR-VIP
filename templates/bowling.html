@@ -63,7 +63,10 @@
   .pin-7 { grid-column: 1; grid-row: 4; } .pin-8 { grid-column: 2; grid-row: 4; } .pin-9 { grid-column: 3; grid-row: 4; } .pin-10 { grid-column: 4; grid-row: 4; }
   .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 130px; background: repeating-linear-gradient(100deg, #caa06a 0 26px, #b88f5c 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
   .pins-up-label { position: absolute; top: 8px; right: 16px; color: #ffe08a; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
-  .ball { width: 76px; height: 76px; border-radius: 50%; background: radial-gradient(circle at 32% 26%, #ff6b6b, #c0272d 45%, #7a1620 75%, #3d0d0d 100%); box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -8px 12px rgba(0,0,0,.5), inset 0 8px 10px rgba(255,255,255,.35); position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); }
+  .ball { width: 76px; height: 76px; border-radius: 50%; background: radial-gradient(circle at 32% 26%, #ff6b6b, #c0272d 45%, #7a1620 75%, #3d0d0d 100%); box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -8px 12px rgba(0,0,0,.5), inset 0 8px 10px rgba(255,255,255,.35); position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); cursor: grab; }
+  .ball.my-turn { box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -8px 12px rgba(0,0,0,.5), inset 0 8px 10px rgba(255,255,255,.35), 0 0 22px rgba(212,175,55,.65); }
+  .ball:active { cursor: grabbing; }
+  .swipe-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: #ffe08a; font-size: 11px; letter-spacing: .5px; text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; opacity: .9; }
   .ball::before, .ball::after, .ball .hole3 { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #1a0505; box-shadow: inset 0 0 4px #000, 0 1px 1px rgba(255,255,255,.15); }
   .ball::before { top: 24px; left: 26px; }
   .ball::after { top: 24px; left: 40px; }
@@ -149,7 +152,8 @@
     </div>
     <div class="lane-foreground">
       <div class="pins-up-label" id="pinsUpLabel"></div>
-      <div class="ball"><span class="hole3"></span></div>
+      <div class="ball" id="ballEl"><span class="hole3"></span></div>
+      <div class="swipe-hint" id="swipeHint" style="display:none;" data-i18n="swipe_hint">👆 Glisse la boule vers le haut</div>
     </div>
   </div>
 
@@ -179,98 +183,98 @@ const I18N = {
     btn_start:'🚀 Démarrer la partie', btn_add_bot:'🤖 Ajouter un bot IA', btn_leave:'🚪 Quitter', btn_bowl:'🎳 Lancer', btn_next_game:'▶️ Nouvelle partie',
     turn_mine:'✅ À toi de jouer !', turn_other:'⏳ Tour de {name}', you_label:'Toi', win_msg:'{name} a gagné avec {score} points ! 🏆',
     alert_prefix:'❌ ', err_generic:'Erreur', err_room_not_found:'Salle introuvable.', err_table_full:'Salle complète (4 joueurs).',
-    err_need_players:'Il faut au moins 2 joueurs.', err_not_your_turn:"Ce n'est pas ton tour.", err_cannot_add_bot:"Impossible d'ajouter un bot.", err_frame_done:'Tu as fini tes 10 manches.' },
+    err_need_players:'Il faut au moins 2 joueurs.', err_not_your_turn:"Ce n'est pas ton tour.", err_cannot_add_bot:"Impossible d'ajouter un bot.", err_frame_done:'Tu as fini tes 10 manches.', swipe_hint:'👆 Glisse la boule vers le haut' },
   en: { label_username:'🎮 Your Nickname', placeholder_username:'Enter your name', label_avatar:'🎨 Choose your avatar',
     btn_create:'➕ Create a lane', label_or_join:'OR JOIN', placeholder_room_code:'Lane code', btn_join:'🔗 Join',
     title_lobby:'BOWLING', label_room_code:'LANE CODE', label_players:'👥 Players (2 to 4)',
     btn_start:'🚀 Start game', btn_add_bot:'🤖 Add AI bot', btn_leave:'🚪 Leave', btn_bowl:'🎳 Bowl', btn_next_game:'▶️ New game',
     turn_mine:'✅ Your turn!', turn_other:"⏳ {name}'s turn", you_label:'You', win_msg:'{name} won with {score} points! 🏆',
     alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Lane not found.', err_table_full:'Lane full (4 players).',
-    err_need_players:'Need at least 2 players.', err_not_your_turn:"It's not your turn.", err_cannot_add_bot:'Cannot add a bot.', err_frame_done:'You already finished your 10 frames.' },
+    err_need_players:'Need at least 2 players.', err_not_your_turn:"It's not your turn.", err_cannot_add_bot:'Cannot add a bot.', err_frame_done:'You already finished your 10 frames.', swipe_hint:'👆 Swipe the ball upward' },
   es: { label_username:'🎮 Tu Apodo', placeholder_username:'Escribe tu nombre', label_avatar:'🎨 Elige tu avatar',
     btn_create:'➕ Crear una pista', label_or_join:'O ÚNETE', placeholder_room_code:'Código de la pista', btn_join:'🔗 Unirse',
     title_lobby:'BOWLING', label_room_code:'CÓDIGO DE LA PISTA', label_players:'👥 Jugadores (2 a 4)',
     btn_start:'🚀 Empezar partida', btn_add_bot:'🤖 Añadir un bot IA', btn_leave:'🚪 Salir', btn_bowl:'🎳 Lanzar', btn_next_game:'▶️ Nueva partida',
     turn_mine:'✅ ¡Es tu turno!', turn_other:'⏳ Turno de {name}', you_label:'Tú', win_msg:'¡{name} ganó con {score} puntos! 🏆',
     alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Pista no encontrada.', err_table_full:'Pista completa (4 jugadores).',
-    err_need_players:'Se necesitan al menos 2 jugadores.', err_not_your_turn:'No es tu turno.', err_cannot_add_bot:'No se puede añadir un bot.', err_frame_done:'Ya terminaste tus 10 entradas.' },
+    err_need_players:'Se necesitan al menos 2 jugadores.', err_not_your_turn:'No es tu turno.', err_cannot_add_bot:'No se puede añadir un bot.', err_frame_done:'Ya terminaste tus 10 entradas.', swipe_hint:'👆 Desliza la bola hacia arriba' },
   de: { label_username:'🎮 Dein Spitzname', placeholder_username:'Gib deinen Namen ein', label_avatar:'🎨 Wähle deinen Avatar',
     btn_create:'➕ Bahn erstellen', label_or_join:'ODER BEITRETEN', placeholder_room_code:'Bahncode', btn_join:'🔗 Beitreten',
     title_lobby:'BOWLING', label_room_code:'BAHNCODE', label_players:'👥 Spieler (2 bis 4)',
     btn_start:'🚀 Spiel starten', btn_add_bot:'🤖 KI-Bot hinzufügen', btn_leave:'🚪 Verlassen', btn_bowl:'🎳 Werfen', btn_next_game:'▶️ Neues Spiel',
     turn_mine:'✅ Du bist dran!', turn_other:'⏳ {name} ist dran', you_label:'Du', win_msg:'{name} hat mit {score} Punkten gewonnen! 🏆',
     alert_prefix:'❌ ', err_generic:'Fehler', err_room_not_found:'Bahn nicht gefunden.', err_table_full:'Bahn voll (4 Spieler).',
-    err_need_players:'Mindestens 2 Spieler nötig.', err_not_your_turn:'Du bist nicht dran.', err_cannot_add_bot:'Bot kann nicht hinzugefügt werden.', err_frame_done:'Du hast deine 10 Runden schon beendet.' },
+    err_need_players:'Mindestens 2 Spieler nötig.', err_not_your_turn:'Du bist nicht dran.', err_cannot_add_bot:'Bot kann nicht hinzugefügt werden.', err_frame_done:'Du hast deine 10 Runden schon beendet.', swipe_hint:'👆 Wisch den Ball nach oben' },
   it: { label_username:'🎮 Il tuo soprannome', placeholder_username:'Inserisci il tuo nome', label_avatar:'🎨 Scegli il tuo avatar',
     btn_create:'➕ Crea una pista', label_or_join:'O UNISCITI', placeholder_room_code:'Codice della pista', btn_join:'🔗 Unisciti',
     title_lobby:'BOWLING', label_room_code:'CODICE DELLA PISTA', label_players:'👥 Giocatori (2-4)',
     btn_start:'🚀 Inizia partita', btn_add_bot:'🤖 Aggiungi un bot IA', btn_leave:'🚪 Esci', btn_bowl:'🎳 Lancia', btn_next_game:'▶️ Nuova partita',
     turn_mine:'✅ Tocca a te!', turn_other:'⏳ Turno di {name}', you_label:'Tu', win_msg:'{name} ha vinto con {score} punti! 🏆',
     alert_prefix:'❌ ', err_generic:'Errore', err_room_not_found:'Pista non trovata.', err_table_full:'Pista piena (4 giocatori).',
-    err_need_players:'Servono almeno 2 giocatori.', err_not_your_turn:'Non è il tuo turno.', err_cannot_add_bot:'Impossibile aggiungere un bot.', err_frame_done:'Hai già finito i tuoi 10 turni.' },
+    err_need_players:'Servono almeno 2 giocatori.', err_not_your_turn:'Non è il tuo turno.', err_cannot_add_bot:'Impossibile aggiungere un bot.', err_frame_done:'Hai già finito i tuoi 10 turni.', swipe_hint:'👆 Trascina la palla verso l\'alto' },
   nl: { label_username:'🎮 Jouw Bijnaam', placeholder_username:'Voer je naam in', label_avatar:'🎨 Kies je avatar',
     btn_create:'➕ Baan aanmaken', label_or_join:'OF DOE MEE', placeholder_room_code:'Baancode', btn_join:'🔗 Meedoen',
     title_lobby:'BOWLING', label_room_code:'BAANCODE', label_players:'👥 Spelers (2 tot 4)',
     btn_start:'🚀 Spel starten', btn_add_bot:'🤖 AI-bot toevoegen', btn_leave:'🚪 Verlaten', btn_bowl:'🎳 Gooien', btn_next_game:'▶️ Nieuw spel',
     turn_mine:'✅ Jij bent aan de beurt!', turn_other:'⏳ Beurt van {name}', you_label:'Jij', win_msg:'{name} heeft gewonnen met {score} punten! 🏆',
     alert_prefix:'❌ ', err_generic:'Fout', err_room_not_found:'Baan niet gevonden.', err_table_full:'Baan vol (4 spelers).',
-    err_need_players:'Minstens 2 spelers nodig.', err_not_your_turn:'Jij bent niet aan de beurt.', err_cannot_add_bot:'Kan geen bot toevoegen.', err_frame_done:'Je hebt je 10 beurten al afgerond.' },
+    err_need_players:'Minstens 2 spelers nodig.', err_not_your_turn:'Jij bent niet aan de beurt.', err_cannot_add_bot:'Kan geen bot toevoegen.', err_frame_done:'Je hebt je 10 beurten al afgerond.', swipe_hint:'👆 Veeg de bal omhoog' },
   ru: { label_username:'🎮 Твой ник', placeholder_username:'Введите ваше имя', label_avatar:'🎨 Выберите аватар',
     btn_create:'➕ Создать дорожку', label_or_join:'ИЛИ ПРИСОЕДИНИТЬСЯ', placeholder_room_code:'Код дорожки', btn_join:'🔗 Присоединиться',
     title_lobby:'БОУЛИНГ', label_room_code:'КОД ДОРОЖКИ', label_players:'👥 Игроки (2-4)',
     btn_start:'🚀 Начать игру', btn_add_bot:'🤖 Добавить ИИ-бота', btn_leave:'🚪 Выйти', btn_bowl:'🎳 Бросить', btn_next_game:'▶️ Новая игра',
     turn_mine:'✅ Твой ход!', turn_other:'⏳ Ход игрока {name}', you_label:'Ты', win_msg:'{name} выиграл с {score} очками! 🏆',
     alert_prefix:'❌ ', err_generic:'Ошибка', err_room_not_found:'Дорожка не найдена.', err_table_full:'Дорожка заполнена (4 игрока).',
-    err_need_players:'Нужно минимум 2 игрока.', err_not_your_turn:'Сейчас не твой ход.', err_cannot_add_bot:'Нельзя добавить бота.', err_frame_done:'Ты уже закончил свои 10 фреймов.' },
+    err_need_players:'Нужно минимум 2 игрока.', err_not_your_turn:'Сейчас не твой ход.', err_cannot_add_bot:'Нельзя добавить бота.', err_frame_done:'Ты уже закончил свои 10 фреймов.', swipe_hint:'👆 Проведи шаром вверх' },
   ar: { label_username:'🎮 اسمك المستعار', placeholder_username:'أدخل اسمك', label_avatar:'🎨 اختر صورتك الرمزية',
     btn_create:'➕ إنشاء مضمار', label_or_join:'أو انضم', placeholder_room_code:'رمز المضمار', btn_join:'🔗 انضمام',
     title_lobby:'البولينج', label_room_code:'رمز المضمار', label_players:'👥 اللاعبون (٢ إلى ٤)',
     btn_start:'🚀 ابدأ اللعبة', btn_add_bot:'🤖 إضافة بوت ذكاء اصطناعي', btn_leave:'🚪 مغادرة', btn_bowl:'🎳 ارمِ', btn_next_game:'▶️ لعبة جديدة',
     turn_mine:'✅ دورك الآن!', turn_other:'⏳ دور {name}', you_label:'أنت', win_msg:'فاز {name} بـ {score} نقطة! 🏆',
     alert_prefix:'❌ ', err_generic:'خطأ', err_room_not_found:'المضمار غير موجود.', err_table_full:'المضمار ممتلئ (٤ لاعبين).',
-    err_need_players:'يلزم لاعبان على الأقل.', err_not_your_turn:'ليس دورك.', err_cannot_add_bot:'لا يمكن إضافة بوت.', err_frame_done:'لقد أنهيت أدوارك العشرة.' },
+    err_need_players:'يلزم لاعبان على الأقل.', err_not_your_turn:'ليس دورك.', err_cannot_add_bot:'لا يمكن إضافة بوت.', err_frame_done:'لقد أنهيت أدوارك العشرة.', swipe_hint:'👆 اسحب الكرة للأعلى' },
   pt: { label_username:'🎮 Seu Apelido', placeholder_username:'Digite seu nome', label_avatar:'🎨 Escolha seu avatar',
     btn_create:'➕ Criar uma pista', label_or_join:'OU ENTRAR', placeholder_room_code:'Código da pista', btn_join:'🔗 Entrar',
     title_lobby:'BOLICHE', label_room_code:'CÓDIGO DA PISTA', label_players:'👥 Jogadores (2 a 4)',
     btn_start:'🚀 Iniciar jogo', btn_add_bot:'🤖 Adicionar bot de IA', btn_leave:'🚪 Sair', btn_bowl:'🎳 Lançar', btn_next_game:'▶️ Novo jogo',
     turn_mine:'✅ É a sua vez!', turn_other:'⏳ Vez de {name}', you_label:'Você', win_msg:'{name} venceu com {score} pontos! 🏆',
     alert_prefix:'❌ ', err_generic:'Erro', err_room_not_found:'Pista não encontrada.', err_table_full:'Pista cheia (4 jogadores).',
-    err_need_players:'São necessários pelo menos 2 jogadores.', err_not_your_turn:'Não é a sua vez.', err_cannot_add_bot:'Não é possível adicionar um bot.', err_frame_done:'Você já terminou seus 10 quadros.' },
+    err_need_players:'São necessários pelo menos 2 jogadores.', err_not_your_turn:'Não é a sua vez.', err_cannot_add_bot:'Não é possível adicionar um bot.', err_frame_done:'Você já terminou seus 10 quadros.', swipe_hint:'👆 Deslize a bola para cima' },
   pl: { label_username:'🎮 Twój Pseudonim', placeholder_username:'Wpisz swoje imię', label_avatar:'🎨 Wybierz awatar',
     btn_create:'➕ Utwórz tor', label_or_join:'LUB DOŁĄCZ', placeholder_room_code:'Kod toru', btn_join:'🔗 Dołącz',
     title_lobby:'KRĘGLE', label_room_code:'KOD TORU', label_players:'👥 Gracze (2-4)',
     btn_start:'🚀 Rozpocznij grę', btn_add_bot:'🤖 Dodaj bota AI', btn_leave:'🚪 Opuść', btn_bowl:'🎳 Rzuć', btn_next_game:'▶️ Nowa gra',
     turn_mine:'✅ Twoja kolej!', turn_other:'⏳ Kolej gracza {name}', you_label:'Ty', win_msg:'{name} wygrał z {score} punktami! 🏆',
     alert_prefix:'❌ ', err_generic:'Błąd', err_room_not_found:'Nie znaleziono toru.', err_table_full:'Tor pełny (4 graczy).',
-    err_need_players:'Potrzeba co najmniej 2 graczy.', err_not_your_turn:'To nie twoja kolej.', err_cannot_add_bot:'Nie można dodać bota.', err_frame_done:'Skończyłeś już swoje 10 rund.' },
+    err_need_players:'Potrzeba co najmniej 2 graczy.', err_not_your_turn:'To nie twoja kolej.', err_cannot_add_bot:'Nie można dodać bota.', err_frame_done:'Skończyłeś już swoje 10 rund.', swipe_hint:'👆 Przesuń kulę w górę' },
   tr: { label_username:'🎮 Takma Adın', placeholder_username:'Adını gir', label_avatar:'🎨 Avatarını seç',
     btn_create:'➕ Pist kur', label_or_join:'YA DA KATIL', placeholder_room_code:'Pist kodu', btn_join:'🔗 Katıl',
     title_lobby:'BOWLING', label_room_code:'PİST KODU', label_players:'👥 Oyuncular (2-4)',
     btn_start:'🚀 Oyunu başlat', btn_add_bot:'🤖 Yapay zeka botu ekle', btn_leave:'🚪 Ayrıl', btn_bowl:'🎳 At', btn_next_game:'▶️ Yeni oyun',
     turn_mine:'✅ Sıra sende!', turn_other:'⏳ Sıra: {name}', you_label:'Sen', win_msg:'{name} {score} puanla kazandı! 🏆',
     alert_prefix:'❌ ', err_generic:'Hata', err_room_not_found:'Pist bulunamadı.', err_table_full:'Pist dolu (4 oyuncu).',
-    err_need_players:'En az 2 oyuncu gerekli.', err_not_your_turn:'Sıra sende değil.', err_cannot_add_bot:'Bot eklenemiyor.', err_frame_done:'10 turunu zaten bitirdin.' },
+    err_need_players:'En az 2 oyuncu gerekli.', err_not_your_turn:'Sıra sende değil.', err_cannot_add_bot:'Bot eklenemiyor.', err_frame_done:'10 turunu zaten bitirdin.', swipe_hint:'👆 Topu yukarı doğru kaydır' },
   ja: { label_username:'🎮 ニックネーム', placeholder_username:'名前を入力', label_avatar:'🎨 アバターを選択',
     btn_create:'➕ レーンを作成', label_or_join:'または参加', placeholder_room_code:'レーンコード', btn_join:'🔗 参加',
     title_lobby:'ボウリング', label_room_code:'レーンコード', label_players:'👥 プレイヤー（2〜4人）',
     btn_start:'🚀 ゲーム開始', btn_add_bot:'🤖 AIボットを追加', btn_leave:'🚪 退出', btn_bowl:'🎳 投げる', btn_next_game:'▶️ 新しいゲーム',
     turn_mine:'✅ あなたの番です！', turn_other:'⏳ {name}の番', you_label:'あなた', win_msg:'{name}が{score}点で勝ちました！🏆',
     alert_prefix:'❌ ', err_generic:'エラー', err_room_not_found:'レーンが見つかりません。', err_table_full:'レーンは満員です（4人）。',
-    err_need_players:'少なくとも2人のプレイヤーが必要です。', err_not_your_turn:'あなたの番ではありません。', err_cannot_add_bot:'ボットを追加できません。', err_frame_done:'すでに10フレーム終了しています。' },
+    err_need_players:'少なくとも2人のプレイヤーが必要です。', err_not_your_turn:'あなたの番ではありません。', err_cannot_add_bot:'ボットを追加できません。', err_frame_done:'すでに10フレーム終了しています。', swipe_hint:'👆 ボールを上にスワイプ' },
   zh: { label_username:'🎮 你的昵称', placeholder_username:'输入你的名字', label_avatar:'🎨 选择你的头像',
     btn_create:'➕ 创建球道', label_or_join:'或加入', placeholder_room_code:'球道代码', btn_join:'🔗 加入',
     title_lobby:'保龄球', label_room_code:'球道代码', label_players:'👥 玩家（2到4人）',
     btn_start:'🚀 开始游戏', btn_add_bot:'🤖 添加AI机器人', btn_leave:'🚪 离开', btn_bowl:'🎳 投球', btn_next_game:'▶️ 新游戏',
     turn_mine:'✅ 轮到你了！', turn_other:'⏳ 轮到 {name}', you_label:'你', win_msg:'{name}以{score}分获胜！🏆',
     alert_prefix:'❌ ', err_generic:'错误', err_room_not_found:'未找到球道。', err_table_full:'球道已满（4人）。',
-    err_need_players:'至少需要2名玩家。', err_not_your_turn:'还没轮到你。', err_cannot_add_bot:'无法添加机器人。', err_frame_done:'你已经完成了10局。' },
+    err_need_players:'至少需要2名玩家。', err_not_your_turn:'还没轮到你。', err_cannot_add_bot:'无法添加机器人。', err_frame_done:'你已经完成了10局。', swipe_hint:'👆 向上滑动球' },
   ko: { label_username:'🎮 닉네임', placeholder_username:'이름을 입력하세요', label_avatar:'🎨 아바타를 선택하세요',
     btn_create:'➕ 레인 만들기', label_or_join:'또는 참가하기', placeholder_room_code:'레인 코드', btn_join:'🔗 참가',
     title_lobby:'볼링', label_room_code:'레인 코드', label_players:'👥 플레이어 (2~4명)',
     btn_start:'🚀 게임 시작', btn_add_bot:'🤖 AI 봇 추가', btn_leave:'🚪 나가기', btn_bowl:'🎳 던지기', btn_next_game:'▶️ 새 게임',
     turn_mine:'✅ 당신의 차례입니다!', turn_other:'⏳ {name}의 차례', you_label:'당신', win_msg:'{name}이(가) {score}점으로 승리했습니다! 🏆',
     alert_prefix:'❌ ', err_generic:'오류', err_room_not_found:'레인을 찾을 수 없습니다.', err_table_full:'레인이 가득 찼습니다 (4명).',
-    err_need_players:'최소 2명의 플레이어가 필요합니다.', err_not_your_turn:'당신의 차례가 아닙니다.', err_cannot_add_bot:'봇을 추가할 수 없습니다.', err_frame_done:'이미 10프레임을 마쳤습니다.' }
+    err_need_players:'최소 2명의 플레이어가 필요합니다.', err_not_your_turn:'당신의 차례가 아닙니다.', err_cannot_add_bot:'봇을 추가할 수 없습니다.', err_frame_done:'이미 10프레임을 마쳤습니다.', swipe_hint:'👆 공을 위로 밀어보세요' }
 };
 const LANGS = ['fr','en','es','de','it','nl','ru','ar','pt','pl','tr','ja','zh','ko'];
 let lang = LANGS.includes(getSiteLang()) ? getSiteLang() : 'fr';
@@ -327,13 +331,18 @@ function leaveTable() {
   show('loginScreen');
 }
 document.getElementById('nextGameBtn').addEventListener('click', () => socket.emit('bowling_next_game', {code: room}));
-document.getElementById('rollBtn').addEventListener('click', () => {
-  const btn = document.getElementById('rollBtn');
-  if (btn.disabled) return;
-  btn.disabled = true;
+
+function canThrow() {
+  return !document.getElementById('rollBtn').disabled && !isRolling;
+}
+
+function throwBall() {
+  if (!canThrow()) return;
+  document.getElementById('rollBtn').disabled = true;
   isRolling = true;
   if (window.SFX) SFX.bowl();
   const ball = document.querySelector('.ball');
+  ball.style.transition = 'transform .48s cubic-bezier(.55,0,.85,.35)';
   ball.style.transform = 'translateY(-140px) scale(.25) rotate(720deg)';
   setTimeout(() => {
     ball.style.transition = 'none';
@@ -341,8 +350,44 @@ document.getElementById('rollBtn').addEventListener('click', () => {
     void ball.offsetWidth;
     ball.style.transition = 'transform .5s cubic-bezier(.55,0,.85,.35)';
     socket.emit('bowling_roll', {code: room, username: user});
-  }, 480);
-});
+  }, 460);
+}
+
+document.getElementById('rollBtn').addEventListener('click', throwBall);
+
+// Swipe/drag the ball upward (toward the pins) to throw it — touch or mouse.
+(function setupBallSwipe() {
+  const ball = document.querySelector('.ball');
+  const THROW_THRESHOLD = 45; // px dragged upward to count as a throw
+  let dragging = false, startY = 0, curDY = 0;
+
+  ball.style.touchAction = 'none';
+
+  ball.addEventListener('pointerdown', (e) => {
+    if (!canThrow()) return;
+    dragging = true; startY = e.clientY; curDY = 0;
+    ball.setPointerCapture(e.pointerId);
+    ball.style.transition = 'none';
+  });
+  ball.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    curDY = Math.min(0, e.clientY - startY); // only allow dragging upward
+    const scale = 1 - Math.min(0.5, -curDY / 300);
+    ball.style.transform = `translateY(${curDY}px) scale(${scale})`;
+  });
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    if (-curDY >= THROW_THRESHOLD) {
+      throwBall();
+    } else {
+      ball.style.transition = 'transform .25s ease-out';
+      ball.style.transform = 'translateY(0) scale(1)';
+    }
+  }
+  ball.addEventListener('pointerup', endDrag);
+  ball.addEventListener('pointercancel', endDrag);
+})();
 
 function frameCellHtml(frameRolls, frameIdx) {
   if (!frameRolls || !frameRolls.length) return '<div class="frame-rolls"></div>';
@@ -416,6 +461,8 @@ function render(state) {
   const activePlayer = state.players.find(x => x.name === state.turn) || {pinsUp: 10};
   const pinsUp = activePlayer.pinsUp;
   document.getElementById('pinsUpLabel').textContent = state.stage === 'finished' ? '' : `${pinsUp} 🎯`;
+  document.getElementById('ballEl').classList.toggle('my-turn', myTurn);
+  document.getElementById('swipeHint').style.display = myTurn ? 'block' : 'none';
   document.getElementById('pinRack').innerHTML = Array.from({length: 10}).map((_, i) => {
     const num = i + 1;
     const isDown = num > pinsUp;
