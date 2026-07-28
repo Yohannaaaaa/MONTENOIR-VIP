@@ -6189,8 +6189,8 @@ def poker_public(r):
 def poker_broadcast(r):
     for u,p in r["players"].items():
         if p.get("sid"):
-            emit("poker_your_hand",{"hole":p.get("hole") or []},room=p["sid"])
-    emit("poker_state",poker_public(r),room=r["code"])
+            socketio.emit("poker_your_hand",{"hole":p.get("hole") or []},room=p["sid"])
+    socketio.emit("poker_state",poker_public(r),room=r["code"])
 
 def poker_take_chips(username,amount):
     users=load_users()
@@ -6290,7 +6290,7 @@ def poker_leave_room(data):
     if not r["players"]:
         del POKER_ROOMS[code]; return
     if mid_hand:
-        poker_run_bots(r)
+        poker_maybe_schedule_bots(code)
     poker_broadcast(r)
 
 @socketio.on("poker_start_game")
@@ -6299,7 +6299,7 @@ def poker_start_game(data):
     if not r or len(r["seatOrder"])<2: emit("poker_error",{"code":"need_players"}); return
     r["started"]=True
     poker_start_new_hand(r)
-    poker_run_bots(r)
+    poker_maybe_schedule_bots(code)
     poker_broadcast(r)
 
 @socketio.on("poker_next_hand")
@@ -6308,7 +6308,7 @@ def poker_next_hand(data):
     if not r or not r["started"]: return
     if r["stage"] not in ("showdown","waiting"): return
     poker_start_new_hand(r)
-    poker_run_bots(r)
+    poker_maybe_schedule_bots(code)
     poker_broadcast(r)
 
 def poker_apply_action(r,u,action,amount):
@@ -6374,17 +6374,30 @@ def poker_bot_decide(r,u):
         return ("fold",0)
     return ("call",0)
 
-def poker_run_bots(r):
-    for _ in range(200):
-        if r["stage"] in ("waiting","showdown"): break
-        if not r.get("order") or r["actIdx"] is None: break
-        u=r["order"][r["actIdx"]]
-        p=r["players"].get(u)
-        if not p or not p.get("isBot"): break
-        action,amount=poker_bot_decide(r,u)
-        poker_apply_action(r,u,action,amount)
-        poker_broadcast(r)
-        time.sleep(0.8)
+def poker_next_is_bot(r):
+    if r["stage"] in ("waiting","showdown") or not r.get("order") or r["actIdx"] is None: return False
+    p=r["players"].get(r["order"][r["actIdx"]])
+    return bool(p and p.get("isBot"))
+
+def poker_run_bot_turns(code):
+    try:
+        for _ in range(200):
+            socketio.sleep(1.6)
+            r=POKER_ROOMS.get(code)
+            if not r or not poker_next_is_bot(r): return
+            u=r["order"][r["actIdx"]]
+            action,amount=poker_bot_decide(r,u)
+            poker_apply_action(r,u,action,amount)
+            poker_broadcast(r)
+    finally:
+        r=POKER_ROOMS.get(code)
+        if r: r["botTaskRunning"]=False
+
+def poker_maybe_schedule_bots(code):
+    r=POKER_ROOMS.get(code)
+    if not r or r.get("botTaskRunning") or not poker_next_is_bot(r): return
+    r["botTaskRunning"]=True
+    socketio.start_background_task(poker_run_bot_turns,code)
 
 @socketio.on("poker_action")
 def poker_action(data):
@@ -6395,7 +6408,7 @@ def poker_action(data):
     if r["stage"] in ("waiting","showdown"): return
     if r["order"][r["actIdx"]]!=u: emit("poker_error",{"code":"not_your_turn"}); return
     poker_apply_action(r,u,action,amount)
-    poker_run_bots(r)
+    poker_maybe_schedule_bots(code)
     poker_broadcast(r)
 
 
@@ -6475,8 +6488,8 @@ def okey_public(r):
 def okey_broadcast(r):
     for u,p in r["players"].items():
         if p.get("sid"):
-            emit("okey_your_hand",{"hand":p["hand"]},room=p["sid"])
-    emit("okey_state",okey_public(r),room=r["code"])
+            socketio.emit("okey_your_hand",{"hand":p["hand"]},room=p["sid"])
+    socketio.emit("okey_state",okey_public(r),room=r["code"])
 
 def okey_deal(r):
     order=list(r["seatOrder"])
@@ -6616,35 +6629,53 @@ def okey_bot_pick_discard(hand,r):
         return s
     return sorted(range(len(hand)),key=lambda i: score(hand[i]))[0]
 
-def okey_run_bots(r):
-    for _ in range(50):
-        if r["stage"]!="playing" or not r.get("order"): break
-        u=r["order"][r["turnIdx"]]
-        p=r["players"].get(u)
-        if not p or not p.get("isBot"): break
-        if not r["mustDiscard"]:
-            source=okey_bot_decide_source(r,u)
-            ok=okey_perform_draw(r,u,source)
+def okey_next_is_bot(r):
+    if r["stage"]!="playing" or not r.get("order"): return False
+    p=r["players"].get(r["order"][r["turnIdx"]])
+    return bool(p and p.get("isBot"))
+
+def okey_run_bot_turns(code):
+    try:
+        for _ in range(50):
+            r=OKEY_ROOMS.get(code)
+            if not r or not okey_next_is_bot(r): return
+            u=r["order"][r["turnIdx"]]
+            p=r["players"][u]
+            if not r["mustDiscard"]:
+                source=okey_bot_decide_source(r,u)
+                ok=okey_perform_draw(r,u,source)
+                okey_broadcast(r)
+                socketio.sleep(1.6)
+                r=OKEY_ROOMS.get(code)
+                if not r or not ok or r["stage"]!="playing": return
+                if not okey_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]; p=r["players"][u]
+            hand=p["hand"]
+            if okey_can_partition(hand,r):
+                okey_finish_round(r,u,hand)
+                okey_broadcast(r)
+                return
+            idx=okey_bot_pick_discard(hand,r)
+            tile=hand.pop(idx)
+            r["discard"].append(tile)
+            r["mustDiscard"]=False
+            r["log"]=u+" taş attı."
+            if okey_can_partition(hand,r):
+                okey_finish_round(r,u,hand)
+                okey_broadcast(r)
+                return
+            r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
             okey_broadcast(r)
-            time.sleep(0.8)
-            if not ok or r["stage"]!="playing": break
-        hand=p["hand"]
-        if okey_can_partition(hand,r):
-            okey_finish_round(r,u,hand)
-            okey_broadcast(r)
-            break
-        idx=okey_bot_pick_discard(hand,r)
-        tile=hand.pop(idx)
-        r["discard"].append(tile)
-        r["mustDiscard"]=False
-        r["log"]=u+" taş attı."
-        if okey_can_partition(hand,r):
-            okey_finish_round(r,u,hand)
-            okey_broadcast(r)
-            break
-        r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
-        okey_broadcast(r)
-        time.sleep(0.8)
+            socketio.sleep(1.6)
+    finally:
+        r=OKEY_ROOMS.get(code)
+        if r: r["botTaskRunning"]=False
+
+def okey_maybe_schedule_bots(code):
+    r=OKEY_ROOMS.get(code)
+    if not r or r.get("botTaskRunning") or not okey_next_is_bot(r): return
+    r["botTaskRunning"]=True
+    socketio.start_background_task(okey_run_bot_turns,code)
 
 @socketio.on("okey_start_game")
 def okey_start_game(data):
@@ -6652,7 +6683,7 @@ def okey_start_game(data):
     if not r or len(r["seatOrder"])<2: emit("okey_error",{"code":"need_players"}); return
     r["started"]=True
     okey_deal(r)
-    okey_run_bots(r)
+    okey_maybe_schedule_bots(code)
     okey_broadcast(r)
 
 @socketio.on("okey_next_hand")
@@ -6660,7 +6691,7 @@ def okey_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
     okey_deal(r)
-    okey_run_bots(r)
+    okey_maybe_schedule_bots(code)
     okey_broadcast(r)
 
 @socketio.on("okey_draw")
@@ -6686,7 +6717,7 @@ def okey_discard(data):
     if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
     okey_perform_discard(r,u,tileId)
     if r["stage"]=="playing":
-        okey_run_bots(r)
+        okey_maybe_schedule_bots(code)
     okey_broadcast(r)
 
 @socketio.on("okey_declare_finish")
@@ -6819,7 +6850,7 @@ def ludo_run_bot_turns(code):
         while True:
             r=LUDO_ROOMS.get(code)
             if not r or not ludo_next_is_bot(r): return
-            socketio.sleep(0.8)
+            socketio.sleep(1.6)
             r=LUDO_ROOMS.get(code)
             if not r or not ludo_next_is_bot(r): return
             u=r["order"][r["turnIdx"]]
@@ -6836,7 +6867,7 @@ def ludo_run_bot_turns(code):
                 r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
                 ludo_broadcast(r)
                 if roll!=6:
-                    socketio.sleep(0.4)
+                    socketio.sleep(1.0)
                     r=LUDO_ROOMS.get(code)
                     if not r: return
                     ludo_advance_turn(r)
@@ -6847,7 +6878,7 @@ def ludo_run_bot_turns(code):
             ludo_broadcast(r)
             if won: return
             if roll!=6:
-                socketio.sleep(0.4)
+                socketio.sleep(1.0)
                 r=LUDO_ROOMS.get(code)
                 if not r: return
                 ludo_advance_turn(r)
@@ -7273,7 +7304,7 @@ def r101_run_bot_turns(code):
         while True:
             r=R101_ROOMS.get(code)
             if not r or not r101_next_is_bot(r): return
-            socketio.sleep(0.7)
+            socketio.sleep(1.5)
             r=R101_ROOMS.get(code)
             if not r or not r101_next_is_bot(r): return
             u=r["order"][r["turnIdx"]]
@@ -7284,7 +7315,7 @@ def r101_run_bot_turns(code):
                 ok=r101_perform_draw(r,u,source)
                 r101_broadcast(r)
                 if not ok or r["stage"]!="playing": return
-                socketio.sleep(0.7)
+                socketio.sleep(1.5)
                 r=R101_ROOMS.get(code)
                 if not r or r["stage"]!="playing": return
             hand=p["hand"]
@@ -7589,7 +7620,7 @@ def tavla_run_bot_turns(code):
             u=r["order"][r["turnIdx"]]
             player=r["players"][u]["color"]
             if not r["dice"]:
-                socketio.sleep(0.6)
+                socketio.sleep(1.4)
                 r=TAVLA_ROOMS.get(code)
                 if not r or not tavla_next_is_bot(r): return
                 d1=random.randint(1,6); d2=random.randint(1,6)
@@ -7601,7 +7632,7 @@ def tavla_run_bot_turns(code):
                     tavla_broadcast(r)
                     continue
                 tavla_broadcast(r)
-            socketio.sleep(0.7)
+            socketio.sleep(1.5)
             r=TAVLA_ROOMS.get(code)
             if not r or not tavla_next_is_bot(r): return
             if not r["dice"]: continue
