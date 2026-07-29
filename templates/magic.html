@@ -40,6 +40,15 @@
   .mode-card .icon { font-size: 34px; margin-bottom: 8px; }
   .mode-card .title { color: #d4af37; font-weight: bold; font-size: 16px; }
   .mode-card .desc { color: #b8a97a; font-size: 12px; margin-top: 4px; }
+  .hub-topbar { display: flex; justify-content: center; margin-bottom: 16px; }
+  .hub-coin { background: rgba(10,10,10,.85); border: 2px solid #d4af37; border-radius: 30px; padding: 10px 24px; color: #ffe9a8; font-weight: bold; font-size: 16px; box-shadow: 0 0 16px rgba(212,175,55,.5); }
+  .hub-scene { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+  .hub-scene-glow { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(212,175,55,.35), transparent 70%); animation: hubPulse 2.4s ease-in-out infinite; }
+  @keyframes hubPulse { 0%,100%{transform:scale(1); opacity:.7;} 50%{transform:scale(1.12); opacity:1;} }
+  .hub-scene .emoji { font-size: 84px; position: relative; z-index: 2; filter: drop-shadow(0 0 20px rgba(212,175,55,.8)); }
+  .hub-level-btn { max-width: 320px; width: 100%; font-size: 20px; padding: 18px; background: linear-gradient(135deg,#3ecf6e,#1f8f45); color: #fff; border: 2px solid #7cfc9a; box-shadow: 0 0 25px rgba(62,207,110,.6); border-radius: 30px; text-transform: none; letter-spacing: .5px; margin-top: 0; }
+  .hub-level-btn:hover { box-shadow: 0 0 35px rgba(62,207,110,.9); transform: scale(1.02); }
+  .hub-secondary { margin-top: 22px; width: 100%; max-width: 460px; }
 
   #gameScreen { padding: 14px; }
   .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 700px; margin: 0 auto 10px; font-size: 13px; color: #d4af37; font-weight: bold; }
@@ -117,14 +126,11 @@
 </div>
 
 <div id="modeScreen" class="screen">
-  <h1 data-i18n="title_mode">MAGIC</h1>
-  <div class="card-box">
+  <div class="hub-topbar"><div class="hub-coin">🪙 <span id="hubChips">-</span></div></div>
+  <div class="hub-scene"><div class="hub-scene-glow"></div><div class="emoji">🧪</div></div>
+  <button class="btn hub-level-btn" id="continueLevelBtn"></button>
+  <div class="card-box hub-secondary">
     <div class="mode-grid">
-      <div class="mode-card" id="soloCard">
-        <div class="icon">🎯</div>
-        <div class="title" data-i18n="btn_solo">Solo — Niveaux</div>
-        <div class="desc" data-i18n="solo_desc">Progresse niveau par niveau.</div>
-      </div>
       <div class="mode-card" id="duelCard">
         <div class="icon">⚔️</div>
         <div class="title" data-i18n="btn_duel">Duel</div>
@@ -437,18 +443,26 @@ document.querySelectorAll('.avatar-btn').forEach(btn => {
   });
 });
 
-document.getElementById('continueBtn').addEventListener('click', () => {
-  user = document.getElementById('username').value.trim();
-  if (!user) { document.getElementById('errorMsg').textContent = t('err_generic'); return; }
-  show('modeScreen');
-});
-document.getElementById('modeBackBtn').addEventListener('click', () => show('loginScreen'));
-
 function levelKey() { return 'magicLevel_' + user; }
 function getSavedLevel() { return parseInt(localStorage.getItem(levelKey()) || '1', 10); }
 function setSavedLevel(n) { localStorage.setItem(levelKey(), String(n)); }
 
-document.getElementById('soloCard').addEventListener('click', () => {
+function refreshHub() {
+  document.getElementById('continueLevelBtn').textContent = '▶️ ' + t('level_label', {n: getSavedLevel()});
+  fetch('/api/auth/profile?username=' + encodeURIComponent(user)).then(r => r.json()).then(d => {
+    if (d.ok && d.profile) document.getElementById('hubChips').textContent = d.profile.chips;
+  }).catch(() => {});
+}
+
+document.getElementById('continueBtn').addEventListener('click', () => {
+  user = document.getElementById('username').value.trim();
+  if (!user) { document.getElementById('errorMsg').textContent = t('err_generic'); return; }
+  show('modeScreen');
+  refreshHub();
+});
+document.getElementById('modeBackBtn').addEventListener('click', () => show('loginScreen'));
+
+document.getElementById('continueLevelBtn').addEventListener('click', () => {
   mode = 'solo';
   level = getSavedLevel();
   socket.emit('magic_solo_start', {username: user, level: level});
@@ -480,6 +494,7 @@ document.getElementById('leaveLobbyBtn').addEventListener('click', () => {
 document.getElementById('leaveGameBtn').addEventListener('click', () => {
   if (mode === 'duel') socket.emit('magic_duel_leave_room', {username: user, code: room});
   show('modeScreen');
+  refreshHub();
 });
 
 function renderBottles(bottles, cap) {
@@ -613,6 +628,7 @@ socket.on('magic_duel_state', (r) => {
       document.getElementById('winOverlay').classList.remove('active');
       socket.emit('magic_duel_leave_room', {username: user, code: room});
       show('modeScreen');
+      refreshHub();
     };
     document.getElementById('winSecondaryBtn').style.display = 'none';
     document.getElementById('winOverlay').classList.add('active');
