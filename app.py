@@ -8207,6 +8207,437 @@ def bowling_run_bots(code):
     socketio.start_background_task(bowling_run_bot_turns,code)
 
 
+# ===== MAGIC (Water Sort puzzle) =====
+MAGIC_CAPACITY = 4
+MAGIC_SOLO = {}    # sid -> solo session state
+MAGIC_ROOMS = {}   # code -> duel room state
+
+def magic_level_params(level):
+    num_colors = min(3 + (level - 1) // 3, 10)
+    return {"numColors": num_colors, "numEmpty": 2}
+
+def magic_generate(level, seed=None):
+    # Build a genuinely mixed (fragmented) puzzle by "un-sorting" from a solved
+    # state: at each step, move a random PARTIAL amount of a bottle's top color
+    # onto ANY other bottle with room (regardless of that bottle's own top
+    # color, unlike a real in-game pour). To guarantee the result stays solvable
+    # with the real pour rule (matching color or empty only), we only ever take
+    # the bottle's *entire* remaining contents when that empties it completely;
+    # otherwise we always leave at least one unit of the same color on top, so
+    # the reverse move (pouring it back) is always a legal same-color pour.
+    rnd = random.Random(seed if seed is not None else level)
+    params = magic_level_params(level)
+    nc, ne, cap = params["numColors"], params["numEmpty"], MAGIC_CAPACITY
+    bottles = [[i] * cap for i in range(nc)] + [[] for _ in range(ne)]
+    scramble_steps = 30 + level * 4
+    for _ in range(scramble_steps):
+        srcs = [i for i in range(len(bottles)) if bottles[i]]
+        if not srcs:
+            break
+        src = rnd.choice(srcs)
+        top = bottles[src][-1]
+        run = 0
+        for c in reversed(bottles[src]):
+            if c == top:
+                run += 1
+            else:
+                break
+        max_n = run if run == len(bottles[src]) else max(run - 1, 0)
+        if max_n <= 0:
+            continue
+        dsts = [j for j in range(len(bottles)) if j != src and len(bottles[j]) < cap]
+        if not dsts:
+            continue
+        dst = rnd.choice(dsts)
+        space = cap - len(bottles[dst])
+        n = rnd.randint(1, min(max_n, space))
+        for _ in range(n):
+            bottles[dst].append(bottles[src].pop())
+    hidden = [0] * len(bottles)
+    if level >= 4:
+        mystery_count = min(2 + (level - 4) // 4, max(nc - 1, 0))
+        candidates_idx = [i for i in range(nc) if len(bottles[i]) > 1]
+        rnd.shuffle(candidates_idx)
+        for i in candidates_idx[:mystery_count]:
+            hidden[i] = len(bottles[i]) - 1
+    return {"bottles": bottles, "hidden": hidden}
+
+def magic_solve(bottles, max_states=200000):
+    """DFS with memoization over board states using the real pour rule.
+    Returns a list of (src, dst) moves that solves the puzzle, or None."""
+    cap = MAGIC_CAPACITY
+    start = tuple(tuple(b) for b in bottles)
+
+    def is_solved(state):
+        for b in state:
+            if b and (len(set(b)) > 1 or len(b) != cap):
+                return False
+        return True
+
+    def moves_for(state):
+        moves = []
+        for i, b in enumerate(state):
+            if not b:
+                continue
+            top = b[-1]
+            run = 0
+            for c in reversed(b):
+                if c == top:
+                    run += 1
+                else:
+                    break
+            for j, d in enumerate(state):
+                if i == j or len(d) >= cap:
+                    continue
+                if not d or d[-1] == top:
+                    # heuristic priority: prefer moves that finish/consolidate a color
+                    score = 0
+                    if not d:
+                        score -= 1
+                    if len(d) + min(run, cap - len(d)) == cap:
+                        score -= 5
+                    moves.append((score, i, j))
+        moves.sort()
+        return [(i, j) for (_, i, j) in moves]
+
+    def apply_state(state, i, j):
+        b = list(state)
+        s, d = list(b[i]), list(b[j])
+        top = s[-1]
+        run = 0
+        for c in reversed(s):
+            if c == top:
+                run += 1
+            else:
+                break
+        n = min(run, cap - len(d))
+        for _ in range(n):
+            d.append(s.pop())
+        b[i], b[j] = tuple(s), tuple(d)
+        return tuple(b)
+
+    visited = {start}
+    stack = [(start, [])]
+    explored = 0
+    while stack:
+        state, path = stack.pop()
+        if is_solved(state):
+            return path
+        explored += 1
+        if explored > max_states:
+            return None
+        for (i, j) in moves_for(state):
+            nxt = apply_state(state, i, j)
+            if nxt in visited:
+                continue
+            visited.add(nxt)
+            stack.append((nxt, path + [(i, j)]))
+    return None
+
+def magic_apply_pour(bottles, src, dst):
+    if src == dst or src < 0 or dst < 0 or src >= len(bottles) or dst >= len(bottles):
+        return False
+    s, d = bottles[src], bottles[dst]
+    if not s:
+        return False
+    top = s[-1]
+    if d and d[-1] != top:
+        return False
+    space = MAGIC_CAPACITY - len(d)
+    if space <= 0:
+        return False
+    run = 0
+    for c in reversed(s):
+        if c == top:
+            run += 1
+        else:
+            break
+    n = min(run, space)
+    for _ in range(n):
+        d.append(s.pop())
+    return True
+
+def magic_update_hidden(hidden, bottles, idx):
+    if idx < 0 or idx >= len(hidden):
+        return
+    new_size = len(bottles[idx])
+    hidden[idx] = min(hidden[idx], max(0, new_size - 1)) if new_size > 0 else 0
+
+def magic_is_solved(bottles):
+    for b in bottles:
+        if b and (len(set(b)) > 1 or len(b) != MAGIC_CAPACITY):
+            return False
+    return True
+
+def magic_public_bottles(bottles, hidden):
+    out = []
+    for i, b in enumerate(bottles):
+        h = hidden[i] if i < len(hidden) else 0
+        row = []
+        for j, c in enumerate(b):
+            row.append(None if j < h else c)
+        out.append(row)
+    return out
+
+# ---- Solo mode ----
+@socketio.on("magic_solo_start")
+def magic_solo_start(data):
+    data = data or {}
+    username = (data.get("username") or "").strip()
+    level = max(1, int(data.get("level", 1)))
+    if not username:
+        emit("magic_error", {"code": "need_login"}); return
+    ok, _ = charge_play_fee([username])
+    if not ok:
+        emit("magic_error", {"code": "not_enough_chips"}); return
+    gen = magic_generate(level, seed=level)
+    MAGIC_SOLO[request.sid] = {
+        "username": username, "level": level,
+        "bottles": gen["bottles"], "hidden": gen["hidden"],
+        "history": [], "undoLeft": 3, "shuffleLeft": 3, "addLeft": 3,
+        "solved": False,
+    }
+    emit("magic_solo_state", magic_solo_public(MAGIC_SOLO[request.sid]))
+
+def magic_solo_public(s):
+    return {
+        "level": s["level"], "bottles": magic_public_bottles(s["bottles"], s["hidden"]),
+        "capacity": MAGIC_CAPACITY, "undoLeft": s["undoLeft"], "shuffleLeft": s["shuffleLeft"],
+        "addLeft": s["addLeft"], "solved": s["solved"],
+    }
+
+@socketio.on("magic_solo_pour")
+def magic_solo_pour(data):
+    s = MAGIC_SOLO.get(request.sid)
+    if not s or s["solved"]:
+        return
+    src, dst = (data or {}).get("src"), (data or {}).get("dst")
+    if not isinstance(src, int) or not isinstance(dst, int):
+        return
+    s["history"].append((json.dumps(s["bottles"]), list(s["hidden"])))
+    if not magic_apply_pour(s["bottles"], src, dst):
+        s["history"].pop()
+        emit("magic_error", {"code": "invalid_move"}); return
+    magic_update_hidden(s["hidden"], s["bottles"], src)
+    if magic_is_solved(s["bottles"]):
+        s["solved"] = True
+    emit("magic_solo_state", magic_solo_public(s))
+
+@socketio.on("magic_solo_undo")
+def magic_solo_undo(data):
+    s = MAGIC_SOLO.get(request.sid)
+    if not s or s["undoLeft"] <= 0 or not s["history"]:
+        emit("magic_error", {"code": "no_undo_left"}); return
+    bottles_json, hidden = s["history"].pop()
+    s["bottles"] = json.loads(bottles_json)
+    s["hidden"] = hidden
+    s["undoLeft"] -= 1
+    s["solved"] = False
+    emit("magic_solo_state", magic_solo_public(s))
+
+@socketio.on("magic_solo_shuffle")
+def magic_solo_shuffle(data):
+    s = MAGIC_SOLO.get(request.sid)
+    if not s or s["shuffleLeft"] <= 0:
+        emit("magic_error", {"code": "no_shuffle_left"}); return
+    gen = magic_generate(s["level"], seed=random.randint(1, 10**9))
+    s["bottles"], s["hidden"] = gen["bottles"], gen["hidden"]
+    s["history"] = []
+    s["shuffleLeft"] -= 1
+    s["solved"] = False
+    emit("magic_solo_state", magic_solo_public(s))
+
+@socketio.on("magic_solo_add_bottle")
+def magic_solo_add_bottle(data):
+    s = MAGIC_SOLO.get(request.sid)
+    if not s or s["addLeft"] <= 0:
+        emit("magic_error", {"code": "no_add_left"}); return
+    if len(s["bottles"]) >= magic_level_params(s["level"])["numColors"] + 4:
+        emit("magic_error", {"code": "no_add_left"}); return
+    s["history"].append((json.dumps(s["bottles"]), list(s["hidden"])))
+    s["bottles"].append([])
+    s["hidden"].append(0)
+    s["addLeft"] -= 1
+    emit("magic_solo_state", magic_solo_public(s))
+
+# ---- Duel mode ----
+def magic_duel_code():
+    while True:
+        c = "MAG-" + "".join(random.choices(string.digits, k=4))
+        if c not in MAGIC_ROOMS:
+            return c
+
+def magic_duel_public(r):
+    players = []
+    for u in r["seatOrder"]:
+        p = r["players"][u]
+        players.append({"name": u, "token": p.get("token", "🧪"), "isBot": p.get("isBot", False),
+                         "moves": p.get("moves", 0), "finished": p.get("finished", False)})
+    return {"code": r["code"], "started": r["started"], "owner": r["owner"], "level": r.get("level"),
+            "players": players, "winner": r.get("winner"), "log": r.get("log", "")}
+
+def magic_duel_broadcast(r):
+    socketio.emit("magic_duel_state", magic_duel_public(r), room=r["code"])
+
+def magic_duel_send_board(r, username):
+    p = r["players"].get(username)
+    if not p or not p.get("sid"):
+        return
+    socketio.emit("magic_duel_board", {
+        "bottles": magic_public_bottles(p["bottles"], p["hidden"]),
+        "capacity": MAGIC_CAPACITY, "solved": p.get("finished", False),
+    }, room=p["sid"])
+
+@socketio.on("magic_duel_create_room")
+def magic_duel_create_room(data):
+    u = (data or {}).get("username", "Joueur").strip() or "Joueur"
+    t = (data or {}).get("token", "🧪")
+    code = magic_duel_code()
+    r = {"code": code, "owner": u, "started": False, "players": {}, "seatOrder": [],
+         "level": 6, "winner": None, "log": "Salon créé.", "botTaskRunning": False}
+    MAGIC_ROOMS[code] = r
+    join_room(code)
+    r["players"][u] = {"name": u, "token": t, "sid": request.sid, "isBot": False,
+                        "bottles": [], "hidden": [], "moves": 0, "finished": False}
+    r["seatOrder"].append(u)
+    magic_duel_broadcast(r)
+
+@socketio.on("magic_duel_join_room")
+def magic_duel_join_room(data):
+    u = (data or {}).get("username", "Joueur").strip() or "Joueur"
+    t = (data or {}).get("token", "🧪")
+    code = ((data or {}).get("code", "") or "").strip().upper()
+    r = MAGIC_ROOMS.get(code)
+    if not r:
+        emit("magic_error", {"code": "room_not_found"}); return
+    if u not in r["players"] and len(r["seatOrder"]) >= 2:
+        emit("magic_error", {"code": "table_full"}); return
+    join_room(code)
+    if u in r["players"]:
+        r["players"][u]["sid"] = request.sid
+    else:
+        r["players"][u] = {"name": u, "token": t, "sid": request.sid, "isBot": False,
+                            "bottles": [], "hidden": [], "moves": 0, "finished": False}
+        r["seatOrder"].append(u)
+    magic_duel_broadcast(r)
+
+@socketio.on("magic_duel_add_bot")
+def magic_duel_add_bot(data):
+    code = ((data or {}).get("code", "") or "").strip().upper()
+    r = MAGIC_ROOMS.get(code)
+    if not r or r["started"]:
+        emit("magic_error", {"code": "cannot_add_bot"}); return
+    if len(r["seatOrder"]) >= 2:
+        emit("magic_error", {"code": "table_full"}); return
+    name = "Bot Magic"
+    r["players"][name] = {"name": name, "token": "🤖", "sid": None, "isBot": True,
+                           "bottles": [], "hidden": [], "moves": 0, "finished": False}
+    r["seatOrder"].append(name)
+    magic_duel_broadcast(r)
+
+@socketio.on("magic_duel_leave_room")
+def magic_duel_leave_room(data):
+    u = (data or {}).get("username", "").strip()
+    code = ((data or {}).get("code", "") or "").strip().upper()
+    r = MAGIC_ROOMS.get(code)
+    if not r or u not in r["players"]:
+        return
+    r["seatOrder"] = [n for n in r["seatOrder"] if n != u]
+    del r["players"][u]
+    if not r["players"]:
+        del MAGIC_ROOMS[code]; return
+    r["started"] = False
+    magic_duel_broadcast(r)
+
+@socketio.on("magic_duel_start")
+def magic_duel_start(data):
+    code = ((data or {}).get("code", "") or "").strip().upper()
+    r = MAGIC_ROOMS.get(code)
+    if not r or len(r["seatOrder"]) != 2:
+        emit("magic_error", {"code": "need_players"}); return
+    ok, _ = charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok:
+        emit("magic_error", {"code": "not_enough_chips"}); return
+    level = r.get("level", 10)
+    gen = magic_generate(level, seed=random.randint(1, 10**9))
+    r["started"] = True
+    r["winner"] = None
+    r["log"] = "Partie lancée !"
+    for u in r["seatOrder"]:
+        p = r["players"][u]
+        p["bottles"] = [list(b) for b in gen["bottles"]]
+        p["hidden"] = list(gen["hidden"])
+        p["moves"] = 0
+        p["finished"] = False
+    r["solution"] = magic_solve(gen["bottles"]) or []
+    magic_duel_broadcast(r)
+    for u in r["seatOrder"]:
+        magic_duel_send_board(r, u)
+    magic_duel_maybe_bot(code)
+
+@socketio.on("magic_duel_pour")
+def magic_duel_pour(data):
+    code = ((data or {}).get("code", "") or "").strip().upper()
+    u = (data or {}).get("username", "").strip()
+    r = MAGIC_ROOMS.get(code)
+    if not r or not r["started"] or u not in r["players"]:
+        return
+    p = r["players"][u]
+    if p.get("finished") or r.get("winner"):
+        return
+    src, dst = (data or {}).get("src"), (data or {}).get("dst")
+    if not isinstance(src, int) or not isinstance(dst, int):
+        return
+    if not magic_apply_pour(p["bottles"], src, dst):
+        emit("magic_error", {"code": "invalid_move"}); return
+    magic_update_hidden(p["hidden"], p["bottles"], src)
+    p["moves"] += 1
+    if magic_is_solved(p["bottles"]):
+        p["finished"] = True
+        if not r.get("winner"):
+            r["winner"] = u
+            r["log"] = f"{u} a gagné ! 🏆"
+    magic_duel_send_board(r, u)
+    magic_duel_broadcast(r)
+
+def magic_duel_maybe_bot(code):
+    r = MAGIC_ROOMS.get(code)
+    if not r or r.get("botTaskRunning"):
+        return
+    bot_name = next((u for u in r["seatOrder"] if r["players"][u].get("isBot")), None)
+    if not bot_name:
+        return
+    r["botTaskRunning"] = True
+    socketio.start_background_task(magic_duel_run_bot, code, bot_name)
+
+def magic_duel_run_bot(code, bot_name):
+    r = MAGIC_ROOMS.get(code)
+    if not r:
+        return
+    solution = r.get("solution", [])
+    for (src, dst) in solution:
+        socketio.sleep(1.0 + random.random() * 0.8)
+        r = MAGIC_ROOMS.get(code)
+        if not r or not r["started"] or r.get("winner"):
+            break
+        p = r["players"].get(bot_name)
+        if not p or p.get("finished"):
+            break
+        if not magic_apply_pour(p["bottles"], src, dst):
+            continue
+        magic_update_hidden(p["hidden"], p["bottles"], src)
+        p["moves"] += 1
+        if magic_is_solved(p["bottles"]):
+            p["finished"] = True
+            if not r.get("winner"):
+                r["winner"] = bot_name
+                r["log"] = f"{bot_name} a gagné ! 🏆"
+        magic_duel_broadcast(r)
+    r = MAGIC_ROOMS.get(code)
+    if r:
+        r["botTaskRunning"] = False
+
+
 # === CLEAN ROUTES MONTENOIR / METROPOLY ===
 
 # === ROUTES PROPRES MONTENOIR / METROPOLY ===
@@ -8257,6 +8688,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <a class="card" href="/101">💯 101</a>
 <a class="card" href="/ludo">🎮 Ludo</a>
 <a class="card" href="/bowling">🎳 Bowling</a>
+<a class="card" href="/magic">🧪 Magic</a>
 </div>
 <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
 </div>
@@ -8296,6 +8728,10 @@ def tavla_page():
 @app.route("/bowling")
 def bowling_page():
     return render_template("bowling.html")
+
+@app.route("/magic")
+def magic_page():
+    return render_template("magic.html")
 
 
 # =========================
