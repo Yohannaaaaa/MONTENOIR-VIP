@@ -476,6 +476,7 @@ document.getElementById('modeBackBtn').addEventListener('click', () => show('log
 document.getElementById('continueLevelBtn').addEventListener('click', () => {
   mode = 'solo';
   level = getSavedLevel();
+  forceInstantRender = true;
   socket.emit('magic_solo_start', {username: user, level: level});
 });
 document.getElementById('duelCard').addEventListener('click', () => {
@@ -493,6 +494,7 @@ document.getElementById('joinBtn').addEventListener('click', () => {
   socket.emit('magic_duel_join_room', {username: user, token: avatar, code: code});
 });
 document.getElementById('startBtn').addEventListener('click', () => {
+  forceInstantRender = true;
   socket.emit('magic_duel_start', {code: room});
 });
 document.getElementById('addBotBtn').addEventListener('click', () => {
@@ -574,11 +576,17 @@ function updateTopSurface(bottle, cap) {
   slots.forEach((slot, s) => slot.classList.toggle('top-surface', s === topFilled));
 }
 
+let forceInstantRender = true;
+
 function renderBottles(bottles, cap) {
   capacity = cap;
+  let rebuilt = false;
   if (renderedBottleCount !== bottles.length || renderedCapacity !== cap) {
     buildBottleDOM(bottles.length, cap);
+    rebuilt = true;
   }
+  const instant = forceInstantRender || rebuilt;
+  forceInstantRender = false;
   const bottleEls = document.querySelectorAll('.bottle');
   bottles.forEach((layers, idx) => {
     const bottle = bottleEls[idx];
@@ -588,6 +596,16 @@ function renderBottles(bottles, cap) {
     const slots = bottle.querySelectorAll('.bottle-slot');
     const targets = [];
     for (let s = 0; s < cap; s++) targets.push(s < layers.length ? layers[s] : undefined);
+
+    if (instant) {
+      slots.forEach(sl => { sl.style.transition = 'none'; });
+      for (let s = 0; s < cap; s++) applySlotValue(slots[s], targets[s]);
+      updateTopSurface(bottle, cap);
+      bottle.classList.toggle('capped', isCapped);
+      void bottle.offsetWidth;
+      slots.forEach(sl => { sl.style.transition = ''; });
+      return;
+    }
 
     const changed = [];
     for (let s = 0; s < cap; s++) {
@@ -652,7 +670,7 @@ function renderCurrentState() {
 }
 
 document.getElementById('undoBtn').addEventListener('click', () => socket.emit('magic_solo_undo', {}));
-document.getElementById('shuffleBtn').addEventListener('click', () => socket.emit('magic_solo_shuffle', {}));
+document.getElementById('shuffleBtn').addEventListener('click', () => { forceInstantRender = true; socket.emit('magic_solo_shuffle', {}); });
 document.getElementById('addBottleBtn').addEventListener('click', () => socket.emit('magic_solo_add_bottle', {}));
 
 function updateSoloUI(s) {
@@ -677,12 +695,14 @@ function updateSoloUI(s) {
       level = s.level + 1;
       setSavedLevel(level);
       document.getElementById('winOverlay').classList.remove('active');
+      forceInstantRender = true;
       socket.emit('magic_solo_start', {username: user, level: level});
     };
     const replayBtn = document.getElementById('winSecondaryBtn');
     replayBtn.textContent = t('btn_replay');
     replayBtn.onclick = () => {
       document.getElementById('winOverlay').classList.remove('active');
+      forceInstantRender = true;
       socket.emit('magic_solo_start', {username: user, level: s.level});
     };
     document.getElementById('winOverlay').classList.add('active');
