@@ -192,6 +192,16 @@
 
 <script>
 const socket = io();
+function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
+(function(){
+  const su = savedProfileUser();
+  if (su) {
+    const inp = document.getElementById('username');
+    const lbl = document.querySelector('label[data-i18n="label_username"]');
+    if (inp) { inp.value = su; inp.style.display = 'none'; }
+    if (lbl) lbl.style.display = 'none';
+  }
+})();
 let user = '', avatar = '🀄', room = '', myHand = [], myOrder = [], lastState = null, isOwner = false, prevMyTurn = false, prevStage = null;
 
 const I18N = {
