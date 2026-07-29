@@ -105,14 +105,24 @@
     .bottom-nav{position:static;margin:20px 0 0;order:4;}
     .bottom-nav a{font-size:13px;padding:12px 22px;}
   }
+  #montenoirOnlineBox{position:fixed;right:25px;bottom:25px;width:148px;height:92px;z-index:9997;background:rgba(0,0,0,.86);border:1px solid rgba(212,175,55,.75);border-radius:8px;box-shadow:0 0 14px rgba(0,255,90,.22),0 0 18px rgba(212,175,55,.22);overflow:hidden;font-family:Consolas,"Courier New",monospace;color:#00ff66;font-size:10.5px;line-height:17px}
+  #montenoirOnlineHeader{height:20px;display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:10px;font-weight:bold;letter-spacing:1px;background:rgba(212,175,55,.08);border-bottom:1px solid rgba(212,175,55,.25);text-shadow:0 0 5px rgba(212,175,55,.8)}
+  #montenoirOnlineViewport{height:70px;overflow:hidden;position:relative}
+  #montenoirOnlineTrack{position:absolute;left:0;top:0;width:100%;animation:montenoirMatrixScroll 8s linear infinite}
+  .montenoirOnlineUser{white-space:nowrap;padding:0 8px;color:#00ff66;text-shadow:0 0 6px #00ff66}
+  @keyframes montenoirMatrixScroll{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
+  #montenoirLoginToastWrap{position:fixed;right:12px;bottom:128px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+  .montenoirLoginToast{min-width:180px;max-width:260px;padding:10px 14px;border-radius:10px;background:rgba(0,0,0,.88);border:1px solid #d4af37;color:#00ff66;font-family:Consolas,"Courier New",monospace;font-size:13px;box-shadow:0 0 18px rgba(0,255,90,.25),0 0 16px rgba(212,175,55,.25);text-shadow:0 0 5px #00ff66;animation:montenoirToastIn .22s ease-out}
+  @keyframes montenoirToastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+  @media(max-width:600px){ #montenoirOnlineBox{width:118px;height:76px;font-size:9px;line-height:15px;right:14px;bottom:14px} #montenoirOnlineHeader{height:18px;font-size:9px} #montenoirOnlineViewport{height:56px} #montenoirLoginToastWrap{right:10px;bottom:98px} }
 </style>
 </head>
 <body>
   <div class="container">
     <img src="/static/PAGEDECOUVERTURE.lux.site.jpeg" alt="Montenoir VIP">
-    
+
     <div class="lang-selector" id="langSelector"></div>
-    
+
     <div class="top-nav">
       <a href="/register" class="text-register">📝 <span>Register</span></a>
       <a href="/login" class="text-login">👤 <span>Login</span></a>
@@ -124,6 +134,8 @@
       <a href="/games" class="text-games">🎮 <span>GAMES</span></a>
       <a href="/tarot" class="text-tarot">🔮 <span>TAROT & RITUAL</span></a>
     </div>
+    <div id="montenoirOnlineBox"><div id="montenoirOnlineHeader">ONLINE</div><div id="montenoirOnlineViewport"><div id="montenoirOnlineTrack"></div></div></div>
+    <div id="montenoirLoginToastWrap"></div>
   </div>
 
   <script src="/static/js/site_lang.js"></script>
@@ -271,6 +283,67 @@
     const selector = document.getElementById('langSelector');
     buildLangSelector(selector, applyPageTranslations, Object.keys(translations));
     applyPageTranslations(getSiteLang());
+  </script>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+  (function(){
+    var onlineSocket = null;
+    try { onlineSocket = (typeof io !== "undefined") ? io() : null; } catch(e) { onlineSocket = null; }
+    function savedUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
+    function savedGender(){ return localStorage.getItem("montenoirGender") || localStorage.getItem("gender") || ""; }
+    function symbolFor(gender){
+      gender = (gender || "").toLowerCase();
+      if (["female","femme","kadin","kadın","woman","girl"].indexOf(gender) >= 0) return "♠️";
+      if (["male","homme","erkek","man","boy"].indexOf(gender) >= 0) return "♣️";
+      return "♣️";
+    }
+    function renderOnline(users){
+      var track = document.getElementById("montenoirOnlineTrack");
+      if (!track) return;
+      users = users || [];
+      if (!users.length) { track.innerHTML = '<div class="montenoirOnlineUser">— en attente —</div>'; return; }
+      var html = users.map(function(u){
+        var sym = u.symbol || symbolFor(u.gender);
+        var name = (u.username || "").replace(/[<>&]/g, "");
+        return '<div class="montenoirOnlineUser">' + sym + ' ' + name + '</div>';
+      }).join("");
+      track.innerHTML = html + html;
+    }
+    function showToast(user){
+      if (!user || !user.username) return;
+      var current = savedUser().toLowerCase();
+      var uname = (user.username || "").toLowerCase();
+      if (current && uname === current) return;
+      window.__montenoirToastSeen = window.__montenoirToastSeen || {};
+      var now = Date.now();
+      if (window.__montenoirToastSeen[uname] && now - window.__montenoirToastSeen[uname] < 6000) return;
+      window.__montenoirToastSeen[uname] = now;
+      var wrap = document.getElementById("montenoirLoginToastWrap");
+      if (!wrap) return;
+      var toast = document.createElement("div");
+      toast.className = "montenoirLoginToast";
+      toast.textContent = (user.symbol || symbolFor(user.gender)) + " " + user.username + " en ligne";
+      wrap.appendChild(toast);
+      setTimeout(function(){ toast.remove(); }, 5000);
+    }
+    function announceOnline(){
+      if (!onlineSocket) return;
+      var u = savedUser();
+      if (u) onlineSocket.emit("montenoir_user_online", {username: u, gender: savedGender()});
+      else onlineSocket.emit("montenoir_get_online");
+    }
+    if (onlineSocket) {
+      onlineSocket.on("connect", announceOnline);
+      onlineSocket.on("montenoir_online_update", function(data){
+        renderOnline((data && data.users) || []);
+        if (data && data.joined) showToast(data.joined);
+      });
+    }
+    announceOnline();
+    setTimeout(announceOnline, 500);
+    setInterval(announceOnline, 30000);
+  })();
   </script>
 </body>
 </html>
