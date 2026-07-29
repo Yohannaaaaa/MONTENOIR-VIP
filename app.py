@@ -8267,6 +8267,12 @@ AUTH_PAGE_STYLE = """
   .msg{margin-top:14px;text-align:center;font-size:13px;min-height:18px;}
   .msg.error{color:#ff6b6b;}
   .msg.success{color:#3adb76;}
+  @media (max-width: 480px) {
+    html, body { overflow-x: hidden; }
+    body{padding:24px 14px;}
+    .card{padding:22px 18px;}
+    h1{font-size:26px;}
+  }
 </style>
 """
 

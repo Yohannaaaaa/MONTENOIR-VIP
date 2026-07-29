@@ -71,6 +71,29 @@
   .action-log { color: #d4af37; font-size: 12px; text-align: center; margin-top: 10px; min-height: 16px; opacity: .9; }
   .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 980px; margin: 0 auto 8px; font-size: 12px; color: #d4af37; }
   .top-bar button { background: none; border: 1px solid #d4af37; color: #d4af37; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+
+  @media (max-width: 600px) {
+    html, body { overflow-x: hidden; }
+    h1 { font-size: 32px; letter-spacing: 3px; margin-bottom: 16px; }
+    .card-box { padding: 20px 16px; }
+    .room-code { font-size: 30px; }
+    .table-wrap { height: min(420px, 60vh); }
+    .seat { width: 84px; }
+    .seat-box { padding: 4px 3px; }
+    .seat-avatar { font-size: 14px; }
+    .seat-name, .seat-stack { font-size: 9px; }
+    .pcard { width: 32px; height: 46px; font-size: 12px; }
+    .pcard.small { width: 24px; height: 34px; font-size: 9px; }
+    .action-bar { gap: 6px; }
+    .action-bar .btn { padding: 10px 12px; font-size: 12px; }
+    .raise-input { width: 84px; }
+    .side-panel { padding: 10px 12px; }
+  }
+  @media (max-width: 380px) {
+    .seat { width: 64px; }
+    .seat-avatar { font-size: 12px; }
+    .seat-name, .seat-stack { font-size: 8px; }
+  }
 </style>
 </head>
 <body>
@@ -435,7 +458,7 @@ function renderCard(card, small) {
 }
 
 function seatPositions(n) {
-  const cx = 490, cy = 280, rx = 430, ry = 225, pts = [];
+  const cx = 50, cy = 50, rx = 40, ry = 37, pts = [];
   for (let i = 0; i < n; i++) {
     const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
     pts.push({x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle)});
@@ -476,7 +499,7 @@ function render(state) {
     const cardsHtml = (cards || []).map(c => renderCard(c, true)).join('');
     const isDealer = state.dealer === p.name;
     const nameLabel = p.name === user ? t('you_label') : p.name;
-    return `<div class="seat${isTurn ? ' turn' : ''}${p.folded ? ' folded' : ''}${p.name === user ? ' me' : ''}" style="left:${pos.x}px;top:${pos.y}px;">
+    return `<div class="seat${isTurn ? ' turn' : ''}${p.folded ? ' folded' : ''}${p.name === user ? ' me' : ''}" style="left:${pos.x}%;top:${pos.y}%;">
       <div class="seat-box">
         ${isDealer ? '<div class="dealer-btn">D</div>' : ''}
         <div class="seat-avatar">${p.token || '🎩'}</div>

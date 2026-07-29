@@ -77,6 +77,31 @@
   .top-bar button { background: none; border: 1px solid #d4af37; color: #d4af37; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
   .winner-box { text-align: center; }
   .winner-hand { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin: 10px 0; }
+
+  @media (max-width: 600px) {
+    html, body { overflow-x: hidden; }
+    h1 { font-size: 32px; letter-spacing: 3px; margin-bottom: 16px; }
+    .card-box { padding: 20px 16px; }
+    .room-code { font-size: 30px; }
+    .table-wrap { height: min(360px, 56vh); }
+    .seat { width: 78px; }
+    .seat-box { padding: 4px 3px; }
+    .seat-avatar { font-size: 14px; }
+    .seat-name, .seat-count { font-size: 9px; }
+    .okey-tile { width: 32px; height: 46px; font-size: 15px; }
+    .okey-tile.small { width: 22px; height: 32px; font-size: 10px; }
+    .table-center { gap: 14px; }
+    .rack { padding: 8px 8px 6px; }
+    .rack-row { min-height: 48px; gap: 3px; }
+    .action-bar { gap: 6px; }
+    .action-bar .btn { padding: 10px 12px; font-size: 12px; }
+    .side-panel { padding: 10px 12px; }
+  }
+  @media (max-width: 380px) {
+    .seat { width: 60px; }
+    .seat-avatar { font-size: 12px; }
+    .seat-name, .seat-count { font-size: 8px; }
+  }
 </style>
 </head>
 <body>
@@ -493,7 +518,7 @@ document.getElementById('sortHandBtn').addEventListener('click', () => {
 });
 
 function seatPositions(n) {
-  const cx = 490, cy = 250, rx = 420, ry = 195, pts = [];
+  const cx = 50, cy = 50, rx = 39, ry = 36, pts = [];
   for (let i = 0; i < n; i++) {
     const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
     pts.push({x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle)});
@@ -531,7 +556,7 @@ function render(state) {
     const pos = positions[i];
     const isTurn = state.turn === p.name;
     const backs = Array.from({length: Math.min(p.handCount, 8)}).map(() => '<div class="okey-tile back small"></div>').join('');
-    return `<div class="seat${isTurn ? ' turn' : ''}" style="left:${pos.x}px;top:${pos.y}px;">
+    return `<div class="seat${isTurn ? ' turn' : ''}" style="left:${pos.x}%;top:${pos.y}%;">
       <div class="seat-box">
         <div class="seat-avatar">${p.token || '🀄'}</div>
         <div class="seat-name">${p.name}</div>
