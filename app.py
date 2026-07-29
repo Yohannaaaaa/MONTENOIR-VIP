@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl, itertools
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64
 try:
     import psycopg2
 except Exception:
@@ -5669,13 +5669,12 @@ def api_profile_avatar():
     if not key:
         return {"ok": False, "msg": "Kullanıcı bulunamadı."}
 
-    folder = os.path.join(app.root_path, "static", "avatars")
-    os.makedirs(folder, exist_ok=True)
+    file_bytes = f.read()
+    if len(file_bytes) > 3 * 1024 * 1024:
+        return {"ok": False, "msg": "Avatar dosyası çok büyük (maksimum 3MB)."}
 
-    filename = secure_filename(f"{key}_{int(time.time())}.{ext}")
-    f.save(os.path.join(folder, filename))
-
-    avatar_url = "/static/avatars/" + filename
+    mime = "jpeg" if ext == "jpg" else ext
+    avatar_url = f"data:image/{mime};base64," + base64.b64encode(file_bytes).decode("ascii")
     users[key]["avatar"] = avatar_url
     users[key]["avatarData"] = avatar_url
     save_users(users)
