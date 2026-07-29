@@ -45,7 +45,7 @@
   .flying-ball { position: absolute; border-radius: 50%; pointer-events: none; z-index: 50;
     background: radial-gradient(circle at 32% 26%, #fbf3e2 0%, #e6d3ae 32%, #c9ab7c 62%, #9c8058 85%, #6f5a3c 100%);
     box-shadow: 0 10px 20px rgba(0,0,0,.7), inset 0 -10px 16px rgba(0,0,0,.35), inset 0 10px 14px rgba(255,255,255,.55); }
-  .lane-scene { position: relative; width: 100%; max-width: 640px; height: 46vh; min-height: 320px; max-height: 480px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c; box-shadow: 0 25px 55px rgba(0,0,0,.85), inset 0 0 0 3px rgba(212,175,55,.5); }
+  .lane-scene { position: relative; width: 100%; max-width: 640px; height: 54vh; min-height: 360px; max-height: 560px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c; box-shadow: 0 25px 55px rgba(0,0,0,.85), inset 0 0 0 3px rgba(212,175,55,.5); }
   .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #123a5c, #061a2c); box-shadow: 0 0 34px rgba(70,170,255,.7), inset 0 -3px 0 rgba(212,175,55,.6); z-index: 2; }
   .lane-gutter { position: absolute; top: 12%; bottom: 0; background: linear-gradient(180deg, #2c2c2c, #0a0a0a); }
   .lane-gutter.left { left: 0; width: 50%; clip-path: polygon(0 100%, 33% 100%, 46.5% 0, 0 0); }
@@ -65,21 +65,22 @@
   .pin-2 { grid-column: 1; grid-row: 2; } .pin-3 { grid-column: 3; grid-row: 2; }
   .pin-4 { grid-column: 1; grid-row: 3; } .pin-5 { grid-column: 2; grid-row: 3; } .pin-6 { grid-column: 3; grid-row: 3; }
   .pin-7 { grid-column: 1; grid-row: 4; } .pin-8 { grid-column: 2; grid-row: 4; } .pin-9 { grid-column: 3; grid-row: 4; } .pin-10 { grid-column: 4; grid-row: 4; }
-  .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 130px; background: repeating-linear-gradient(100deg, #d9b485 0 26px, #c49a68 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+  .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 21vh; min-height: 150px; max-height: 210px; background: repeating-linear-gradient(100deg, #d9b485 0 26px, #c49a68 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
   .pins-up-label { position: absolute; top: 8px; right: 16px; color: #ffe08a; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
-  .ball { width: 76px; height: 76px; border-radius: 50%;
+  .ball { width: 112px; height: 112px; border-radius: 50%;
     background: radial-gradient(circle at 32% 26%, #fbf3e2 0%, #e6d3ae 32%, #c9ab7c 62%, #9c8058 85%, #6f5a3c 100%);
-    box-shadow: 0 10px 20px rgba(0,0,0,.7), inset 0 -10px 16px rgba(0,0,0,.35), inset 0 10px 14px rgba(255,255,255,.55);
+    box-shadow: 0 14px 26px rgba(0,0,0,.7), inset 0 -14px 22px rgba(0,0,0,.35), inset 0 14px 18px rgba(255,255,255,.55);
     position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); cursor: grab; }
-  .ball.my-turn { box-shadow: 0 10px 20px rgba(0,0,0,.7), inset 0 -10px 16px rgba(0,0,0,.35), inset 0 10px 14px rgba(255,255,255,.55), 0 0 26px rgba(212,175,55,.75); }
+  .ball.my-turn { box-shadow: 0 14px 26px rgba(0,0,0,.7), inset 0 -14px 22px rgba(0,0,0,.35), inset 0 14px 18px rgba(255,255,255,.55), 0 0 30px rgba(212,175,55,.75); }
   .ball:active { cursor: grabbing; }
   .swipe-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: #ffe08a; font-size: 12px; font-weight: bold; letter-spacing: .5px; text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; opacity: .95; animation: swipeHintPulse 1.6s ease-in-out infinite; }
   @keyframes swipeHintPulse { 0%,100%{transform:translateX(-50%) translateY(0); opacity:.7;} 50%{transform:translateX(-50%) translateY(-5px); opacity:1;} }
-  .ball::before, .ball::after, .ball .hole3 { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #1a0505; box-shadow: inset 0 0 4px #000, 0 1px 1px rgba(255,255,255,.15); }
-  .ball::before { top: 24px; left: 26px; }
-  .ball::after { top: 24px; left: 40px; }
-  .ball .hole3 { top: 36px; left: 33px; width: 7px; height: 7px; }
-  @media (max-width: 500px) { .lane-scene { height: 38vh; min-height: 260px; } .lane-foreground { height: 100px; } .ball { width: 60px; height: 60px; } }
+  .ball::before, .ball::after, .ball .hole3 { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #1a0505; box-shadow: inset 0 0 5px #000, 0 1px 1px rgba(255,255,255,.15); }
+  .ball::before { top: 35px; left: 38px; }
+  .ball::after { top: 35px; left: 59px; }
+  .ball .hole3 { top: 53px; left: 48px; width: 10px; height: 10px; }
+  @media (max-width: 500px) { .lane-scene { height: 44vh; min-height: 300px; } .lane-foreground { height: 18vh; min-height: 120px; } .ball { width: 92px; height: 92px; }
+    .ball::before { top: 29px; left: 31px; } .ball::after { top: 29px; left: 48px; } .ball .hole3 { top: 44px; left: 39px; width: 8px; height: 8px; } }
   .pins-up-label { color: #ffe08a; font-size: 13px; margin-bottom: 4px; letter-spacing: 1px; }
 
   .scoreboard { width: 100%; max-width: 960px; margin: 0 auto 12px; overflow-x: auto; }
@@ -185,6 +186,16 @@
 
 <script>
 const socket = io();
+function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
+(function(){
+  const su = savedProfileUser();
+  if (su) {
+    const inp = document.getElementById('username');
+    const lbl = document.querySelector('label[data-i18n="label_username"]');
+    if (inp) { inp.value = su; inp.style.display = 'none'; }
+    if (lbl) lbl.style.display = 'none';
+  }
+})();
 let user = '', avatar = '🎳', room = '', lastState = null, isOwner = false, isRolling = false, prevMyTurn = false, prevStage = null, canRollNow = false;
 
 const I18N = {
