@@ -4104,9 +4104,8 @@ def coming_soon(game):
 
 
 
-@socketio.on('request_password_reset')
-def request_password_reset(data):
-    email = data.get('email','').strip().lower()
+def do_request_password_reset(email):
+    email = (email or '').strip().lower()
     users = load_users()
     found_user = None
     for username, udata in users.items():
@@ -4116,8 +4115,7 @@ def request_password_reset(data):
 
     # Réponse neutre pour ne pas révéler les emails enregistrés.
     if not found_user:
-        emit('password_reset_requested', {'sent': True})
-        return
+        return {'sent': True}
 
     token = ''.join(random.choices(string.ascii_letters + string.digits, k=42))
     users[found_user]['resetToken'] = token
@@ -4127,20 +4125,17 @@ def request_password_reset(data):
     base_url = os.environ.get('PUBLIC_BASE_URL', '').rstrip('/')
     if not base_url:
         base_url = 'https://montenoirvip.onrender.com'
-    reset_link = base_url + '/?reset=' + token
+    reset_link = base_url + '/login?reset=' + token
 
     sent = send_reset_email(email, reset_link)
-    emit('password_reset_requested', {'sent': sent, 'link': reset_link, 'token': token})
+    return {'sent': sent, 'link': reset_link, 'token': token}
 
-
-@socketio.on('confirm_password_reset')
-def confirm_password_reset(data):
-    token = data.get('token','').strip()
-    new_password = data.get('newPassword','')
+def do_confirm_password_reset(token, new_password):
+    token = (token or '').strip()
+    new_password = new_password or ''
 
     if not token or not new_password:
-        emit('password_reset_confirmed', {'ok': False, 'msg': 'Token ve yeni şifre gerekli.'})
-        return
+        return {'ok': False, 'msg': 'Token ve yeni şifre gerekli.'}
 
     users = load_users()
     for username, udata in users.items():
@@ -4149,10 +4144,28 @@ def confirm_password_reset(data):
             users[username].pop('resetToken', None)
             users[username].pop('resetExpires', None)
             save_users(users)
-            emit('password_reset_confirmed', {'ok': True})
-            return
+            return {'ok': True}
 
-    emit('password_reset_confirmed', {'ok': False, 'msg': 'Token geçersiz veya süresi dolmuş.'})
+    return {'ok': False, 'msg': 'Token geçersiz veya süresi dolmuş.'}
+
+@socketio.on('request_password_reset')
+def request_password_reset(data):
+    emit('password_reset_requested', do_request_password_reset((data or {}).get('email','')))
+
+@socketio.on('confirm_password_reset')
+def confirm_password_reset(data):
+    data = data or {}
+    emit('password_reset_confirmed', do_confirm_password_reset(data.get('token',''), data.get('newPassword','')))
+
+@app.route('/api/auth/request_reset', methods=['POST'])
+def api_request_password_reset():
+    data = request.get_json(force=True, silent=True) or {}
+    return do_request_password_reset(data.get('email',''))
+
+@app.route('/api/auth/confirm_reset', methods=['POST'])
+def api_confirm_password_reset():
+    data = request.get_json(force=True, silent=True) or {}
+    return do_confirm_password_reset(data.get('token',''), data.get('newPassword',''))
 
 
 @socketio.on('create_room')
@@ -8396,7 +8409,7 @@ def login_page():
     return render_template_string(AUTH_PAGE_STYLE + """
     <div class="lang-selector" id="langSelector"></div>
     <h1 data-common-i18n="login_title">👤 Connexion</h1>
-    <div class="card">
+    <div class="card" id="loginCard">
       <form id="loginForm">
         <label data-common-i18n="field_username">Nom d'utilisateur</label>
         <input type="text" id="loginUsername" required>
@@ -8406,6 +8419,22 @@ def login_page():
         <div class="msg" id="authMsg"></div>
       </form>
       <a class="switch-link" href="/register" data-common-i18n="link_no_account">Pas de compte ? S'inscrire</a>
+      <a class="switch-link" href="#" id="forgotLink" data-common-i18n="link_forgot_password">Mot de passe oublié ?</a>
+    </div>
+    <div class="card" id="forgotCard" style="display:none;">
+      <h1 data-common-i18n="forgot_title" style="font-size:20px;">🔑 Mot de passe oublié</h1>
+      <label data-common-i18n="field_email">Email</label>
+      <input type="email" id="forgotEmail">
+      <button type="button" class="submit" id="forgotSendBtn" data-common-i18n="btn_send_reset">Envoyer le lien</button>
+      <div class="msg" id="forgotMsg"></div>
+      <a class="switch-link" href="#" id="backToLoginLink" data-common-i18n="link_back_to_login">← Retour à la connexion</a>
+    </div>
+    <div class="card" id="resetCard" style="display:none;">
+      <h1 data-common-i18n="reset_title" style="font-size:20px;">🔑 Nouveau mot de passe</h1>
+      <label data-common-i18n="field_new_password">Nouveau mot de passe</label>
+      <input type="password" id="newPasswordInput">
+      <button type="button" class="submit" id="resetConfirmBtn" data-common-i18n="btn_set_new_password">Valider</button>
+      <div class="msg" id="resetMsg"></div>
     </div>
     <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
     <script src="/static/js/site_lang.js"></script>
@@ -8439,6 +8468,58 @@ def login_page():
         }
       }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
     });
+
+    const loginCard = document.getElementById('loginCard');
+    const forgotCard = document.getElementById('forgotCard');
+    const resetCard = document.getElementById('resetCard');
+    document.getElementById('forgotLink').addEventListener('click', function(e){
+      e.preventDefault(); loginCard.style.display='none'; forgotCard.style.display='block';
+    });
+    document.getElementById('backToLoginLink').addEventListener('click', function(e){
+      e.preventDefault(); forgotCard.style.display='none'; loginCard.style.display='block';
+    });
+    document.getElementById('forgotSendBtn').addEventListener('click', function(){
+      const email = document.getElementById('forgotEmail').value.trim();
+      const msgEl = document.getElementById('forgotMsg');
+      if (!email) return;
+      fetch('/api/auth/request_reset', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email})
+      }).then(r => r.json()).then(d => {
+        msgEl.className = 'msg success';
+        if (d.sent) {
+          msgEl.textContent = ct('reset_email_sent_msg');
+        } else {
+          msgEl.textContent = ct('reset_email_not_configured_msg') + ' ' + d.link;
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = ct('err_generic'); });
+    });
+    document.getElementById('resetConfirmBtn').addEventListener('click', function(){
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('reset');
+      const newPassword = document.getElementById('newPasswordInput').value;
+      const msgEl = document.getElementById('resetMsg');
+      if (!newPassword) return;
+      fetch('/api/auth/confirm_reset', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({token: token, newPassword: newPassword})
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('reset_success_msg');
+          setTimeout(() => { window.location.href = '/login'; }, 1200);
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = ct('reset_invalid_msg');
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = ct('err_generic'); });
+    });
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset')) {
+        loginCard.style.display='none'; forgotCard.style.display='none'; resetCard.style.display='block';
+      }
+    })();
     </script>
     """)
 
