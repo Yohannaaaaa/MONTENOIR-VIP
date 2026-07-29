@@ -113,6 +113,30 @@ CHIP_PACKAGES = [
 def stripe_configured():
     return bool(stripe and STRIPE_SECRET_KEY)
 
+GAME_ENTRY_FEE = 100
+
+def charge_play_fee(usernames):
+    """Deduct GAME_ENTRY_FEE chips from each given username. All-or-nothing:
+    if any player can't afford it, nobody is charged. Returns (True, None)
+    on success, or (False, username_that_lacks_chips) on failure."""
+    usernames = [u for u in usernames if u]
+    if not usernames:
+        return True, None
+    users = load_users()
+    for u in usernames:
+        key = find_user_key(users, u)
+        if not key:
+            ensure_user_account(u)
+            users = load_users()
+            key = find_user_key(users, u)
+        if not key or int(users[key].get("chips", 1000)) < GAME_ENTRY_FEE:
+            return False, u
+    for u in usernames:
+        key = find_user_key(users, u)
+        users[key]["chips"] = int(users[key].get("chips", 1000)) - GAME_ENTRY_FEE
+    save_users(users)
+    return True, None
+
 def load_processed_stripe_sessions():
     try:
         with open(STRIPE_PROCESSED_FILE, "r", encoding="utf-8") as f:
@@ -6913,6 +6937,8 @@ def okey_maybe_schedule_bots(code):
 def okey_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("okey_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("okey_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     okey_deal(r)
     okey_maybe_schedule_bots(code)
@@ -6922,6 +6948,8 @@ def okey_start_game(data):
 def okey_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("okey_error",{"code":"not_enough_chips"}); return
     okey_deal(r)
     okey_maybe_schedule_bots(code)
     okey_broadcast(r)
@@ -7196,6 +7224,8 @@ def ludo_set_team_mode(data):
 def ludo_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=LUDO_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("ludo_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("ludo_error",{"code":"not_enough_chips"}); return
     r["started"]=True; r["stage"]="playing"; r["order"]=list(r["seatOrder"]); r["turnIdx"]=0
     r["sixCount"]=0; r["pendingMoves"]=[]; r["winner"]=None; r["lastRoll"]=None
     r["log"]="Oyun başladı — "+r["order"][0]+" başlıyor."
@@ -7393,6 +7423,8 @@ def r101_leave_room(data):
 def r101_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("r101_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("r101_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     r101_deal(r)
     r101_run_bots(r["code"])
@@ -7402,6 +7434,8 @@ def r101_start_game(data):
 def r101_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("r101_error",{"code":"not_enough_chips"}); return
     r101_deal(r)
     r101_run_bots(r["code"])
     r101_broadcast(r)
@@ -7770,6 +7804,8 @@ def tavla_leave_room(data):
 def tavla_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
     if not r or len(r["seatOrder"])!=2: emit("tavla_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("tavla_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     tavla_deal(r)
     tavla_run_bots(r["code"])
@@ -7779,6 +7815,8 @@ def tavla_start_game(data):
 def tavla_next_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("tavla_error",{"code":"not_enough_chips"}); return
     tavla_deal(r)
     tavla_run_bots(r["code"])
     tavla_broadcast(r)
@@ -8082,6 +8120,8 @@ def bowling_leave_room(data):
 def bowling_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("bowling_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("bowling_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     bowling_deal(r)
     bowling_run_bots(r["code"])
@@ -8091,6 +8131,8 @@ def bowling_start_game(data):
 def bowling_next_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("bowling_error",{"code":"not_enough_chips"}); return
     bowling_deal(r)
     bowling_run_bots(r["code"])
     bowling_broadcast(r)
