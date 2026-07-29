@@ -352,7 +352,7 @@ def send_reset_email(to_email, reset_link):
         print("RESET PASSWORD LINK:", reset_link)
         return False
 
-    message = f"Subject: Codenames VIP - Reset password\n\nClique sur ce lien pour renouveler ton mot de passe :\n{reset_link}\n\nSi tu n'as rien demandé, ignore ce message."
+    message = f"Subject: Montenoir VIP - Réinitialisation du mot de passe\n\nClique sur ce lien pour renouveler ton mot de passe :\n{reset_link}\n\nSi tu n'as rien demandé, ignore ce message."
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls(context=context)
@@ -4126,7 +4126,7 @@ def request_password_reset(data):
 
     base_url = os.environ.get('PUBLIC_BASE_URL', '').rstrip('/')
     if not base_url:
-        base_url = 'https://codenames-vip.onrender.com'
+        base_url = 'https://montenoirvip.onrender.com'
     reset_link = base_url + '/?reset=' + token
 
     sent = send_reset_email(email, reset_link)
