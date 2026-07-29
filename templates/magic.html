@@ -62,18 +62,29 @@
   .rack-wrap { width: 100%; max-width: 720px; margin: 0 auto; }
   .bottles-row { display: flex; flex-wrap: wrap; gap: 22px 18px; justify-content: center; padding: 20px 10px 6px; }
   .bottle-wrap { display: flex; flex-direction: column; align-items: center; }
-  .bottle { position: relative; width: 58px; height: 216px; border-radius: 8px 8px 28px 28px;
-    background: linear-gradient(120deg, rgba(255,255,255,.16), rgba(255,255,255,.02) 45%, rgba(255,255,255,.10) 65%, rgba(255,255,255,.02));
-    border: 2px solid rgba(212,175,55,.55); box-shadow: inset 0 0 14px rgba(255,255,255,.12), inset -8px 0 14px rgba(0,0,0,.35), 0 10px 20px rgba(0,0,0,.65);
-    overflow: hidden; cursor: pointer; transition: transform .18s, box-shadow .18s; }
-  .bottle::before { content:''; position:absolute; top:0; bottom:0; left:6px; width:7px; border-radius:6px; background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.04) 55%, rgba(255,255,255,.3)); pointer-events:none; z-index:5; }
+  .bottle { position: relative; width: 58px; height: 216px; cursor: pointer; transition: transform .18s; }
+  .bottle-glass { position: absolute; inset: 0; border-radius: 8px 8px 28px 28px;
+    background: linear-gradient(120deg, rgba(255,255,255,.18), rgba(255,255,255,.02) 45%, rgba(255,255,255,.12) 65%, rgba(255,255,255,.02));
+    border: 2px solid rgba(212,175,55,.6); box-shadow: inset 0 0 18px rgba(255,255,255,.14), inset -10px 0 16px rgba(0,0,0,.4), 0 4px 0 rgba(255,255,255,.08), 0 12px 24px rgba(0,0,0,.7);
+    overflow: hidden; transition: box-shadow .18s; }
+  .bottle-glass::before { content:''; position:absolute; top:0; bottom:0; left:6px; width:8px; border-radius:6px; background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.05) 55%, rgba(255,255,255,.35)); pointer-events:none; z-index:5; }
+  .bottle-glass::after { content:''; position:absolute; top:0; bottom:0; right:9px; width:3px; border-radius:6px; background: linear-gradient(180deg, rgba(255,255,255,.3), transparent 60%, rgba(255,255,255,.15)); pointer-events:none; z-index:5; }
+  .bottle-slot.top-surface::after { content:''; position:absolute; top:-2px; left:4%; right:4%; height:6px; border-radius:50%; background: rgba(255,255,255,.45); filter: blur(.3px); }
+  .bottle-slot.settle { animation: liquidSettle .45s ease; }
+  @keyframes liquidSettle { 0%{transform:translateY(-3px);} 60%{transform:translateY(1px);} 100%{transform:translateY(0);} }
   .bottle-neck { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 24px; height: 16px;
-    background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.04)); border: 2px solid rgba(212,175,55,.55); border-bottom: none; border-radius: 6px 6px 0 0; }
-  .bottle.selected { border-color: #fff4b0; box-shadow: 0 0 0 3px rgba(212,175,55,.9), 0 0 22px rgba(212,175,55,.85), inset 0 0 14px rgba(255,255,255,.2); transform: translateY(-10px); }
+    background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.04)); border: 2px solid rgba(212,175,55,.55); border-bottom: none; border-radius: 6px 6px 0 0; z-index: 4; }
+  .bottle-cork { display: none; position: absolute; top: -26px; left: 50%; transform: translateX(-50%); width: 32px; height: 16px;
+    background: linear-gradient(160deg,#c9a24a,#8a6a2a 55%,#5c4718); border: 2px solid #3d2c10; border-radius: 8px 8px 4px 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,.6), inset 0 1px 2px rgba(255,255,255,.35); z-index: 6; }
+  .bottle.capped .bottle-neck { opacity: 0; }
+  .bottle.capped .bottle-cork { display: block; }
+  .bottle.selected .bottle-glass { box-shadow: 0 0 0 3px rgba(212,175,55,.9), 0 0 22px rgba(212,175,55,.85), inset 0 0 14px rgba(255,255,255,.2); }
+  .bottle.selected { transform: translateY(-10px); }
   .bottle.pouring { animation: bottleTilt 1.6s ease; }
   @keyframes bottleTilt { 0%{transform:rotate(0)} 25%{transform:rotate(-16deg)} 75%{transform:rotate(-16deg)} 100%{transform:rotate(0)} }
   .bottle-slot { position: absolute; left: 2px; right: 2px; background: transparent;
-    transition: background-color 1.4s ease; }
+    transition: background-color .7s ease; }
   .bottle-slot.mystery { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 15px; text-shadow: 0 0 6px #000;
     background: repeating-linear-gradient(135deg,#2a2a2a,#2a2a2a 6px,#161616 6px,#161616 12px) !important; }
   .bottle-count { margin-top: 8px; font-size: 11px; color: #8a7550; }
@@ -512,20 +523,55 @@ function buildBottleDOM(numBottles, cap) {
     const neck = document.createElement('div');
     neck.className = 'bottle-neck';
     bottle.appendChild(neck);
+    const cork = document.createElement('div');
+    cork.className = 'bottle-cork';
+    bottle.appendChild(cork);
+    const glass = document.createElement('div');
+    glass.className = 'bottle-glass';
     for (let s = 0; s < cap; s++) {
       const slot = document.createElement('div');
       slot.className = 'bottle-slot';
       slot.dataset.slot = s;
+      slot.dataset.val = 'empty';
       slot.style.bottom = (2 + s * layerH) + 'px';
       slot.style.height = layerH + 'px';
-      bottle.appendChild(slot);
+      glass.appendChild(slot);
     }
+    bottle.appendChild(glass);
     bottle.addEventListener('click', () => onBottleClick(idx));
     wrap.appendChild(bottle);
     row.appendChild(wrap);
   }
   renderedBottleCount = numBottles;
   renderedCapacity = cap;
+}
+
+function slotValKey(c) { return c === undefined ? 'empty' : (c === null ? 'mystery' : String(c)); }
+
+function applySlotValue(slot, c) {
+  if (c === undefined) {
+    slot.classList.remove('mystery');
+    slot.style.background = 'transparent';
+    slot.textContent = '';
+  } else if (c === null) {
+    slot.classList.add('mystery');
+    slot.style.background = '';
+    slot.textContent = '?';
+  } else {
+    slot.classList.remove('mystery');
+    slot.style.background = MAGIC_COLORS[c % MAGIC_COLORS.length];
+    slot.textContent = '';
+  }
+  slot.dataset.val = slotValKey(c);
+}
+
+function updateTopSurface(bottle, cap) {
+  const slots = bottle.querySelectorAll('.bottle-slot');
+  let topFilled = -1;
+  for (let s = 0; s < cap; s++) {
+    if (slots[s].dataset.val !== 'empty') topFilled = s;
+  }
+  slots.forEach((slot, s) => slot.classList.toggle('top-surface', s === topFilled));
 }
 
 function renderBottles(bottles, cap) {
@@ -538,24 +584,33 @@ function renderBottles(bottles, cap) {
     const bottle = bottleEls[idx];
     if (!bottle) return;
     bottle.classList.toggle('selected', selectedIdx === idx);
+    const isCapped = layers.length === cap && layers.every(c => c !== null && c === layers[0]);
     const slots = bottle.querySelectorAll('.bottle-slot');
+    const targets = [];
+    for (let s = 0; s < cap; s++) targets.push(s < layers.length ? layers[s] : undefined);
+
+    const changed = [];
     for (let s = 0; s < cap; s++) {
-      const slot = slots[s];
-      const c = s < layers.length ? layers[s] : undefined;
-      if (c === undefined) {
-        slot.classList.remove('mystery');
-        slot.style.background = 'transparent';
-        slot.textContent = '';
-      } else if (c === null) {
-        slot.classList.add('mystery');
-        slot.style.background = '';
-        slot.textContent = '?';
-      } else {
-        slot.classList.remove('mystery');
-        slot.style.background = MAGIC_COLORS[c % MAGIC_COLORS.length];
-        slot.textContent = '';
-      }
+      if (slots[s].dataset.val !== slotValKey(targets[s])) changed.push(s);
     }
+    if (changed.length === 0) {
+      bottle.classList.toggle('capped', isCapped);
+      return;
+    }
+    const wasFilled = Array.from(slots).filter(sl => sl.dataset.val !== 'empty').length;
+    const willBeFilled = targets.filter(t => t !== undefined).length;
+    const filling = willBeFilled >= wasFilled;
+    const ordered = changed.slice().sort((a, b) => filling ? a - b : b - a);
+    ordered.forEach((s, i) => {
+      setTimeout(() => {
+        applySlotValue(slots[s], targets[s]);
+        updateTopSurface(bottle, cap);
+        slots[s].classList.remove('settle');
+        void slots[s].offsetWidth;
+        slots[s].classList.add('settle');
+        if (i === ordered.length - 1) bottle.classList.toggle('capped', isCapped);
+      }, i * 260);
+    });
   });
 }
 
