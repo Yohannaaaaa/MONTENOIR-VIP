@@ -70,12 +70,12 @@
   .bottle-neck { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 24px; height: 16px;
     background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.04)); border: 2px solid rgba(212,175,55,.55); border-bottom: none; border-radius: 6px 6px 0 0; }
   .bottle.selected { border-color: #fff4b0; box-shadow: 0 0 0 3px rgba(212,175,55,.9), 0 0 22px rgba(212,175,55,.85), inset 0 0 14px rgba(255,255,255,.2); transform: translateY(-10px); }
-  .bottle.pouring { animation: bottleTilt .5s ease; }
-  @keyframes bottleTilt { 0%{transform:rotate(0)} 30%{transform:rotate(-18deg)} 70%{transform:rotate(-18deg)} 100%{transform:rotate(0)} }
-  .bottle-layer { position: absolute; left: 2px; right: 2px; transition: bottom .3s ease, height .3s ease; }
-  .bottle-layer.mystery { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 15px; text-shadow: 0 0 6px #000;
+  .bottle.pouring { animation: bottleTilt 1.6s ease; }
+  @keyframes bottleTilt { 0%{transform:rotate(0)} 25%{transform:rotate(-16deg)} 75%{transform:rotate(-16deg)} 100%{transform:rotate(0)} }
+  .bottle-slot { position: absolute; left: 2px; right: 2px; background: transparent;
+    transition: background-color 1.4s ease; }
+  .bottle-slot.mystery { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 15px; text-shadow: 0 0 6px #000;
     background: repeating-linear-gradient(135deg,#2a2a2a,#2a2a2a 6px,#161616 6px,#161616 12px) !important; }
-  .bottle-layer .sheen { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: rgba(255,255,255,.35); border-radius: 50%/5px; }
   .bottle-count { margin-top: 8px; font-size: 11px; color: #8a7550; }
 
   .power-bar { display: flex; gap: 12px; justify-content: center; margin: 18px auto 4px; flex-wrap: wrap; max-width: 500px; }
@@ -497,25 +497,65 @@ document.getElementById('leaveGameBtn').addEventListener('click', () => {
   refreshHub();
 });
 
+let renderedBottleCount = -1, renderedCapacity = -1;
+
+function buildBottleDOM(numBottles, cap) {
+  const row = document.getElementById('bottlesRow');
+  row.innerHTML = '';
+  const layerH = (216 - 4) / cap;
+  for (let idx = 0; idx < numBottles; idx++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'bottle-wrap';
+    const bottle = document.createElement('div');
+    bottle.className = 'bottle';
+    bottle.dataset.idx = idx;
+    const neck = document.createElement('div');
+    neck.className = 'bottle-neck';
+    bottle.appendChild(neck);
+    for (let s = 0; s < cap; s++) {
+      const slot = document.createElement('div');
+      slot.className = 'bottle-slot';
+      slot.dataset.slot = s;
+      slot.style.bottom = (2 + s * layerH) + 'px';
+      slot.style.height = layerH + 'px';
+      bottle.appendChild(slot);
+    }
+    bottle.addEventListener('click', () => onBottleClick(idx));
+    wrap.appendChild(bottle);
+    row.appendChild(wrap);
+  }
+  renderedBottleCount = numBottles;
+  renderedCapacity = cap;
+}
+
 function renderBottles(bottles, cap) {
   capacity = cap;
-  const row = document.getElementById('bottlesRow');
-  row.innerHTML = bottles.map((layers, idx) => {
-    const layerH = (216 - 4) / cap;
-    let layersHtml = '';
-    layers.forEach((c, j) => {
-      const bottom = 2 + j * layerH;
-      if (c === null) {
-        layersHtml += `<div class="bottle-layer mystery" style="bottom:${bottom}px;height:${layerH}px;">?</div>`;
+  if (renderedBottleCount !== bottles.length || renderedCapacity !== cap) {
+    buildBottleDOM(bottles.length, cap);
+  }
+  const bottleEls = document.querySelectorAll('.bottle');
+  bottles.forEach((layers, idx) => {
+    const bottle = bottleEls[idx];
+    if (!bottle) return;
+    bottle.classList.toggle('selected', selectedIdx === idx);
+    const slots = bottle.querySelectorAll('.bottle-slot');
+    for (let s = 0; s < cap; s++) {
+      const slot = slots[s];
+      const c = s < layers.length ? layers[s] : undefined;
+      if (c === undefined) {
+        slot.classList.remove('mystery');
+        slot.style.background = 'transparent';
+        slot.textContent = '';
+      } else if (c === null) {
+        slot.classList.add('mystery');
+        slot.style.background = '';
+        slot.textContent = '?';
       } else {
-        layersHtml += `<div class="bottle-layer" style="bottom:${bottom}px;height:${layerH}px;background:${MAGIC_COLORS[c % MAGIC_COLORS.length]};"><div class="sheen"></div></div>`;
+        slot.classList.remove('mystery');
+        slot.style.background = MAGIC_COLORS[c % MAGIC_COLORS.length];
+        slot.textContent = '';
       }
-    });
-    const sel = (selectedIdx === idx) ? ' selected' : '';
-    return `<div class="bottle-wrap"><div class="bottle${sel}" data-idx="${idx}"><div class="bottle-neck"></div>${layersHtml}</div></div>`;
-  }).join('');
-  row.querySelectorAll('.bottle').forEach(el => {
-    el.addEventListener('click', () => onBottleClick(parseInt(el.dataset.idx, 10)));
+    }
   });
 }
 
@@ -537,7 +577,13 @@ function onBottleClick(idx) {
   const dst = idx;
   selectedIdx = null;
   if (window.SFX) SFX.move();
-  document.querySelectorAll('.bottle')[src] && document.querySelectorAll('.bottle')[src].classList.add('pouring');
+  const srcEl = document.querySelectorAll('.bottle')[src];
+  if (srcEl) {
+    srcEl.classList.remove('pouring');
+    void srcEl.offsetWidth;
+    srcEl.classList.add('pouring');
+    setTimeout(() => srcEl.classList.remove('pouring'), 1700);
+  }
   if (mode === 'solo') {
     socket.emit('magic_solo_pour', {src, dst});
   } else {
