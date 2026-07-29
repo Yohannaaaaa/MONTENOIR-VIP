@@ -41,7 +41,10 @@
   .player-chip { display: flex; align-items: center; gap: 6px; background: rgba(10,10,10,.8); border: 2px solid #444; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
   .player-chip.turn { border-color: #d4af37; box-shadow: 0 0 12px rgba(212,175,55,.7); }
 
-  .lane-wrap { width: 100%; margin-bottom: 12px; }
+  .lane-wrap { width: 100%; margin-bottom: 12px; position: relative; }
+  .flying-ball { position: absolute; border-radius: 50%; pointer-events: none; z-index: 50;
+    background: radial-gradient(circle at 32% 26%, #fbf3e2 0%, #e6d3ae 32%, #c9ab7c 62%, #9c8058 85%, #6f5a3c 100%);
+    box-shadow: 0 10px 20px rgba(0,0,0,.7), inset 0 -10px 16px rgba(0,0,0,.35), inset 0 10px 14px rgba(255,255,255,.55); }
   .lane-scene { position: relative; width: 100%; max-width: 640px; height: 46vh; min-height: 320px; max-height: 480px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c; box-shadow: 0 25px 55px rgba(0,0,0,.85), inset 0 0 0 3px rgba(212,175,55,.5); }
   .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #123a5c, #061a2c); box-shadow: 0 0 34px rgba(70,170,255,.7), inset 0 -3px 0 rgba(212,175,55,.6); z-index: 2; }
   .lane-gutter { position: absolute; top: 12%; bottom: 0; background: linear-gradient(180deg, #2c2c2c, #0a0a0a); }
@@ -54,7 +57,7 @@
   .target-arrows { position: absolute; top: 33%; left: 0; right: 0; height: 4%; z-index: 1; }
   .arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid rgba(180,20,20,.8); transform: translateX(-50%); }
   .pin-rack { position: absolute; top: 13.5%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 11px); grid-template-rows: repeat(4, 12px); gap: 2px; align-items: end; justify-content: center; z-index: 1; }
-  .pin { width: 7px; height: 15px; position: relative; justify-self: center; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .4s, transform .4s; }
+  .pin { width: 7px; height: 15px; position: relative; justify-self: center; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
   .pin::before { content: ''; position: absolute; inset: 0; border-radius: 50% 50% 35% 35% / 65% 65% 30% 30%; background: linear-gradient(100deg, #a99878 0%, #fffdf5 18%, #fffdf5 68%, #b8a678 100%); border: 0.5px solid #8a6c2a; }
   .pin::after { content: ''; position: absolute; left: -0.5px; right: -0.5px; top: 26%; height: 15%; background: linear-gradient(100deg, #7a1620, #c0272d 40%, #c0272d 60%, #7a1620); }
   .pin.down { opacity: .15; transform: rotate(75deg) translateY(5px) scale(.8); }
@@ -310,6 +313,37 @@ document.getElementById('targetArrows').innerHTML = ARROW_POSITIONS.map(pct =>
   `<div class="arrow" style="left:${pct}%;"></div>`
 ).join('');
 
+// Build the 10 pins once and reuse the same DOM nodes on every update, so the
+// "falling" CSS transition can actually animate instead of snapping instantly
+// (rebuilding via innerHTML each render would recreate them already-fallen).
+let pinDownState = Array(10).fill(false);
+(function buildPinRack() {
+  const rack = document.getElementById('pinRack');
+  rack.innerHTML = Array.from({length: 10}).map((_, i) => `<div class="pin pin-${i + 1}"></div>`).join('');
+})();
+function updatePinRack(pinsUp) {
+  const pins = document.querySelectorAll('#pinRack .pin');
+  const freshRack = pinsUp === 10; // new frame/rack: reset instantly, don't animate pins "standing back up"
+  if (freshRack) pins.forEach(p => { p.style.transition = 'none'; });
+  let staggerIdx = 0;
+  for (let i = 0; i < 10; i++) {
+    const num = i + 1;
+    const isDown = num > pinsUp;
+    if (isDown && !pinDownState[i]) {
+      pins[i].style.transitionDelay = (staggerIdx * 70) + 'ms';
+      staggerIdx++;
+    } else {
+      pins[i].style.transitionDelay = '0ms';
+    }
+    pins[i].classList.toggle('down', isDown);
+    pinDownState[i] = isDown;
+  }
+  if (freshRack) {
+    void document.getElementById('pinRack').offsetWidth;
+    pins.forEach(p => { p.style.transition = ''; });
+  }
+}
+
 document.querySelectorAll('.avatar-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
@@ -344,21 +378,51 @@ function canThrow() {
   return canRollNow && !isRolling;
 }
 
+const BALL_TRAVEL_MS = 1650; // real bowling: the ball rolls the length of the lane before hitting pins
+
 function throwBall() {
   if (!canThrow()) return;
   canRollNow = false;
   isRolling = true;
   if (window.SFX) SFX.bowl();
   const ball = document.querySelector('.ball');
-  ball.style.transition = 'transform .48s cubic-bezier(.55,0,.85,.35)';
-  ball.style.transform = 'translateY(-140px) scale(.25) rotate(720deg)';
+  const wrap = document.querySelector('.lane-wrap');
+  const pinRack = document.getElementById('pinRack');
+  const ballRect = ball.getBoundingClientRect();
+  const wrapRect = wrap.getBoundingClientRect();
+  const pinRect = pinRack.getBoundingClientRect();
+
+  const startSize = ballRect.width;
+  const endSize = startSize * 0.22;
+  const startLeft = ballRect.left - wrapRect.left;
+  const startTop = ballRect.top - wrapRect.top;
+  const endLeft = pinRect.left + pinRect.width / 2 - endSize / 2 - wrapRect.left;
+  const endTop = pinRect.top + pinRect.height * 0.35 - endSize / 2 - wrapRect.top;
+
+  const flying = document.createElement('div');
+  flying.className = 'flying-ball';
+  flying.style.width = startSize + 'px';
+  flying.style.height = startSize + 'px';
+  flying.style.left = startLeft + 'px';
+  flying.style.top = startTop + 'px';
+  wrap.appendChild(flying);
+  ball.style.visibility = 'hidden';
+  ball.style.transition = 'none';
+  ball.style.transform = 'translateY(0) scale(1)';
+
+  void flying.offsetWidth;
+  flying.style.transition = `left ${BALL_TRAVEL_MS}ms cubic-bezier(.25,.55,.35,1), top ${BALL_TRAVEL_MS}ms cubic-bezier(.25,.55,.35,1), width ${BALL_TRAVEL_MS}ms cubic-bezier(.25,.55,.35,1), height ${BALL_TRAVEL_MS}ms cubic-bezier(.25,.55,.35,1)`;
+  flying.style.left = endLeft + 'px';
+  flying.style.top = endTop + 'px';
+  flying.style.width = endSize + 'px';
+  flying.style.height = endSize + 'px';
+
   setTimeout(() => {
-    ball.style.transition = 'none';
-    ball.style.transform = 'translateY(0) scale(1) rotate(0)';
-    void ball.offsetWidth;
-    ball.style.transition = 'transform .5s cubic-bezier(.55,0,.85,.35)';
+    flying.remove();
+    ball.style.visibility = 'visible';
+    ball.style.transition = '';
     socket.emit('bowling_roll', {code: room, username: user});
-  }, 460);
+  }, BALL_TRAVEL_MS);
 }
 
 // Swipe/drag the ball upward (toward the pins) to throw it — touch or mouse.
@@ -476,11 +540,7 @@ function render(state) {
   document.getElementById('pinsUpLabel').textContent = state.stage === 'finished' ? '' : `${pinsUp} 🎯`;
   document.getElementById('ballEl').classList.toggle('my-turn', myTurn);
   document.getElementById('swipeHint').style.display = myTurn ? 'block' : 'none';
-  document.getElementById('pinRack').innerHTML = Array.from({length: 10}).map((_, i) => {
-    const num = i + 1;
-    const isDown = num > pinsUp;
-    return `<div class="pin pin-${num}${isDown ? ' down' : ''}"></div>`;
-  }).join('');
+  updatePinRack(pinsUp);
 
   document.getElementById('turnIndicator').textContent = state.stage === 'finished' ? '' :
     (myTurn ? t('turn_mine') : (state.turn ? t('turn_other', {name: state.turn}) : ''));
