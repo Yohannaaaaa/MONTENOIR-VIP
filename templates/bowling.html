@@ -42,14 +42,14 @@
   .player-chip.turn { border-color: #d4af37; box-shadow: 0 0 12px rgba(212,175,55,.7); }
 
   .lane-wrap { width: 100%; margin-bottom: 12px; }
-  .lane-scene { position: relative; width: 100%; max-width: 640px; height: 46vh; min-height: 320px; max-height: 480px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c; box-shadow: 0 25px 55px rgba(0,0,0,.85), inset 0 0 0 3px rgba(212,175,55,.4); }
-  .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #1a2a52, #0a1226); box-shadow: 0 0 30px rgba(90,140,255,.55); z-index: 2; }
-  .lane-gutter { position: absolute; top: 12%; bottom: 0; background: linear-gradient(180deg, #333, #0a0a0a); }
+  .lane-scene { position: relative; width: 100%; max-width: 640px; height: 46vh; min-height: 320px; max-height: 480px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c; box-shadow: 0 25px 55px rgba(0,0,0,.85), inset 0 0 0 3px rgba(212,175,55,.5); }
+  .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #2a1a52, #0a0a26); box-shadow: 0 0 34px rgba(150,90,255,.6), inset 0 -3px 0 rgba(212,175,55,.7); z-index: 2; }
+  .lane-gutter { position: absolute; top: 12%; bottom: 0; background: linear-gradient(180deg, #3a3a3a, #0a0a0a); }
   .lane-gutter.left { left: 0; width: 50%; clip-path: polygon(0 100%, 33% 100%, 46.5% 0, 0 0); }
   .lane-gutter.right { right: 0; width: 50%; clip-path: polygon(100% 100%, 67% 100%, 53.5% 0, 100% 0); }
-  .lane-gutter::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(150,180,255,.15), transparent 30%); }
-  .lane-floor { position: absolute; top: 12%; bottom: 0; left: 0; right: 0; clip-path: polygon(9% 100%, 91% 100%, 55% 0, 45% 0); background: repeating-conic-gradient(from 205deg at 50% 0%, #caa06a 0deg 2.1deg, #a97c4d 2.1deg 4.2deg); }
-  .lane-floor::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.1), transparent 35%); }
+  .lane-gutter::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(180,150,255,.2), transparent 30%); }
+  .lane-floor { position: absolute; top: 12%; bottom: 0; left: 0; right: 0; clip-path: polygon(9% 100%, 91% 100%, 55% 0, 45% 0); background: repeating-conic-gradient(from 205deg at 50% 0%, #e0b374 0deg 2.1deg, #b3854f 2.1deg 4.2deg); box-shadow: inset 0 0 60px rgba(212,175,55,.15); }
+  .lane-floor::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,235,180,.22), transparent 35%); }
   .target-arrows { position: absolute; top: 33%; left: 0; right: 0; height: 4%; z-index: 1; }
   .arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid rgba(180,20,20,.8); transform: translateX(-50%); }
   .pin-rack { position: absolute; top: 13.5%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 11px); grid-template-rows: repeat(4, 12px); gap: 2px; align-items: end; justify-content: center; z-index: 1; }
@@ -63,10 +63,15 @@
   .pin-7 { grid-column: 1; grid-row: 4; } .pin-8 { grid-column: 2; grid-row: 4; } .pin-9 { grid-column: 3; grid-row: 4; } .pin-10 { grid-column: 4; grid-row: 4; }
   .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 130px; background: repeating-linear-gradient(100deg, #caa06a 0 26px, #b88f5c 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
   .pins-up-label { position: absolute; top: 8px; right: 16px; color: #ffe08a; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
-  .ball { width: 76px; height: 76px; border-radius: 50%; background: radial-gradient(circle at 32% 26%, #ff6b6b, #c0272d 45%, #7a1620 75%, #3d0d0d 100%); box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -8px 12px rgba(0,0,0,.5), inset 0 8px 10px rgba(255,255,255,.35); position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); cursor: grab; }
-  .ball.my-turn { box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -8px 12px rgba(0,0,0,.5), inset 0 8px 10px rgba(255,255,255,.35), 0 0 22px rgba(212,175,55,.65); }
+  .ball { width: 76px; height: 76px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 24%, #ffe89a 0%, #e63946 22%, #a3172a 50%, #5c0d17 78%, #2a0509 100%);
+    box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -10px 16px rgba(0,0,0,.55), inset 0 10px 14px rgba(255,255,255,.4), inset 8px -6px 20px rgba(255,200,80,.18);
+    position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); cursor: grab; }
+  .ball::-webkit-scrollbar { display: none; }
+  .ball.my-turn { box-shadow: 0 10px 20px rgba(0,0,0,.75), inset 0 -10px 16px rgba(0,0,0,.55), inset 0 10px 14px rgba(255,255,255,.4), inset 8px -6px 20px rgba(255,200,80,.18), 0 0 26px rgba(212,175,55,.75); }
   .ball:active { cursor: grabbing; }
-  .swipe-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: #ffe08a; font-size: 11px; letter-spacing: .5px; text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; opacity: .9; }
+  .swipe-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: #ffe08a; font-size: 12px; font-weight: bold; letter-spacing: .5px; text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; opacity: .95; animation: swipeHintPulse 1.6s ease-in-out infinite; }
+  @keyframes swipeHintPulse { 0%,100%{transform:translateX(-50%) translateY(0); opacity:.7;} 50%{transform:translateX(-50%) translateY(-5px); opacity:1;} }
   .ball::before, .ball::after, .ball .hole3 { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #1a0505; box-shadow: inset 0 0 4px #000, 0 1px 1px rgba(255,255,255,.15); }
   .ball::before { top: 24px; left: 26px; }
   .ball::after { top: 24px; left: 40px; }
@@ -165,9 +170,6 @@
 
   <div class="side-panel">
     <div class="turn-indicator" id="turnIndicator"></div>
-    <div class="action-bar" id="actionBar">
-      <button class="btn green" id="rollBtn" style="width:auto;" data-i18n="btn_bowl">🎳 Lancer</button>
-    </div>
     <div class="action-bar" id="roundOverBar" style="display:none;">
       <div class="winner-box">
         <div id="winnerMsg" style="color:#d4af37;font-weight:bold;margin-bottom:8px;"></div>
@@ -180,7 +182,7 @@
 
 <script>
 const socket = io();
-let user = '', avatar = '🎳', room = '', lastState = null, isOwner = false, isRolling = false, prevMyTurn = false, prevStage = null;
+let user = '', avatar = '🎳', room = '', lastState = null, isOwner = false, isRolling = false, prevMyTurn = false, prevStage = null, canRollNow = false;
 
 const I18N = {
   fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🎨 Choisis ton avatar',
@@ -339,12 +341,12 @@ function leaveTable() {
 document.getElementById('nextGameBtn').addEventListener('click', () => socket.emit('bowling_next_game', {code: room}));
 
 function canThrow() {
-  return !document.getElementById('rollBtn').disabled && !isRolling;
+  return canRollNow && !isRolling;
 }
 
 function throwBall() {
   if (!canThrow()) return;
-  document.getElementById('rollBtn').disabled = true;
+  canRollNow = false;
   isRolling = true;
   if (window.SFX) SFX.bowl();
   const ball = document.querySelector('.ball');
@@ -358,8 +360,6 @@ function throwBall() {
     socket.emit('bowling_roll', {code: room, username: user});
   }, 460);
 }
-
-document.getElementById('rollBtn').addEventListener('click', throwBall);
 
 // Swipe/drag the ball upward (toward the pins) to throw it — touch or mouse.
 (function setupBallSwipe() {
@@ -478,12 +478,10 @@ function render(state) {
   document.getElementById('turnIndicator').textContent = state.stage === 'finished' ? '' :
     (myTurn ? t('turn_mine') : (state.turn ? t('turn_other', {name: state.turn}) : ''));
   document.getElementById('actionLog').textContent = state.log || '';
-  document.getElementById('rollBtn').disabled = !myTurn || isRolling;
-  document.getElementById('rollBtn').style.display = state.stage === 'finished' ? 'none' : 'inline-block';
+  canRollNow = myTurn && state.stage !== 'finished';
 
   const over = state.stage === 'finished';
   document.getElementById('roundOverBar').style.display = over ? 'flex' : 'none';
-  document.getElementById('actionBar').style.display = over ? 'none' : 'flex';
   if (over) {
     const winner = state.players.find(p => p.name === state.winner);
     document.getElementById('winnerMsg').textContent = state.winner ? t('win_msg', {name: state.winner, score: winner ? winner.total : ''}) : '';
