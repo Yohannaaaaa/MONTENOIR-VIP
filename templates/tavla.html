@@ -102,6 +102,13 @@
   .action-log { color: #d4af37; font-size: 12px; text-align: center; margin-top: 10px; min-height: 16px; opacity: .9; }
   .winner-box { text-align: center; }
   @media (max-width: 700px) { .board-row { height: 110px; } .checker { width: 20px; height: 20px; margin-top: -9px; } }
+  @media (max-width: 600px) {
+    html, body { overflow-x: hidden; }
+    h1 { font-size: 30px; letter-spacing: 3px; margin-bottom: 16px; }
+    .card-box { padding: 20px 16px; }
+    .room-code { font-size: 28px; }
+    .action-bar .btn { padding: 8px 14px; font-size: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -202,7 +209,7 @@ const I18N = {
     turn_mine:'✅ À toi de jouer !', turn_other:'⏳ Tour de {name}', roll_hint:'Lance les dés.',
     move_hint:'Clique un dé puis un pion à déplacer.', win_msg:'{name} a gagné la partie ! 🏆', you_label:'Toi',
     alert_prefix:'❌ ', err_generic:'Erreur', err_room_not_found:'Table introuvable.', err_table_full:'Table complète (2 joueurs).',
-    err_need_players:'Il faut exactement 2 joueurs.', err_not_your_turn:"Ce n'est pas ton tour.", err_already_rolled:'Tu as déjà lancé les dés.',
+    err_need_players:'Il faut exactement 2 joueurs.', err_not_enough_chips:'Pas assez de jetons sur ton compte.', err_not_your_turn:"Ce n'est pas ton tour.", err_already_rolled:'Tu as déjà lancé les dés.',
     err_invalid_die:'Dé invalide.', err_invalid_move:'Coup invalide.' },
   en: { label_username:'🎮 Your Nickname', placeholder_username:'Enter your name', label_avatar:'🎨 Choose your avatar',
     btn_create:'➕ Create a table', label_or_join:'OR JOIN', placeholder_room_code:'Table code', btn_join:'🔗 Join',
@@ -212,7 +219,7 @@ const I18N = {
     turn_mine:'✅ Your turn!', turn_other:"⏳ {name}'s turn", roll_hint:'Roll the dice.',
     move_hint:'Click a die then a checker to move.', win_msg:'{name} won the game! 🏆', you_label:'You',
     alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Table not found.', err_table_full:'Table full (2 players).',
-    err_need_players:'Need exactly 2 players.', err_not_your_turn:"It's not your turn.", err_already_rolled:'You already rolled.',
+    err_need_players:'Need exactly 2 players.', err_not_enough_chips:'Not enough chips in your account.', err_not_your_turn:"It's not your turn.", err_already_rolled:'You already rolled.',
     err_invalid_die:'Invalid die.', err_invalid_move:'Invalid move.' },
   es: { label_username:'🎮 Tu Apodo', placeholder_username:'Escribe tu nombre', label_avatar:'🎨 Elige tu avatar',
     btn_create:'➕ Crear una mesa', label_or_join:'O ÚNETE', placeholder_room_code:'Código de la mesa', btn_join:'🔗 Unirse',
@@ -222,7 +229,7 @@ const I18N = {
     turn_mine:'✅ ¡Es tu turno!', turn_other:'⏳ Turno de {name}', roll_hint:'Lanza los dados.',
     move_hint:'Toca un dado y luego una ficha para mover.', win_msg:'¡{name} ganó la partida! 🏆', you_label:'Tú',
     alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Mesa no encontrada.', err_table_full:'Mesa completa (2 jugadores).',
-    err_need_players:'Se necesitan exactamente 2 jugadores.', err_not_your_turn:'No es tu turno.', err_already_rolled:'Ya lanzaste los dados.',
+    err_need_players:'Se necesitan exactamente 2 jugadores.', err_not_enough_chips:'No tienes suficientes fichas en tu cuenta.', err_not_your_turn:'No es tu turno.', err_already_rolled:'Ya lanzaste los dados.',
     err_invalid_die:'Dado inválido.', err_invalid_move:'Movimiento inválido.' },
   de: { label_username:'🎮 Dein Spitzname', placeholder_username:'Gib deinen Namen ein', label_avatar:'🎨 Wähle deinen Avatar',
     btn_create:'➕ Tisch erstellen', label_or_join:'ODER BEITRETEN', placeholder_room_code:'Tischcode', btn_join:'🔗 Beitreten',
@@ -232,7 +239,7 @@ const I18N = {
     turn_mine:'✅ Du bist dran!', turn_other:'⏳ {name} ist dran', roll_hint:'Würfle.',
     move_hint:'Klicke einen Würfel, dann einen Stein zum Ziehen.', win_msg:'{name} hat das Spiel gewonnen! 🏆', you_label:'Du',
     alert_prefix:'❌ ', err_generic:'Fehler', err_room_not_found:'Tisch nicht gefunden.', err_table_full:'Tisch voll (2 Spieler).',
-    err_need_players:'Es werden genau 2 Spieler benötigt.', err_not_your_turn:'Du bist nicht dran.', err_already_rolled:'Du hast schon gewürfelt.',
+    err_need_players:'Es werden genau 2 Spieler benötigt.', err_not_enough_chips:'Nicht genug Chips auf deinem Konto.', err_not_your_turn:'Du bist nicht dran.', err_already_rolled:'Du hast schon gewürfelt.',
     err_invalid_die:'Ungültiger Würfel.', err_invalid_move:'Ungültiger Zug.' },
   it: { label_username:'🎮 Il tuo soprannome', placeholder_username:'Inserisci il tuo nome', label_avatar:'🎨 Scegli il tuo avatar',
     btn_create:'➕ Crea un tavolo', label_or_join:'O UNISCITI', placeholder_room_code:'Codice del tavolo', btn_join:'🔗 Unisciti',
@@ -242,7 +249,7 @@ const I18N = {
     turn_mine:'✅ Tocca a te!', turn_other:'⏳ Turno di {name}', roll_hint:'Lancia i dadi.',
     move_hint:'Clicca un dado e poi una pedina da muovere.', win_msg:'{name} ha vinto la partita! 🏆', you_label:'Tu',
     alert_prefix:'❌ ', err_generic:'Errore', err_room_not_found:'Tavolo non trovato.', err_table_full:'Tavolo pieno (2 giocatori).',
-    err_need_players:'Servono esattamente 2 giocatori.', err_not_your_turn:'Non è il tuo turno.', err_already_rolled:'Hai già lanciato i dadi.',
+    err_need_players:'Servono esattamente 2 giocatori.', err_not_enough_chips:'Fiches insufficienti sul tuo account.', err_not_your_turn:'Non è il tuo turno.', err_already_rolled:'Hai già lanciato i dadi.',
     err_invalid_die:'Dado non valido.', err_invalid_move:'Mossa non valida.' },
   nl: { label_username:'🎮 Jouw Bijnaam', placeholder_username:'Voer je naam in', label_avatar:'🎨 Kies je avatar',
     btn_create:'➕ Tafel aanmaken', label_or_join:'OF DOE MEE', placeholder_room_code:'Tafelcode', btn_join:'🔗 Meedoen',
@@ -252,7 +259,7 @@ const I18N = {
     turn_mine:'✅ Jij bent aan de beurt!', turn_other:'⏳ Beurt van {name}', roll_hint:'Gooi de dobbelstenen.',
     move_hint:'Klik een dobbelsteen en dan een steen om te verplaatsen.', win_msg:'{name} heeft het spel gewonnen! 🏆', you_label:'Jij',
     alert_prefix:'❌ ', err_generic:'Fout', err_room_not_found:'Tafel niet gevonden.', err_table_full:'Tafel vol (2 spelers).',
-    err_need_players:'Precies 2 spelers nodig.', err_not_your_turn:'Jij bent niet aan de beurt.', err_already_rolled:'Je hebt al gegooid.',
+    err_need_players:'Precies 2 spelers nodig.', err_not_enough_chips:'Niet genoeg chips op je account.', err_not_your_turn:'Jij bent niet aan de beurt.', err_already_rolled:'Je hebt al gegooid.',
     err_invalid_die:'Ongeldige dobbelsteen.', err_invalid_move:'Ongeldige zet.' },
   ru: { label_username:'🎮 Твой ник', placeholder_username:'Введите ваше имя', label_avatar:'🎨 Выберите аватар',
     btn_create:'➕ Создать стол', label_or_join:'ИЛИ ПРИСОЕДИНИТЬСЯ', placeholder_room_code:'Код стола', btn_join:'🔗 Присоединиться',
@@ -262,7 +269,7 @@ const I18N = {
     turn_mine:'✅ Твой ход!', turn_other:'⏳ Ход игрока {name}', roll_hint:'Брось кости.',
     move_hint:'Кликни кость, затем шашку для хода.', win_msg:'{name} выиграл партию! 🏆', you_label:'Ты',
     alert_prefix:'❌ ', err_generic:'Ошибка', err_room_not_found:'Стол не найден.', err_table_full:'Стол заполнен (2 игрока).',
-    err_need_players:'Нужно ровно 2 игрока.', err_not_your_turn:'Сейчас не твой ход.', err_already_rolled:'Ты уже бросил кости.',
+    err_need_players:'Нужно ровно 2 игрока.', err_not_enough_chips:'Недостаточно фишек на счёте.', err_not_your_turn:'Сейчас не твой ход.', err_already_rolled:'Ты уже бросил кости.',
     err_invalid_die:'Неверная кость.', err_invalid_move:'Недопустимый ход.' },
   ar: { label_username:'🎮 اسمك المستعار', placeholder_username:'أدخل اسمك', label_avatar:'🎨 اختر صورتك الرمزية',
     btn_create:'➕ إنشاء طاولة', label_or_join:'أو انضم', placeholder_room_code:'رمز الطاولة', btn_join:'🔗 انضمام',
@@ -272,7 +279,7 @@ const I18N = {
     turn_mine:'✅ دورك الآن!', turn_other:'⏳ دور {name}', roll_hint:'ارمِ النرد.',
     move_hint:'انقر على نرد ثم على قطعة لتحريكها.', win_msg:'فاز {name} بالمباراة! 🏆', you_label:'أنت',
     alert_prefix:'❌ ', err_generic:'خطأ', err_room_not_found:'الطاولة غير موجودة.', err_table_full:'الطاولة ممتلئة (لاعبان).',
-    err_need_players:'يلزم لاعبان بالضبط.', err_not_your_turn:'ليس دورك.', err_already_rolled:'لقد رميت النرد بالفعل.',
+    err_need_players:'يلزم لاعبان بالضبط.', err_not_enough_chips:'لا توجد رقائق كافية في حسابك.', err_not_your_turn:'ليس دورك.', err_already_rolled:'لقد رميت النرد بالفعل.',
     err_invalid_die:'نرد غير صالح.', err_invalid_move:'حركة غير صالحة.' },
   pt: { label_username:'🎮 Seu Apelido', placeholder_username:'Digite seu nome', label_avatar:'🎨 Escolha seu avatar',
     btn_create:'➕ Criar uma mesa', label_or_join:'OU ENTRAR', placeholder_room_code:'Código da mesa', btn_join:'🔗 Entrar',
@@ -282,7 +289,7 @@ const I18N = {
     turn_mine:'✅ É a sua vez!', turn_other:'⏳ Vez de {name}', roll_hint:'Lance os dados.',
     move_hint:'Clique num dado e depois numa peça para mover.', win_msg:'{name} venceu o jogo! 🏆', you_label:'Você',
     alert_prefix:'❌ ', err_generic:'Erro', err_room_not_found:'Mesa não encontrada.', err_table_full:'Mesa cheia (2 jogadores).',
-    err_need_players:'É necessário exatamente 2 jogadores.', err_not_your_turn:'Não é a sua vez.', err_already_rolled:'Você já lançou os dados.',
+    err_need_players:'É necessário exatamente 2 jogadores.', err_not_enough_chips:'Fichas insuficientes na sua conta.', err_not_your_turn:'Não é a sua vez.', err_already_rolled:'Você já lançou os dados.',
     err_invalid_die:'Dado inválido.', err_invalid_move:'Movimento inválido.' },
   pl: { label_username:'🎮 Twój Pseudonim', placeholder_username:'Wpisz swoje imię', label_avatar:'🎨 Wybierz awatar',
     btn_create:'➕ Utwórz stół', label_or_join:'LUB DOŁĄCZ', placeholder_room_code:'Kod stołu', btn_join:'🔗 Dołącz',
@@ -292,7 +299,7 @@ const I18N = {
     turn_mine:'✅ Twoja kolej!', turn_other:'⏳ Kolej gracza {name}', roll_hint:'Rzuć kośćmi.',
     move_hint:'Kliknij kostkę, a potem pionek do ruchu.', win_msg:'{name} wygrał grę! 🏆', you_label:'Ty',
     alert_prefix:'❌ ', err_generic:'Błąd', err_room_not_found:'Nie znaleziono stołu.', err_table_full:'Stół pełny (2 graczy).',
-    err_need_players:'Potrzeba dokładnie 2 graczy.', err_not_your_turn:'To nie twoja kolej.', err_already_rolled:'Już rzuciłeś kośćmi.',
+    err_need_players:'Potrzeba dokładnie 2 graczy.', err_not_enough_chips:'Za mało żetonów na koncie.', err_not_your_turn:'To nie twoja kolej.', err_already_rolled:'Już rzuciłeś kośćmi.',
     err_invalid_die:'Nieprawidłowa kostka.', err_invalid_move:'Nieprawidłowy ruch.' },
   tr: { label_username:'🎮 Takma Adın', placeholder_username:'Adını gir', label_avatar:'🎨 Avatarını seç',
     btn_create:'➕ Masa kur', label_or_join:'YA DA KATIL', placeholder_room_code:'Masa kodu', btn_join:'🔗 Katıl',
@@ -302,7 +309,7 @@ const I18N = {
     turn_mine:'✅ Sıra sende!', turn_other:'⏳ Sıra: {name}', roll_hint:'Zar at.',
     move_hint:'Bir zar seç, sonra oynatacağın pulu tıkla.', win_msg:'{name} oyunu kazandı! 🏆', you_label:'Sen',
     alert_prefix:'❌ ', err_generic:'Hata', err_room_not_found:'Masa bulunamadı.', err_table_full:'Masa dolu (2 oyuncu).',
-    err_need_players:'Tam olarak 2 oyuncu gerekli.', err_not_your_turn:'Sıra sende değil.', err_already_rolled:'Zaten zar attın.',
+    err_need_players:'Tam olarak 2 oyuncu gerekli.', err_not_enough_chips:'Hesabında yeterli jeton yok.', err_not_your_turn:'Sıra sende değil.', err_already_rolled:'Zaten zar attın.',
     err_invalid_die:'Geçersiz zar.', err_invalid_move:'Geçersiz hamle.' },
   ja: { label_username:'🎮 ニックネーム', placeholder_username:'名前を入力', label_avatar:'🎨 アバターを選択',
     btn_create:'➕ テーブルを作成', label_or_join:'または参加', placeholder_room_code:'テーブルコード', btn_join:'🔗 参加',
@@ -312,7 +319,7 @@ const I18N = {
     turn_mine:'✅ あなたの番です！', turn_other:'⏳ {name}の番', roll_hint:'サイコロを振ってください。',
     move_hint:'サイコロをクリックしてから動かす駒をクリック。', win_msg:'{name}がゲームに勝ちました！🏆', you_label:'あなた',
     alert_prefix:'❌ ', err_generic:'エラー', err_room_not_found:'テーブルが見つかりません。', err_table_full:'テーブルは満席です（2人）。',
-    err_need_players:'ちょうど2人のプレイヤーが必要です。', err_not_your_turn:'あなたの番ではありません。', err_already_rolled:'すでにサイコロを振りました。',
+    err_need_players:'ちょうど2人のプレイヤーが必要です。', err_not_enough_chips:'アカウントのチップが足りません。', err_not_your_turn:'あなたの番ではありません。', err_already_rolled:'すでにサイコロを振りました。',
     err_invalid_die:'無効なサイコロです。', err_invalid_move:'無効な動きです。' },
   zh: { label_username:'🎮 你的昵称', placeholder_username:'输入你的名字', label_avatar:'🎨 选择你的头像',
     btn_create:'➕ 创建牌桌', label_or_join:'或加入', placeholder_room_code:'牌桌代码', btn_join:'🔗 加入',
@@ -322,7 +329,7 @@ const I18N = {
     turn_mine:'✅ 轮到你了！', turn_other:'⏳ 轮到 {name}', roll_hint:'掷骰子。',
     move_hint:'点击骰子，然后点击要移动的棋子。', win_msg:'{name}赢得了游戏！🏆', you_label:'你',
     alert_prefix:'❌ ', err_generic:'错误', err_room_not_found:'未找到牌桌。', err_table_full:'牌桌已满（2人）。',
-    err_need_players:'需要正好2名玩家。', err_not_your_turn:'还没轮到你。', err_already_rolled:'你已经掷过骰子了。',
+    err_need_players:'需要正好2名玩家。', err_not_enough_chips:'账户筹码不足。', err_not_your_turn:'还没轮到你。', err_already_rolled:'你已经掷过骰子了。',
     err_invalid_die:'无效的骰子。', err_invalid_move:'无效的移动。' },
   ko: { label_username:'🎮 닉네임', placeholder_username:'이름을 입력하세요', label_avatar:'🎨 아바타를 선택하세요',
     btn_create:'➕ 테이블 만들기', label_or_join:'또는 참가하기', placeholder_room_code:'테이블 코드', btn_join:'🔗 참가',
@@ -332,7 +339,7 @@ const I18N = {
     turn_mine:'✅ 당신의 차례입니다!', turn_other:'⏳ {name}의 차례', roll_hint:'주사위를 굴리세요.',
     move_hint:'주사위를 클릭한 다음 움직일 말을 클릭하세요.', win_msg:'{name}이(가) 게임에서 승리했습니다! 🏆', you_label:'당신',
     alert_prefix:'❌ ', err_generic:'오류', err_room_not_found:'테이블을 찾을 수 없습니다.', err_table_full:'테이블이 가득 찼습니다 (2명).',
-    err_need_players:'정확히 2명의 플레이어가 필요합니다.', err_not_your_turn:'당신의 차례가 아닙니다.', err_already_rolled:'이미 주사위를 굴렸습니다.',
+    err_need_players:'정확히 2명의 플레이어가 필요합니다.', err_not_enough_chips:'계정에 칩이 부족합니다.', err_not_your_turn:'당신의 차례가 아닙니다.', err_already_rolled:'이미 주사위를 굴렸습니다.',
     err_invalid_die:'잘못된 주사위입니다.', err_invalid_move:'잘못된 이동입니다.' }
 };
 const LANGS = ['fr','en','es','de','it','nl','ru','ar','pt','pl','tr','ja','zh','ko'];
@@ -583,6 +590,7 @@ socket.on('tavla_error', (d) => {
   if (window.SFX) SFX.error();
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
+  if (d.code === 'not_enough_chips') { if (confirm(t('alert_prefix') + msg)) window.location.href = '/kasa'; return; }
   alert(t('alert_prefix') + msg);
 });
 </script>

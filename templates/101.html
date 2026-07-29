@@ -80,6 +80,21 @@
   .action-bar .btn { width: auto; padding: 10px 18px; margin-top: 0; font-size: 13px; }
   .action-log { color: #d4af37; font-size: 12px; text-align: center; margin-top: 10px; min-height: 16px; opacity: .9; }
   .winner-box { text-align: center; }
+
+  @media (max-width: 600px) {
+    html, body { overflow-x: hidden; }
+    h1 { font-size: 30px; letter-spacing: 3px; margin-bottom: 16px; }
+    .card-box { padding: 20px 16px; }
+    .room-code { font-size: 30px; }
+    .okey-tile { width: 30px; height: 42px; font-size: 14px; }
+    .okey-tile.small { width: 21px; height: 30px; font-size: 9px; }
+    .piles-row { gap: 14px; }
+    .player-chip { font-size: 11px; padding: 5px 10px; }
+    .rack { padding: 8px 8px 6px; }
+    .rack-row { min-height: 46px; gap: 3px; }
+    .action-bar .btn { padding: 8px 12px; font-size: 12px; }
+    .side-panel { padding: 10px 12px; }
+  }
 </style>
 </head>
 <body>
@@ -182,7 +197,7 @@ const I18N = {
     must_discard_hint:'Sélectionne des tuiles pour un groupe, ajoute-les à la table, ou défausse.',
     waiting_players:'En attente de joueurs (min. 2)…', win_msg:'{name} a gagné cette main !',
     alert_prefix:'❌ ', err_generic:'Erreur', err_room_not_found:'Table introuvable.', err_table_full:'Table complète (max 4).',
-    err_need_players:'Il faut au moins 2 joueurs.', err_not_your_turn:"Ce n'est pas ton tour.", err_must_discard:'Défausse une tuile avant de continuer.',
+    err_need_players:'Il faut au moins 2 joueurs.', err_not_enough_chips:'Pas assez de jetons sur ton compte.', err_not_your_turn:"Ce n'est pas ton tour.", err_must_discard:'Défausse une tuile avant de continuer.',
     err_must_draw:"Pioche d'abord une tuile.", err_discard_empty:'La défausse est vide.', err_already_opened:'Tu es déjà ouvert.',
     err_invalid_group:'Groupe invalide.', err_not_enough_points:'Pas assez de points (101 minimum).', err_not_opened:"Tu dois d'abord ouvrir.",
     err_invalid_move:'Coup invalide.', points_label:'{points} pts', you_label:'Toi', opened_label:'ouvert' },
@@ -196,7 +211,7 @@ const I18N = {
     must_discard_hint:'Select tiles to form a group, add them to the table, or discard.',
     waiting_players:'Waiting for players (min. 2)…', win_msg:'{name} won this hand!',
     alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Table not found.', err_table_full:'Table full (max 4).',
-    err_need_players:'Need at least 2 players.', err_not_your_turn:"It's not your turn.", err_must_discard:'Discard a tile before continuing.',
+    err_need_players:'Need at least 2 players.', err_not_enough_chips:'Not enough chips in your account.', err_not_your_turn:"It's not your turn.", err_must_discard:'Discard a tile before continuing.',
     err_must_draw:'Draw a tile first.', err_discard_empty:'The discard pile is empty.', err_already_opened:'You are already open.',
     err_invalid_group:'Invalid group.', err_not_enough_points:'Not enough points (101 minimum).', err_not_opened:'You must open first.',
     err_invalid_move:'Invalid move.', points_label:'{points} pts', you_label:'You', opened_label:'open' },
@@ -210,7 +225,7 @@ const I18N = {
     must_discard_hint:'Selecciona fichas para un grupo, añádelas a la mesa, o descarta.',
     waiting_players:'Esperando jugadores (mín. 2)…', win_msg:'¡{name} ganó esta mano!',
     alert_prefix:'❌ ', err_generic:'Error', err_room_not_found:'Mesa no encontrada.', err_table_full:'Mesa completa (máx 4).',
-    err_need_players:'Se necesitan al menos 2 jugadores.', err_not_your_turn:'No es tu turno.', err_must_discard:'Descarta una ficha antes de continuar.',
+    err_need_players:'Se necesitan al menos 2 jugadores.', err_not_enough_chips:'No tienes suficientes fichas en tu cuenta.', err_not_your_turn:'No es tu turno.', err_must_discard:'Descarta una ficha antes de continuar.',
     err_must_draw:'Roba una ficha primero.', err_discard_empty:'El descarte está vacío.', err_already_opened:'Ya estás abierto.',
     err_invalid_group:'Grupo inválido.', err_not_enough_points:'No hay suficientes puntos (101 mínimo).', err_not_opened:'Debes abrir primero.',
     err_invalid_move:'Movimiento inválido.', points_label:'{points} pts', you_label:'Tú', opened_label:'abierto' },
@@ -224,7 +239,7 @@ const I18N = {
     must_discard_hint:'Wähle Steine für eine Gruppe, füge sie dem Tisch hinzu, oder lege ab.',
     waiting_players:'Warten auf Spieler (min. 2)…', win_msg:'{name} hat diese Runde gewonnen!',
     alert_prefix:'❌ ', err_generic:'Fehler', err_room_not_found:'Tisch nicht gefunden.', err_table_full:'Tisch voll (max 4).',
-    err_need_players:'Mindestens 2 Spieler nötig.', err_not_your_turn:'Du bist nicht dran.', err_must_discard:'Lege einen Stein ab, bevor du fortfährst.',
+    err_need_players:'Mindestens 2 Spieler nötig.', err_not_enough_chips:'Nicht genug Chips auf deinem Konto.', err_not_your_turn:'Du bist nicht dran.', err_must_discard:'Lege einen Stein ab, bevor du fortfährst.',
     err_must_draw:'Ziehe zuerst einen Stein.', err_discard_empty:'Die Ablage ist leer.', err_already_opened:'Du bist bereits offen.',
     err_invalid_group:'Ungültige Gruppe.', err_not_enough_points:'Nicht genug Punkte (mind. 101).', err_not_opened:'Du musst zuerst öffnen.',
     err_invalid_move:'Ungültiger Zug.', points_label:'{points} Pkt', you_label:'Du', opened_label:'offen' },
@@ -238,7 +253,7 @@ const I18N = {
     must_discard_hint:'Seleziona tessere per un gruppo, aggiungile al tavolo, oppure scarta.',
     waiting_players:'In attesa di giocatori (min. 2)…', win_msg:'{name} ha vinto questa mano!',
     alert_prefix:'❌ ', err_generic:'Errore', err_room_not_found:'Tavolo non trovato.', err_table_full:'Tavolo pieno (max 4).',
-    err_need_players:'Servono almeno 2 giocatori.', err_not_your_turn:'Non è il tuo turno.', err_must_discard:'Scarta una tessera prima di continuare.',
+    err_need_players:'Servono almeno 2 giocatori.', err_not_enough_chips:'Fiches insufficienti sul tuo account.', err_not_your_turn:'Non è il tuo turno.', err_must_discard:'Scarta una tessera prima di continuare.',
     err_must_draw:'Pesca prima una tessera.', err_discard_empty:'Gli scarti sono vuoti.', err_already_opened:'Sei già aperto.',
     err_invalid_group:'Gruppo non valido.', err_not_enough_points:'Punti insufficienti (min. 101).', err_not_opened:'Devi prima aprire.',
     err_invalid_move:'Mossa non valida.', points_label:'{points} pt', you_label:'Tu', opened_label:'aperto' },
@@ -252,7 +267,7 @@ const I18N = {
     must_discard_hint:'Selecteer stenen voor een groep, voeg toe aan tafel, of leg af.',
     waiting_players:'Wachten op spelers (min. 2)…', win_msg:'{name} heeft deze ronde gewonnen!',
     alert_prefix:'❌ ', err_generic:'Fout', err_room_not_found:'Tafel niet gevonden.', err_table_full:'Tafel vol (max 4).',
-    err_need_players:'Minimaal 2 spelers nodig.', err_not_your_turn:'Jij bent niet aan de beurt.', err_must_discard:'Leg een steen af voor je verdergaat.',
+    err_need_players:'Minimaal 2 spelers nodig.', err_not_enough_chips:'Niet genoeg chips op je account.', err_not_your_turn:'Jij bent niet aan de beurt.', err_must_discard:'Leg een steen af voor je verdergaat.',
     err_must_draw:'Trek eerst een steen.', err_discard_empty:'De afleg is leeg.', err_already_opened:'Je bent al open.',
     err_invalid_group:'Ongeldige groep.', err_not_enough_points:'Niet genoeg punten (min. 101).', err_not_opened:'Je moet eerst openen.',
     err_invalid_move:'Ongeldige zet.', points_label:'{points} pt', you_label:'Jij', opened_label:'open' },
@@ -266,7 +281,7 @@ const I18N = {
     must_discard_hint:'Выбери камни для группы, добавь их на стол, или сбрось.',
     waiting_players:'Ожидание игроков (мин. 2)…', win_msg:'{name} выиграл эту раздачу!',
     alert_prefix:'❌ ', err_generic:'Ошибка', err_room_not_found:'Стол не найден.', err_table_full:'Стол заполнен (макс 4).',
-    err_need_players:'Нужно минимум 2 игрока.', err_not_your_turn:'Сейчас не твой ход.', err_must_discard:'Сбрось камень, прежде чем продолжить.',
+    err_need_players:'Нужно минимум 2 игрока.', err_not_enough_chips:'Недостаточно фишек на счёте.', err_not_your_turn:'Сейчас не твой ход.', err_must_discard:'Сбрось камень, прежде чем продолжить.',
     err_must_draw:'Сначала возьми камень.', err_discard_empty:'Сброс пуст.', err_already_opened:'Ты уже открылся.',
     err_invalid_group:'Неверная группа.', err_not_enough_points:'Недостаточно очков (мин. 101).', err_not_opened:'Сначала нужно открыться.',
     err_invalid_move:'Недопустимый ход.', points_label:'{points} очк.', you_label:'Ты', opened_label:'открыт' },
@@ -280,7 +295,7 @@ const I18N = {
     must_discard_hint:'اختر قطعًا لتكوين مجموعة، أضفها للطاولة، أو انبذ.',
     waiting_players:'في انتظار اللاعبين (٢ على الأقل)…', win_msg:'فاز {name} بهذه الجولة!',
     alert_prefix:'❌ ', err_generic:'خطأ', err_room_not_found:'الطاولة غير موجودة.', err_table_full:'الطاولة ممتلئة (٤ كحد أقصى).',
-    err_need_players:'يلزم لاعبان على الأقل.', err_not_your_turn:'ليس دورك.', err_must_discard:'انبذ قطعة قبل المتابعة.',
+    err_need_players:'يلزم لاعبان على الأقل.', err_not_enough_chips:'لا توجد رقائق كافية في حسابك.', err_not_your_turn:'ليس دورك.', err_must_discard:'انبذ قطعة قبل المتابعة.',
     err_must_draw:'اسحب قطعة أولاً.', err_discard_empty:'النبذ فارغ.', err_already_opened:'أنت مفتوح بالفعل.',
     err_invalid_group:'مجموعة غير صالحة.', err_not_enough_points:'نقاط غير كافية (101 كحد أدنى).', err_not_opened:'يجب أن تفتح أولاً.',
     err_invalid_move:'حركة غير صالحة.', points_label:'{points} نقطة', you_label:'أنت', opened_label:'مفتوح' },
@@ -294,7 +309,7 @@ const I18N = {
     must_discard_hint:'Selecione peças para um grupo, adicione à mesa, ou descarte.',
     waiting_players:'Aguardando jogadores (mín. 2)…', win_msg:'{name} venceu esta rodada!',
     alert_prefix:'❌ ', err_generic:'Erro', err_room_not_found:'Mesa não encontrada.', err_table_full:'Mesa cheia (máx 4).',
-    err_need_players:'É necessário pelo menos 2 jogadores.', err_not_your_turn:'Não é a sua vez.', err_must_discard:'Descarte uma peça antes de continuar.',
+    err_need_players:'É necessário pelo menos 2 jogadores.', err_not_enough_chips:'Fichas insuficientes na sua conta.', err_not_your_turn:'Não é a sua vez.', err_must_discard:'Descarte uma peça antes de continuar.',
     err_must_draw:'Compre uma peça primeiro.', err_discard_empty:'O descarte está vazio.', err_already_opened:'Você já está aberto.',
     err_invalid_group:'Grupo inválido.', err_not_enough_points:'Pontos insuficientes (mín. 101).', err_not_opened:'Você deve abrir primeiro.',
     err_invalid_move:'Movimento inválido.', points_label:'{points} pts', you_label:'Você', opened_label:'aberto' },
@@ -308,7 +323,7 @@ const I18N = {
     must_discard_hint:'Wybierz kamienie na grupę, dodaj do stołu, albo odrzuć.',
     waiting_players:'Oczekiwanie na graczy (min. 2)…', win_msg:'{name} wygrał tę rundę!',
     alert_prefix:'❌ ', err_generic:'Błąd', err_room_not_found:'Nie znaleziono stołu.', err_table_full:'Stół pełny (maks 4).',
-    err_need_players:'Potrzeba co najmniej 2 graczy.', err_not_your_turn:'To nie twoja kolej.', err_must_discard:'Odrzuć kamień zanim będziesz kontynuować.',
+    err_need_players:'Potrzeba co najmniej 2 graczy.', err_not_enough_chips:'Za mało żetonów na koncie.', err_not_your_turn:'To nie twoja kolej.', err_must_discard:'Odrzuć kamień zanim będziesz kontynuować.',
     err_must_draw:'Najpierw dobierz kamień.', err_discard_empty:'Odrzuty są puste.', err_already_opened:'Już jesteś otwarty.',
     err_invalid_group:'Nieprawidłowa grupa.', err_not_enough_points:'Za mało punktów (min. 101).', err_not_opened:'Musisz najpierw się otworzyć.',
     err_invalid_move:'Nieprawidłowy ruch.', points_label:'{points} pkt', you_label:'Ty', opened_label:'otwarty' },
@@ -322,7 +337,7 @@ const I18N = {
     must_discard_hint:'Grup için taş seç, masaya ekle, ya da taş at.',
     waiting_players:'Oyuncular bekleniyor (min. 2)…', win_msg:'{name} bu eli kazandı!',
     alert_prefix:'❌ ', err_generic:'Hata', err_room_not_found:'Masa bulunamadı.', err_table_full:'Masa dolu (maks 4).',
-    err_need_players:'En az 2 oyuncu gerekli.', err_not_your_turn:'Sıra sende değil.', err_must_discard:'Devam etmeden önce bir taş at.',
+    err_need_players:'En az 2 oyuncu gerekli.', err_not_enough_chips:'Hesabında yeterli jeton yok.', err_not_your_turn:'Sıra sende değil.', err_must_discard:'Devam etmeden önce bir taş at.',
     err_must_draw:'Önce bir taş çek.', err_discard_empty:'Iskarta boş.', err_already_opened:'Zaten açıldın.',
     err_invalid_group:'Geçersiz grup.', err_not_enough_points:'Yeterli puan yok (min. 101).', err_not_opened:'Önce açılman gerekiyor.',
     err_invalid_move:'Geçersiz hamle.', points_label:'{points} puan', you_label:'Sen', opened_label:'açık' },
@@ -336,7 +351,7 @@ const I18N = {
     must_discard_hint:'グループにする牌を選んで卓に出すか、捨ててください。',
     waiting_players:'プレイヤーを待っています（最低2人）…', win_msg:'{name}がこの局を勝ちました！',
     alert_prefix:'❌ ', err_generic:'エラー', err_room_not_found:'テーブルが見つかりません。', err_table_full:'テーブルは満席です（最大4人）。',
-    err_need_players:'最低2人のプレイヤーが必要です。', err_not_your_turn:'あなたの番ではありません。', err_must_discard:'続ける前に牌を捨ててください。',
+    err_need_players:'最低2人のプレイヤーが必要です。', err_not_enough_chips:'アカウントのチップが足りません。', err_not_your_turn:'あなたの番ではありません。', err_must_discard:'続ける前に牌を捨ててください。',
     err_must_draw:'まず牌を引いてください。', err_discard_empty:'捨て札がありません。', err_already_opened:'すでにオープンしています。',
     err_invalid_group:'無効なグループです。', err_not_enough_points:'ポイントが足りません（最低101）。', err_not_opened:'先にオープンする必要があります。',
     err_invalid_move:'無効な動きです。', points_label:'{points} 点', you_label:'あなた', opened_label:'オープン' },
@@ -350,7 +365,7 @@ const I18N = {
     must_discard_hint:'选择牌组成一组，放到桌上，或者弃牌。',
     waiting_players:'等待玩家中（至少2人）…', win_msg:'{name}赢得了这一局！',
     alert_prefix:'❌ ', err_generic:'错误', err_room_not_found:'未找到牌桌。', err_table_full:'牌桌已满（最多4人）。',
-    err_need_players:'至少需要2名玩家。', err_not_your_turn:'还没轮到你。', err_must_discard:'继续之前请弃一张牌。',
+    err_need_players:'至少需要2名玩家。', err_not_enough_chips:'账户筹码不足。', err_not_your_turn:'还没轮到你。', err_must_discard:'继续之前请弃一张牌。',
     err_must_draw:'请先摸一张牌。', err_discard_empty:'弃牌堆是空的。', err_already_opened:'你已经开牌了。',
     err_invalid_group:'无效的组合。', err_not_enough_points:'points不够（最低101）。', err_not_opened:'你必须先开牌。',
     err_invalid_move:'无效的移动。', points_label:'{points} 分', you_label:'你', opened_label:'已开牌' },
@@ -364,7 +379,7 @@ const I18N = {
     must_discard_hint:'그룹을 만들 패를 선택해 테이블에 놓거나, 버리세요.',
     waiting_players:'플레이어를 기다리는 중 (최소 2명)…', win_msg:'{name}이(가) 이번 판을 이겼습니다!',
     alert_prefix:'❌ ', err_generic:'오류', err_room_not_found:'테이블을 찾을 수 없습니다.', err_table_full:'테이블이 가득 찼습니다 (최대 4명).',
-    err_need_players:'최소 2명의 플레이어가 필요합니다.', err_not_your_turn:'당신의 차례가 아닙니다.', err_must_discard:'계속하기 전에 패를 버리세요.',
+    err_need_players:'최소 2명의 플레이어가 필요합니다.', err_not_enough_chips:'계정에 칩이 부족합니다.', err_not_your_turn:'당신의 차례가 아닙니다.', err_must_discard:'계속하기 전에 패를 버리세요.',
     err_must_draw:'먼저 패를 가져오세요.', err_discard_empty:'버림패가 비어 있습니다.', err_already_opened:'이미 오픈했습니다.',
     err_invalid_group:'잘못된 그룹입니다.', err_not_enough_points:'포인트가 부족합니다 (최소 101).', err_not_opened:'먼저 오픈해야 합니다.',
     err_invalid_move:'잘못된 이동입니다.', points_label:'{points}점', you_label:'당신', opened_label:'오픈됨' }
@@ -630,6 +645,7 @@ socket.on('r101_error', (d) => {
   if (window.SFX) SFX.error();
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
+  if (d.code === 'not_enough_chips') { if (confirm(t('alert_prefix') + msg)) window.location.href = '/kasa'; return; }
   alert(t('alert_prefix') + msg);
 });
 </script>

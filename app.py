@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl, itertools
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64
 try:
     import psycopg2
 except Exception:
@@ -112,6 +112,30 @@ CHIP_PACKAGES = [
 
 def stripe_configured():
     return bool(stripe and STRIPE_SECRET_KEY)
+
+GAME_ENTRY_FEE = 100
+
+def charge_play_fee(usernames):
+    """Deduct GAME_ENTRY_FEE chips from each given username. All-or-nothing:
+    if any player can't afford it, nobody is charged. Returns (True, None)
+    on success, or (False, username_that_lacks_chips) on failure."""
+    usernames = [u for u in usernames if u]
+    if not usernames:
+        return True, None
+    users = load_users()
+    for u in usernames:
+        key = find_user_key(users, u)
+        if not key:
+            ensure_user_account(u)
+            users = load_users()
+            key = find_user_key(users, u)
+        if not key or int(users[key].get("chips", 1000)) < GAME_ENTRY_FEE:
+            return False, u
+    for u in usernames:
+        key = find_user_key(users, u)
+        users[key]["chips"] = int(users[key].get("chips", 1000)) - GAME_ENTRY_FEE
+    save_users(users)
+    return True, None
 
 def load_processed_stripe_sessions():
     try:
@@ -328,7 +352,7 @@ def send_reset_email(to_email, reset_link):
         print("RESET PASSWORD LINK:", reset_link)
         return False
 
-    message = f"Subject: Codenames VIP - Reset password\n\nClique sur ce lien pour renouveler ton mot de passe :\n{reset_link}\n\nSi tu n'as rien demandé, ignore ce message."
+    message = f"Subject: Montenoir VIP - Réinitialisation du mot de passe\n\nClique sur ce lien pour renouveler ton mot de passe :\n{reset_link}\n\nSi tu n'as rien demandé, ignore ce message."
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls(context=context)
@@ -4080,9 +4104,8 @@ def coming_soon(game):
 
 
 
-@socketio.on('request_password_reset')
-def request_password_reset(data):
-    email = data.get('email','').strip().lower()
+def do_request_password_reset(email):
+    email = (email or '').strip().lower()
     users = load_users()
     found_user = None
     for username, udata in users.items():
@@ -4092,8 +4115,7 @@ def request_password_reset(data):
 
     # Réponse neutre pour ne pas révéler les emails enregistrés.
     if not found_user:
-        emit('password_reset_requested', {'sent': True})
-        return
+        return {'sent': True}
 
     token = ''.join(random.choices(string.ascii_letters + string.digits, k=42))
     users[found_user]['resetToken'] = token
@@ -4102,21 +4124,18 @@ def request_password_reset(data):
 
     base_url = os.environ.get('PUBLIC_BASE_URL', '').rstrip('/')
     if not base_url:
-        base_url = 'https://codenames-vip.onrender.com'
-    reset_link = base_url + '/?reset=' + token
+        base_url = 'https://montenoirvip.onrender.com'
+    reset_link = base_url + '/login?reset=' + token
 
     sent = send_reset_email(email, reset_link)
-    emit('password_reset_requested', {'sent': sent, 'link': reset_link, 'token': token})
+    return {'sent': sent, 'link': reset_link, 'token': token}
 
-
-@socketio.on('confirm_password_reset')
-def confirm_password_reset(data):
-    token = data.get('token','').strip()
-    new_password = data.get('newPassword','')
+def do_confirm_password_reset(token, new_password):
+    token = (token or '').strip()
+    new_password = new_password or ''
 
     if not token or not new_password:
-        emit('password_reset_confirmed', {'ok': False, 'msg': 'Token ve yeni şifre gerekli.'})
-        return
+        return {'ok': False, 'msg': 'Token ve yeni şifre gerekli.'}
 
     users = load_users()
     for username, udata in users.items():
@@ -4125,10 +4144,28 @@ def confirm_password_reset(data):
             users[username].pop('resetToken', None)
             users[username].pop('resetExpires', None)
             save_users(users)
-            emit('password_reset_confirmed', {'ok': True})
-            return
+            return {'ok': True}
 
-    emit('password_reset_confirmed', {'ok': False, 'msg': 'Token geçersiz veya süresi dolmuş.'})
+    return {'ok': False, 'msg': 'Token geçersiz veya süresi dolmuş.'}
+
+@socketio.on('request_password_reset')
+def request_password_reset(data):
+    emit('password_reset_requested', do_request_password_reset((data or {}).get('email','')))
+
+@socketio.on('confirm_password_reset')
+def confirm_password_reset(data):
+    data = data or {}
+    emit('password_reset_confirmed', do_confirm_password_reset(data.get('token',''), data.get('newPassword','')))
+
+@app.route('/api/auth/request_reset', methods=['POST'])
+def api_request_password_reset():
+    data = request.get_json(force=True, silent=True) or {}
+    return do_request_password_reset(data.get('email',''))
+
+@app.route('/api/auth/confirm_reset', methods=['POST'])
+def api_confirm_password_reset():
+    data = request.get_json(force=True, silent=True) or {}
+    return do_confirm_password_reset(data.get('token',''), data.get('newPassword',''))
 
 
 @socketio.on('create_room')
@@ -5632,13 +5669,12 @@ def api_profile_avatar():
     if not key:
         return {"ok": False, "msg": "Kullanıcı bulunamadı."}
 
-    folder = os.path.join(app.root_path, "static", "avatars")
-    os.makedirs(folder, exist_ok=True)
+    file_bytes = f.read()
+    if len(file_bytes) > 3 * 1024 * 1024:
+        return {"ok": False, "msg": "Avatar dosyası çok büyük (maksimum 3MB)."}
 
-    filename = secure_filename(f"{key}_{int(time.time())}.{ext}")
-    f.save(os.path.join(folder, filename))
-
-    avatar_url = "/static/avatars/" + filename
+    mime = "jpeg" if ext == "jpg" else ext
+    avatar_url = f"data:image/{mime};base64," + base64.b64encode(file_bytes).decode("ascii")
     users[key]["avatar"] = avatar_url
     users[key]["avatarData"] = avatar_url
     save_users(users)
@@ -6913,6 +6949,8 @@ def okey_maybe_schedule_bots(code):
 def okey_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("okey_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("okey_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     okey_deal(r)
     okey_maybe_schedule_bots(code)
@@ -6922,6 +6960,8 @@ def okey_start_game(data):
 def okey_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("okey_error",{"code":"not_enough_chips"}); return
     okey_deal(r)
     okey_maybe_schedule_bots(code)
     okey_broadcast(r)
@@ -7196,6 +7236,8 @@ def ludo_set_team_mode(data):
 def ludo_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=LUDO_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("ludo_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("ludo_error",{"code":"not_enough_chips"}); return
     r["started"]=True; r["stage"]="playing"; r["order"]=list(r["seatOrder"]); r["turnIdx"]=0
     r["sixCount"]=0; r["pendingMoves"]=[]; r["winner"]=None; r["lastRoll"]=None
     r["log"]="Oyun başladı — "+r["order"][0]+" başlıyor."
@@ -7393,6 +7435,8 @@ def r101_leave_room(data):
 def r101_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("r101_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("r101_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     r101_deal(r)
     r101_run_bots(r["code"])
@@ -7402,6 +7446,8 @@ def r101_start_game(data):
 def r101_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("r101_error",{"code":"not_enough_chips"}); return
     r101_deal(r)
     r101_run_bots(r["code"])
     r101_broadcast(r)
@@ -7770,6 +7816,8 @@ def tavla_leave_room(data):
 def tavla_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
     if not r or len(r["seatOrder"])!=2: emit("tavla_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("tavla_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     tavla_deal(r)
     tavla_run_bots(r["code"])
@@ -7779,6 +7827,8 @@ def tavla_start_game(data):
 def tavla_next_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("tavla_error",{"code":"not_enough_chips"}); return
     tavla_deal(r)
     tavla_run_bots(r["code"])
     tavla_broadcast(r)
@@ -8082,6 +8132,8 @@ def bowling_leave_room(data):
 def bowling_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
     if not r or len(r["seatOrder"])<2: emit("bowling_error",{"code":"need_players"}); return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("bowling_error",{"code":"not_enough_chips"}); return
     r["started"]=True
     bowling_deal(r)
     bowling_run_bots(r["code"])
@@ -8091,6 +8143,8 @@ def bowling_start_game(data):
 def bowling_next_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
+    if not ok: emit("bowling_error",{"code":"not_enough_chips"}); return
     bowling_deal(r)
     bowling_run_bots(r["code"])
     bowling_broadcast(r)
@@ -8267,6 +8321,12 @@ AUTH_PAGE_STYLE = """
   .msg{margin-top:14px;text-align:center;font-size:13px;min-height:18px;}
   .msg.error{color:#ff6b6b;}
   .msg.success{color:#3adb76;}
+  @media (max-width: 480px) {
+    html, body { overflow-x: hidden; }
+    body{padding:24px 14px;}
+    .card{padding:22px 18px;}
+    h1{font-size:26px;}
+  }
 </style>
 """
 
@@ -8348,7 +8408,7 @@ def login_page():
     return render_template_string(AUTH_PAGE_STYLE + """
     <div class="lang-selector" id="langSelector"></div>
     <h1 data-common-i18n="login_title">👤 Connexion</h1>
-    <div class="card">
+    <div class="card" id="loginCard">
       <form id="loginForm">
         <label data-common-i18n="field_username">Nom d'utilisateur</label>
         <input type="text" id="loginUsername" required>
@@ -8358,6 +8418,22 @@ def login_page():
         <div class="msg" id="authMsg"></div>
       </form>
       <a class="switch-link" href="/register" data-common-i18n="link_no_account">Pas de compte ? S'inscrire</a>
+      <a class="switch-link" href="#" id="forgotLink" data-common-i18n="link_forgot_password">Mot de passe oublié ?</a>
+    </div>
+    <div class="card" id="forgotCard" style="display:none;">
+      <h1 data-common-i18n="forgot_title" style="font-size:20px;">🔑 Mot de passe oublié</h1>
+      <label data-common-i18n="field_email">Email</label>
+      <input type="email" id="forgotEmail">
+      <button type="button" class="submit" id="forgotSendBtn" data-common-i18n="btn_send_reset">Envoyer le lien</button>
+      <div class="msg" id="forgotMsg"></div>
+      <a class="switch-link" href="#" id="backToLoginLink" data-common-i18n="link_back_to_login">← Retour à la connexion</a>
+    </div>
+    <div class="card" id="resetCard" style="display:none;">
+      <h1 data-common-i18n="reset_title" style="font-size:20px;">🔑 Nouveau mot de passe</h1>
+      <label data-common-i18n="field_new_password">Nouveau mot de passe</label>
+      <input type="password" id="newPasswordInput">
+      <button type="button" class="submit" id="resetConfirmBtn" data-common-i18n="btn_set_new_password">Valider</button>
+      <div class="msg" id="resetMsg"></div>
     </div>
     <a class="back" href="/" data-common-i18n="back_home">← Retour accueil</a>
     <script src="/static/js/site_lang.js"></script>
@@ -8391,6 +8467,58 @@ def login_page():
         }
       }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = translateAuthMsg('Kullanıcı bulunamadı.'); });
     });
+
+    const loginCard = document.getElementById('loginCard');
+    const forgotCard = document.getElementById('forgotCard');
+    const resetCard = document.getElementById('resetCard');
+    document.getElementById('forgotLink').addEventListener('click', function(e){
+      e.preventDefault(); loginCard.style.display='none'; forgotCard.style.display='block';
+    });
+    document.getElementById('backToLoginLink').addEventListener('click', function(e){
+      e.preventDefault(); forgotCard.style.display='none'; loginCard.style.display='block';
+    });
+    document.getElementById('forgotSendBtn').addEventListener('click', function(){
+      const email = document.getElementById('forgotEmail').value.trim();
+      const msgEl = document.getElementById('forgotMsg');
+      if (!email) return;
+      fetch('/api/auth/request_reset', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email})
+      }).then(r => r.json()).then(d => {
+        msgEl.className = 'msg success';
+        if (d.sent) {
+          msgEl.textContent = ct('reset_email_sent_msg');
+        } else {
+          msgEl.textContent = ct('reset_email_not_configured_msg') + ' ' + d.link;
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = ct('err_generic'); });
+    });
+    document.getElementById('resetConfirmBtn').addEventListener('click', function(){
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('reset');
+      const newPassword = document.getElementById('newPasswordInput').value;
+      const msgEl = document.getElementById('resetMsg');
+      if (!newPassword) return;
+      fetch('/api/auth/confirm_reset', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({token: token, newPassword: newPassword})
+      }).then(r => r.json()).then(d => {
+        if (d.ok) {
+          msgEl.className = 'msg success';
+          msgEl.textContent = ct('reset_success_msg');
+          setTimeout(() => { window.location.href = '/login'; }, 1200);
+        } else {
+          msgEl.className = 'msg error';
+          msgEl.textContent = ct('reset_invalid_msg');
+        }
+      }).catch(() => { msgEl.className = 'msg error'; msgEl.textContent = ct('err_generic'); });
+    });
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset')) {
+        loginCard.style.display='none'; forgotCard.style.display='none'; resetCard.style.display='block';
+      }
+    })();
     </script>
     """)
 
