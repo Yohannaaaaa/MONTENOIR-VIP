@@ -69,19 +69,19 @@
   .lane-vignette { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(ellipse 80% 90% at 50% 35%, transparent 55%, rgba(0,0,0,.4) 100%); }
   .target-arrows { position: absolute; top: 42%; left: 0; right: 0; height: 4%; z-index: 1; }
   .arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid rgba(180,20,20,.8); transform: translateX(-50%); }
-  .pin-rack { position: absolute; top: 6%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 15px); grid-template-rows: repeat(4, 16px); gap: 3px; align-items: end; justify-content: center; z-index: 1; }
-  .pin { width: 13px; height: 24px; position: relative; justify-self: center;
+  .pin-rack { position: absolute; top: 6%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 24px); grid-template-rows: repeat(4, 25px); gap: 4px; align-items: end; justify-content: center; z-index: 1; }
+  .pin { width: 20px; height: 38px; position: relative; justify-self: center;
     --pin-c1: #fffdf6; --pin-c2: #ad9e7f;
     --pin-shape: polygon(50% 0%, 66% 3%, 74% 9%, 69% 17%, 60% 24%, 58% 29%, 69% 34%, 79% 47%, 76% 70%, 66% 90%, 62% 100%, 38% 100%, 34% 90%, 24% 70%, 21% 47%, 31% 34%, 42% 29%, 40% 24%, 31% 17%, 26% 9%, 34% 3%);
-    background: radial-gradient(ellipse 140% 60% at 50% 100%, rgba(0,0,0,.6), transparent 70%);
-    filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
+    background: radial-gradient(ellipse 130% 55% at 50% 100%, rgba(0,0,0,.55), transparent 72%);
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,.55)); transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
   .pin::before { content: ''; position: absolute; inset: 0; clip-path: var(--pin-shape);
     background:
-      radial-gradient(circle at 30% 8%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.8) 9%, transparent 20%),
-      linear-gradient(100deg, var(--pin-c2) 0%, var(--pin-c1) 26%, var(--pin-c1) 64%, var(--pin-c2) 100%);
+      radial-gradient(circle at 30% 8%, rgba(255,255,255,1) 0%, rgba(255,255,255,.9) 7%, transparent 16%),
+      linear-gradient(100deg, var(--pin-c2) 0%, var(--pin-c1) 22%, var(--pin-c1) 68%, var(--pin-c2) 100%);
     box-shadow: inset 1px 0 1px rgba(255,255,255,.7), inset -1px 0 2px rgba(0,0,0,.25); }
   .pin::after { content: ''; position: absolute; inset: 0; clip-path: var(--pin-shape);
-    background: linear-gradient(180deg, transparent 0 20%, #7a1620 20% 23%, #c0272d 23% 27%, #e0393f 27% 29%, #c0272d 29% 32%, #7a1620 32% 35%, transparent 35% 100%); }
+    background: linear-gradient(180deg, transparent 0 19%, #7a1620 19% 22%, #c0272d 22% 27%, #e0393f 27% 29%, #c0272d 29% 34%, #7a1620 34% 37%, transparent 37% 100%); }
   .pin.down { opacity: .92; transform: rotate(92deg) translateY(9px) translateX(2px) scale(.82); }
   .pin-1 { grid-column: 2 / span 1; grid-row: 1; }
   .pin-2 { grid-column: 1; grid-row: 2; } .pin-3 { grid-column: 3; grid-row: 2; }
