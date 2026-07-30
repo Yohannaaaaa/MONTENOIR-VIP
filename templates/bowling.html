@@ -43,32 +43,51 @@
 
   .lane-wrap { width: 100%; margin-bottom: 12px; position: relative; }
   .flying-ball { position: absolute; border-radius: 50%; pointer-events: none; z-index: 50;
-    background: radial-gradient(circle at 32% 26%, #fbf3e2 0%, #e6d3ae 32%, #c9ab7c 62%, #9c8058 85%, #6f5a3c 100%);
+    background: radial-gradient(circle at 26% 19%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 5%, transparent 13%),
+      radial-gradient(circle at 32% 26%, #fbf3e2 0%, #e6d3ae 32%, #c9ab7c 62%, #9c8058 85%, #6f5a3c 100%);
     box-shadow: 0 10px 20px rgba(0,0,0,.7), inset 0 -10px 16px rgba(0,0,0,.35), inset 0 10px 14px rgba(255,255,255,.55); }
-  .lane-scene { position: relative; width: 100%; max-width: 640px; height: 54vh; min-height: 360px; max-height: 560px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c; box-shadow: 0 25px 55px rgba(0,0,0,.85), inset 0 0 0 3px rgba(212,175,55,.5); }
-  .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #123a5c, #061a2c); box-shadow: 0 0 34px rgba(70,170,255,.7), inset 0 -3px 0 rgba(212,175,55,.6); z-index: 2; }
-  .lane-gutter { position: absolute; top: 12%; bottom: 0; background: linear-gradient(180deg, #2c2c2c, #0a0a0a); }
+  .lane-scene { position: relative; width: 100%; max-width: 640px; height: 54vh; min-height: 360px; max-height: 560px; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c;
+    box-shadow: 0 25px 55px rgba(0,0,0,.85), 0 0 0 1px rgba(255,236,180,.35), inset 0 0 0 3px rgba(212,175,55,.5), inset 0 0 0 5px rgba(0,0,0,.4); }
+  .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #1c507d, #061a2c); box-shadow: 0 0 34px rgba(70,170,255,.7), inset 0 -3px 0 rgba(212,175,55,.6), inset 0 3px 10px rgba(180,225,255,.35); z-index: 2; }
+  .lane-backwall::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.18) 48%, transparent 62%); background-size: 260% 100%; animation: backwallSheen 6s ease-in-out infinite; }
+  @keyframes backwallSheen { 0%,100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
+  .lane-gutter { position: absolute; top: 12%; bottom: 0; background: linear-gradient(180deg, #333, #0a0a0a); }
   .lane-gutter.left { left: 0; width: 50%; clip-path: polygon(0 100%, 33% 100%, 46.5% 0, 0 0); }
   .lane-gutter.right { right: 0; width: 50%; clip-path: polygon(100% 100%, 67% 100%, 53.5% 0, 100% 0); }
-  .lane-gutter::before { content: ''; position: absolute; top: 0; bottom: 0; left: 42%; width: 8%; background: linear-gradient(90deg, rgba(140,200,255,.15), rgba(210,235,255,.85) 50%, rgba(140,200,255,.15)); box-shadow: 0 0 10px rgba(140,200,255,.6); }
+  .lane-gutter::before { content: ''; position: absolute; top: 0; bottom: 0; left: 42%; width: 8%;
+    background: linear-gradient(180deg, rgba(210,235,255,.9), rgba(140,200,255,.25) 40%, rgba(210,235,255,.9) 60%, rgba(140,200,255,.25) 80%, rgba(210,235,255,.9));
+    background-size: 100% 220%; box-shadow: 0 0 10px rgba(140,200,255,.6); animation: gutterShimmer 3.4s linear infinite; }
   .lane-gutter.right::before { left: 50%; }
-  .lane-floor { position: absolute; top: 12%; bottom: 0; left: 0; right: 0; clip-path: polygon(9% 100%, 91% 100%, 55% 0, 45% 0); background: repeating-conic-gradient(from 205deg at 50% 0%, #d9b485 0deg 2.1deg, #c49a68 2.1deg 4.2deg); box-shadow: inset 0 0 60px rgba(0,0,0,.12); }
-  .lane-floor::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,250,235,.28), transparent 35%); }
+  @keyframes gutterShimmer { 0% { background-position: 0 0; } 100% { background-position: 0 -220%; } }
+  .lane-floor { position: absolute; top: 12%; bottom: 0; left: 0; right: 0; clip-path: polygon(9% 100%, 91% 100%, 55% 0, 45% 0); background: repeating-conic-gradient(from 205deg at 50% 0%, #dcb98a 0deg 2.1deg, #b78d5c 2.1deg 4.2deg); box-shadow: inset 0 0 70px rgba(0,0,0,.18); }
+  .lane-floor::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,250,235,.35), transparent 32%), linear-gradient(20deg, transparent 40%, rgba(255,255,255,.14) 50%, transparent 60%); }
+  .lane-spotlight { position: absolute; top: 0; width: 42%; height: 78%; z-index: 3; pointer-events: none; mix-blend-mode: screen;
+    background: radial-gradient(ellipse 65% 100% at 50% 0%, rgba(255,244,210,.4), rgba(255,244,210,0) 72%); }
+  .lane-spotlight.left { left: -6%; }
+  .lane-spotlight.right { right: -6%; }
+  .lane-vignette { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(ellipse 80% 90% at 50% 35%, transparent 55%, rgba(0,0,0,.4) 100%); }
   .target-arrows { position: absolute; top: 33%; left: 0; right: 0; height: 4%; z-index: 1; }
   .arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid rgba(180,20,20,.8); transform: translateX(-50%); }
   .pin-rack { position: absolute; top: 13.5%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 11px); grid-template-rows: repeat(4, 12px); gap: 2px; align-items: end; justify-content: center; z-index: 1; }
-  .pin { width: 7px; height: 15px; position: relative; justify-self: center; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
-  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 50% 50% 35% 35% / 65% 65% 30% 30%; background: linear-gradient(100deg, #a99878 0%, #fffdf5 18%, #fffdf5 68%, #b8a678 100%); border: 0.5px solid #8a6c2a; }
+  .pin { width: 7px; height: 15px; position: relative; justify-self: center;
+    background: radial-gradient(ellipse 140% 60% at 50% 100%, rgba(0,0,0,.55), transparent 70%);
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
+  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 50% 50% 35% 35% / 65% 65% 30% 30%;
+    background: radial-gradient(circle at 30% 12%, rgba(255,255,255,.95), transparent 22%),
+      linear-gradient(100deg, #a99878 0%, #fffdf5 18%, #fffdf5 68%, #b8a678 100%);
+    border: 0.5px solid #8a6c2a; }
   .pin::after { content: ''; position: absolute; left: -0.5px; right: -0.5px; top: 26%; height: 15%; background: linear-gradient(100deg, #7a1620, #c0272d 40%, #c0272d 60%, #7a1620); }
   .pin.down { opacity: .92; transform: rotate(92deg) translateY(9px) translateX(2px) scale(.82); }
   .pin-1 { grid-column: 2 / span 1; grid-row: 1; }
   .pin-2 { grid-column: 1; grid-row: 2; } .pin-3 { grid-column: 3; grid-row: 2; }
   .pin-4 { grid-column: 1; grid-row: 3; } .pin-5 { grid-column: 2; grid-row: 3; } .pin-6 { grid-column: 3; grid-row: 3; }
   .pin-7 { grid-column: 1; grid-row: 4; } .pin-8 { grid-column: 2; grid-row: 4; } .pin-9 { grid-column: 3; grid-row: 4; } .pin-10 { grid-column: 4; grid-row: 4; }
-  .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 21vh; min-height: 150px; max-height: 210px; background: repeating-linear-gradient(100deg, #d9b485 0 26px, #c49a68 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
-  .pins-up-label { position: absolute; top: 8px; right: 16px; color: #ffe08a; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+  .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 21vh; min-height: 150px; max-height: 210px; background: repeating-linear-gradient(100deg, #d9b485 0 26px, #c49a68 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .lane-foreground::before { content: ''; position: absolute; left: 50%; bottom: 14%; width: 130px; height: 26px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.45), transparent 72%); z-index: 0; }
+  .pins-up-label { position: absolute; top: 8px; right: 16px; color: #ffe08a; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,.8); z-index: 2; }
   .ball { width: 112px; height: 112px; border-radius: 50%;
-    background: radial-gradient(circle at 32% 26%, #fbf3e2 0%, #e6d3ae 32%, #c9ab7c 62%, #9c8058 85%, #6f5a3c 100%);
+    background: radial-gradient(circle at 26% 19%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.55) 6%, transparent 15%),
+      radial-gradient(circle at 32% 26%, #fbf3e2 0%, #e6d3ae 32%, #c9ab7c 62%, #9c8058 85%, #6f5a3c 100%);
     box-shadow: 0 14px 26px rgba(0,0,0,.7), inset 0 -14px 22px rgba(0,0,0,.35), inset 0 14px 18px rgba(255,255,255,.55);
     position: relative; z-index: 1; transition: transform .5s cubic-bezier(.55,0,.85,.35); cursor: grab; }
   .ball.my-turn { box-shadow: 0 14px 26px rgba(0,0,0,.7), inset 0 -14px 22px rgba(0,0,0,.35), inset 0 14px 18px rgba(255,255,255,.55), 0 0 30px rgba(212,175,55,.75); }
@@ -164,6 +183,9 @@
         <div class="target-arrows" id="targetArrows"></div>
       </div>
       <div class="pin-rack" id="pinRack"></div>
+      <div class="lane-spotlight left"></div>
+      <div class="lane-spotlight right"></div>
+      <div class="lane-vignette"></div>
     </div>
     <div class="lane-foreground">
       <div class="pins-up-label" id="pinsUpLabel"></div>
