@@ -70,24 +70,23 @@
   .target-arrows { position: absolute; top: 42%; left: 0; right: 0; height: 4%; z-index: 1; }
   .arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid rgba(180,20,20,.8); transform: translateX(-50%); }
   .pin-rack { position: absolute; top: 6%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 15px); grid-template-rows: repeat(4, 16px); gap: 3px; align-items: end; justify-content: center; z-index: 1; }
-  .pin { width: 9px; height: 21px; position: relative; justify-self: center; transform-style: preserve-3d;
+  .pin { width: 11px; height: 22px; position: relative; justify-self: center; transform-style: preserve-3d;
+    --pin-c1: #2f7fd0; --pin-c2: #123252;
     background: radial-gradient(ellipse 140% 60% at 50% 100%, rgba(0,0,0,.6), transparent 70%);
     filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
-  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 50% 50% 30% 30% / 62% 62% 20% 20%; transform: translateZ(1px);
+  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 46% 46% 30% 30% / 58% 58% 18% 18%; transform: translateZ(1px);
     background:
-      radial-gradient(circle at 30% 9%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.75) 9%, transparent 18%),
-      linear-gradient(180deg, transparent 0 21%, #f3cf7d 21% 23.5%, transparent 23.5% 41%, #f3cf7d 41% 43.5%, transparent 43.5% 80%, #f3cf7d 80% 82.5%, transparent 82.5% 100%),
-      linear-gradient(100deg, #7d6949 0%, #fffdf6 24%, #fffdf6 60%, #8a7350 100%);
-    box-shadow: inset 1px 0 1px rgba(255,255,255,.5), inset -1px 0 2px rgba(0,0,0,.35);
-    border: 0.5px solid #d4af37; }
-  .pin::after { content: ''; position: absolute; left: -0.5px; right: -0.5px; top: 23.5%; height: 17.5%; transform: translateZ(1.5px);
-    background: linear-gradient(100deg, #6e1119, #c0272d 38%, #e0393f 52%, #c0272d 64%, #6e1119 100%);
-    box-shadow: 0 0 0 0.5px rgba(212,175,55,.9); }
+      radial-gradient(circle at 30% 10%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.8) 10%, transparent 22%),
+      linear-gradient(100deg, var(--pin-c2) 0%, var(--pin-c1) 26%, var(--pin-c1) 64%, var(--pin-c2) 100%);
+    box-shadow: inset 1px 0 1px rgba(255,255,255,.55), inset -1px 0 2px rgba(0,0,0,.4);
+    border: 0.5px solid rgba(0,0,0,.4); }
+  .pin::after { content: ''; position: absolute; left: -0.5px; right: -0.5px; top: 20%; height: 11%; transform: translateZ(1.5px);
+    background: linear-gradient(100deg, #050505, #262626 40%, #3a3a3a 52%, #262626 64%, #050505 100%); }
   .pin.down { opacity: .92; transform: rotate(92deg) translateY(9px) translateX(2px) scale(.82); }
-  .pin-1 { grid-column: 2 / span 1; grid-row: 1; }
-  .pin-2 { grid-column: 1; grid-row: 2; } .pin-3 { grid-column: 3; grid-row: 2; }
-  .pin-4 { grid-column: 1; grid-row: 3; } .pin-5 { grid-column: 2; grid-row: 3; } .pin-6 { grid-column: 3; grid-row: 3; }
-  .pin-7 { grid-column: 1; grid-row: 4; } .pin-8 { grid-column: 2; grid-row: 4; } .pin-9 { grid-column: 3; grid-row: 4; } .pin-10 { grid-column: 4; grid-row: 4; }
+  .pin-1 { grid-column: 2 / span 1; grid-row: 1; --pin-c1: #2f7fd0; --pin-c2: #123252; }
+  .pin-2 { grid-column: 1; grid-row: 2; --pin-c1: #ea7f2e; --pin-c2: #7a3b0d; } .pin-3 { grid-column: 3; grid-row: 2; --pin-c1: #ea7f2e; --pin-c2: #7a3b0d; }
+  .pin-4 { grid-column: 1; grid-row: 3; --pin-c1: #f2ce46; --pin-c2: #8a6a10; } .pin-5 { grid-column: 2; grid-row: 3; --pin-c1: #d8302f; --pin-c2: #6e1010; } .pin-6 { grid-column: 3; grid-row: 3; --pin-c1: #f2ce46; --pin-c2: #8a6a10; }
+  .pin-7 { grid-column: 1; grid-row: 4; --pin-c1: #33a852; --pin-c2: #0f5222; } .pin-8 { grid-column: 2; grid-row: 4; --pin-c1: #2f7fd0; --pin-c2: #123252; } .pin-9 { grid-column: 3; grid-row: 4; --pin-c1: #d8302f; --pin-c2: #6e1010; } .pin-10 { grid-column: 4; grid-row: 4; --pin-c1: #33a852; --pin-c2: #0f5222; }
   .lane-foreground { position: relative; max-width: 640px; margin: 0 auto; height: 21vh; min-height: 150px; max-height: 210px; background: repeating-linear-gradient(100deg, #d9b485 0 26px, #c49a68 26px 30px); border-radius: 0 0 14px 14px; box-shadow: inset 0 0 0 3px rgba(212,175,55,.35), 0 10px 25px rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .lane-foreground::before { content: ''; position: absolute; left: 50%; bottom: 14%; width: 130px; height: 26px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,.45), transparent 72%); z-index: 0; }
   .pins-up-label { position: absolute; top: 8px; right: 16px; color: #ffe08a; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,.8); z-index: 2; }
