@@ -52,7 +52,7 @@
   .lane-backwall { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: linear-gradient(180deg, #1c507d, #061a2c); box-shadow: 0 0 34px rgba(70,170,255,.7), inset 0 -3px 0 rgba(212,175,55,.6), inset 0 3px 10px rgba(180,225,255,.35); z-index: 2; }
   .lane-backwall::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.18) 48%, transparent 62%); background-size: 260% 100%; animation: backwallSheen 6s ease-in-out infinite; }
   @keyframes backwallSheen { 0%,100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
-  .lane-3d { position: absolute; top: 12%; bottom: 0; left: 18%; right: 18%; transform-style: preserve-3d; transform-origin: 50% 0%; transform: rotateX(56deg); }
+  .lane-3d { position: absolute; top: 12%; bottom: 0; left: 18%; right: 18%; transform-style: preserve-3d; transform-origin: 50% 0%; transform: rotateX(38deg); }
   .lane-gutter { position: absolute; top: 0; bottom: 0; width: 24%; background: linear-gradient(180deg, #333, #0a0a0a); }
   .lane-gutter.left { left: -24%; }
   .lane-gutter.right { right: -24%; }
@@ -70,17 +70,17 @@
   .target-arrows { position: absolute; top: 42%; left: 0; right: 0; height: 4%; z-index: 1; }
   .arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid rgba(180,20,20,.8); transform: translateX(-50%); }
   .pin-rack { position: absolute; top: 6%; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 15px); grid-template-rows: repeat(4, 16px); gap: 3px; align-items: end; justify-content: center; z-index: 1; }
-  .pin { width: 11px; height: 22px; position: relative; justify-self: center; transform-style: preserve-3d;
+  .pin { width: 11px; height: 22px; position: relative; justify-self: center;
     --pin-c1: #2f7fd0; --pin-c2: #123252;
     background: radial-gradient(ellipse 140% 60% at 50% 100%, rgba(0,0,0,.6), transparent 70%);
     filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
-  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 46% 46% 30% 30% / 58% 58% 18% 18%; transform: translateZ(1px);
+  .pin::before { content: ''; position: absolute; inset: 0; border-radius: 46% 46% 30% 30% / 58% 58% 18% 18%;
     background:
       radial-gradient(circle at 30% 10%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.8) 10%, transparent 22%),
       linear-gradient(100deg, var(--pin-c2) 0%, var(--pin-c1) 26%, var(--pin-c1) 64%, var(--pin-c2) 100%);
     box-shadow: inset 1px 0 1px rgba(255,255,255,.55), inset -1px 0 2px rgba(0,0,0,.4);
     border: 0.5px solid rgba(0,0,0,.4); }
-  .pin::after { content: ''; position: absolute; left: -0.5px; right: -0.5px; top: 20%; height: 11%; transform: translateZ(1.5px);
+  .pin::after { content: ''; position: absolute; left: -0.5px; right: -0.5px; top: 20%; height: 11%;
     background: linear-gradient(100deg, #050505, #262626 40%, #3a3a3a 52%, #262626 64%, #050505 100%); }
   .pin.down { opacity: .92; transform: rotate(92deg) translateY(9px) translateX(2px) scale(.82); }
   .pin-1 { grid-column: 2 / span 1; grid-row: 1; --pin-c1: #2f7fd0; --pin-c2: #123252; }
