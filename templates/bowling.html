@@ -75,11 +75,17 @@
     transition: opacity .9s ease-in, transform .9s cubic-bezier(.3,.9,.4,1); }
   .pin::before { content: ''; position: absolute; inset: 0; clip-path: polygon(50% 0%, 66% 3%, 74% 9%, 69% 17%, 60% 24%, 58% 29%, 69% 34%, 79% 47%, 76% 70%, 66% 90%, 62% 100%, 38% 100%, 34% 90%, 24% 70%, 21% 47%, 31% 34%, 42% 29%, 40% 24%, 31% 17%, 26% 9%, 34% 3%);
     background:
-      radial-gradient(circle at 30% 8%, rgba(255,255,255,1) 0%, rgba(255,255,255,.9) 7%, transparent 16%),
-      linear-gradient(100deg, #ad9e7f 0%, #fffdf6 22%, #fffdf6 68%, #ad9e7f 100%);
-    box-shadow: inset 1px 0 1px rgba(255,255,255,.7), inset -1px 0 2px rgba(0,0,0,.25); }
+      radial-gradient(circle at 28% 7%, rgba(255,255,255,1) 0%, rgba(255,255,255,.95) 6%, transparent 15%),
+      radial-gradient(ellipse 60% 22% at 50% 62%, rgba(255,255,255,.55), transparent 70%),
+      linear-gradient(100deg, #a8987a 0%, #fffdf8 20%, #fffdf8 70%, #a8987a 100%);
+    box-shadow: inset 1px 0 1px rgba(255,255,255,.8), inset -1px 0 2px rgba(0,0,0,.22); }
   .pin::after { content: ''; position: absolute; inset: 0; clip-path: polygon(50% 0%, 66% 3%, 74% 9%, 69% 17%, 60% 24%, 58% 29%, 69% 34%, 79% 47%, 76% 70%, 66% 90%, 62% 100%, 38% 100%, 34% 90%, 24% 70%, 21% 47%, 31% 34%, 42% 29%, 40% 24%, 31% 17%, 26% 9%, 34% 3%);
-    background: linear-gradient(180deg, transparent 0 19%, #7a1620 19% 22%, #c0272d 22% 27%, #e0393f 27% 29%, #c0272d 29% 34%, #7a1620 34% 37%, transparent 37% 100%); }
+    background: linear-gradient(180deg,
+      transparent 0 16%,
+      #7a1620 16% 18%, #d8323a 18% 21%, #f0605f 21% 22%, #d8323a 22% 24%, #7a1620 24% 25.5%,
+      transparent 25.5% 29%,
+      #7a1620 29% 31%, #d8323a 31% 34%, #f0605f 34% 35%, #d8323a 35% 37%, #7a1620 37% 38.5%,
+      transparent 38.5% 100%); }
   .pin.down { opacity: .92; transform: rotate(92deg) translateY(9px) translateX(2px) scale(.82); }
   .pin-1 { grid-column: 2 / span 1; grid-row: 1; }
   .pin-2 { grid-column: 1; grid-row: 2; } .pin-3 { grid-column: 3; grid-row: 2; }
