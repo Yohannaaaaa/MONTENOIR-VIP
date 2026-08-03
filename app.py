@@ -6307,10 +6307,10 @@ def owns_full_group(room, username, group):
     return bool(cells) and all(room["owners"].get(str(i))==username for i in cells)
 
 def m_room(code,owner):
-    return {"code":code,"owner":owner,"started":False,"turnIndex":0,"players":{},"owners":{},"houses":{},"hotels":{},"mortgages":{},"lastLog":"Oda hazır.","lastDice":None}
+    return {"code":code,"owner":owner,"started":False,"turnIndex":0,"turnOrder":[],"players":{},"owners":{},"houses":{},"hotels":{},"mortgages":{},"pendingBuy":None,"winner":None,"lastLog":"Oda hazır.","lastDice":None}
 
 def m_public(r):
-    return {"code":r["code"],"started":r["started"],"turnIndex":r["turnIndex"],"players":r["players"],"owners":r["owners"],"houses":r.get("houses",{}),"hotels":r.get("hotels",{}),"mortgages":r.get("mortgages",{}),"lastLog":r["lastLog"],"lastDice":r["lastDice"],"settings":r.get("settings",{"players":4,"turns":"illimite","target":7000})}
+    return {"code":r["code"],"started":r["started"],"turnIndex":r["turnIndex"],"turnOrder":r.get("turnOrder",[]),"players":r["players"],"owners":r["owners"],"houses":r.get("houses",{}),"hotels":r.get("hotels",{}),"mortgages":r.get("mortgages",{}),"pendingBuy":r.get("pendingBuy"),"winner":r.get("winner"),"lastLog":r["lastLog"],"lastDice":r["lastDice"],"settings":r.get("settings",{"players":4,"turns":"illimite","target":7000})}
 
 def m_code():
     while True:
@@ -6318,73 +6318,159 @@ def m_code():
         if c not in METROPOLY_ROOMS:
             return c
 
+MONOPOLY_TOKENS={"car","jackpot","boat","horse","hat","cat"}
+
+def m_by_sid(r,sid):
+    # Resolve the acting player from the socket connection itself instead of trusting
+    # a client-supplied username — otherwise anyone who knows another player's name
+    # could roll their dice, buy their properties, or spend their turn for them.
+    for name,p in r["players"].items():
+        if p.get("sid")==sid:
+            return name
+    return None
+
+def m_current_turn_user(r):
+    order=r.get("turnOrder") or list(r["players"].keys())
+    if not order: return None
+    return order[r["turnIndex"]%len(order)]
+
+def m_advance_turn(r):
+    order=r.get("turnOrder") or list(r["players"].keys())
+    n=len(order)
+    if n==0: return
+    for _ in range(n):
+        r["turnIndex"]=(r["turnIndex"]+1)%n
+        if not r["players"].get(order[r["turnIndex"]],{}).get("bankrupt"):
+            return
+
+def m_release_assets(r,username):
+    # A bankrupt player's properties/houses/hotels go back to the bank instead of
+    # staying locked forever (unbuyable by anyone, but still un-payable rent for them).
+    for cell,owner in list(r["owners"].items()):
+        if owner==username:
+            del r["owners"][cell]
+            r.get("houses",{}).pop(cell,None)
+            r.get("hotels",{}).pop(cell,None)
+
+def m_check_winner(r):
+    if r.get("winner") or not r.get("started"): return
+    if len(r["players"])<2: return
+    alive=[n for n,p in r["players"].items() if not p.get("bankrupt")]
+    if len(alive)==1:
+        r["winner"]=alive[0]
+        r["lastLog"]=alive[0]+" tüm rakiplerini iflas ettirdi ve oyunu kazandı! 🏆"
 
 @socketio.on("monopoly_create_room")
 def mc(data):
-    u=(data or {}).get("username","Misafir").strip() or "Misafir"; t=(data or {}).get("token","🎩")
+    u=(data or {}).get("username","Misafir").strip()[:20] or "Misafir"
+    t=(data or {}).get("token","hat")
+    if t not in MONOPOLY_TOKENS: t="hat"
     c=m_code(); r=m_room(c,u); METROPOLY_ROOMS[c]=r; join_room(c)
-    r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False}
+    r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False,"sid":request.sid}
     r["lastLog"]=u+" odayı kurdu."; emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_join_room")
 def mj(data):
-    u=(data or {}).get("username","Misafir").strip() or "Misafir"; t=(data or {}).get("token","🎩"); c=((data or {}).get("code","") or "").strip().upper()
+    u=(data or {}).get("username","Misafir").strip()[:20] or "Misafir"
+    t=(data or {}).get("token","hat")
+    if t not in MONOPOLY_TOKENS: t="hat"
+    c=((data or {}).get("code","") or "").strip().upper()
     if c not in METROPOLY_ROOMS: emit("monopoly_error",{"code":"room_not_found"}); return
-    r=METROPOLY_ROOMS[c]; join_room(c)
+    r=METROPOLY_ROOMS[c]
+    if r["started"] and u not in r["players"]:
+        emit("monopoly_error",{"code":"room_not_found"}); return
+    join_room(c)
     if u not in r["players"]:
-        r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False}
+        r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False,"sid":request.sid}
+    else:
+        r["players"][u]["sid"]=request.sid
     r["lastLog"]=u+" odaya girdi."; emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_start_game")
 def ms(data):
     c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
-    if r: r["started"]=True; r["lastLog"]="Oyun başladı."; emit("monopoly_room_state",m_public(r),room=c)
+    if not r or r["started"]: return
+    u=m_by_sid(r,request.sid)
+    if u!=r["owner"]: emit("monopoly_error",{"code":"not_owner"}); return
+    with _state_lock:
+        r["started"]=True
+        r["turnOrder"]=list(r["players"].keys())
+        r["turnIndex"]=0
+        r["lastLog"]="Oyun başladı."
+    emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_roll_dice")
 def mr(data):
-    c=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip(); r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]: emit("monopoly_error",{"code":"missing"}); return
-    names=[n for n,p in r["players"].items() if not p.get("bankrupt")]
-    if u!=names[r["turnIndex"]%len(names)]: emit("monopoly_error",{"code":"not_your_turn"}); return
-    p=r["players"][u]; d1=random.randint(1,6); d2=random.randint(1,6); d=d1+d2; old=p["position"]; new=(old+d)%len(METROPOLY_CELLS)
-    if new<old: p["money"]+=200
-    p["position"]=new; name,typ,price,rent,grp=METROPOLY_CELLS[new]; log=f"{u} zar: {d1}+{d2}. {name}."
-    pending=False
-    if typ in ["property","transport","utility"]:
-        owner=r["owners"].get(str(new))
-        if owner and owner!=u:
-            pay=rent+int(r["houses"].get(str(new),0))*15
-            if r.get("hotels",{}).get(str(new)): pay=rent*5
-            p["money"]-=pay; r["players"][owner]["money"]+=pay; log+=f" {owner} sahibine {pay}€ kira ödedi."
-        elif not owner: pending=True; log+=f" Satın alınabilir: {price}€."
-    elif typ=="tax": p["money"]-=200; log+=" Vergi: -200€."
-    elif typ=="bank": b=random.choice([50,75,100,150]); p["money"]+=b; log+=f" Banka: +{b}€."
-    elif typ=="bonus": b=random.choice([-50,50,100,150]); p["money"]+=b; log+=f" Enchères: {b}€."
-    elif typ=="jail": p["jailed"]=1; log+=" Prison."
-    if p["money"]<0: p["bankrupt"]=True; log+=" İflas."
-    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
-    if names2 and not pending: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
-    r["lastDice"]=d; r["lastLog"]=log
+    c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
+    if not r: emit("monopoly_error",{"code":"missing"}); return
+    u=m_by_sid(r,request.sid)
+    if not u: emit("monopoly_error",{"code":"missing"}); return
+    if r.get("winner"): return
+    if r.get("pendingBuy"): emit("monopoly_error",{"code":"not_your_turn"}); return
+    if u!=m_current_turn_user(r): emit("monopoly_error",{"code":"not_your_turn"}); return
+    with _state_lock:
+        p=r["players"][u]; d1=random.randint(1,6); d2=random.randint(1,6); d=d1+d2; old=p["position"]; new=(old+d)%len(METROPOLY_CELLS)
+        if new<old: p["money"]+=200
+        p["position"]=new; name,typ,price,rent,grp=METROPOLY_CELLS[new]; log=f"{u} zar: {d1}+{d2}. {name}."
+        pending=False
+        if typ in ["property","transport","utility"]:
+            owner=r["owners"].get(str(new))
+            if owner and owner!=u:
+                if typ=="utility":
+                    pay=d*(10 if owns_full_group(r,owner,"utility") else 4)
+                elif r.get("hotels",{}).get(str(new)):
+                    pay=rent*5
+                else:
+                    pay=rent+int(r["houses"].get(str(new),0))*15
+                # Never invent money: the payer can only hand over what they actually have.
+                actual=min(pay,max(p["money"],0))
+                p["money"]-=actual; r["players"][owner]["money"]+=actual
+                log+=f" {owner} sahibine {actual}€ kira ödedi."
+            elif not owner:
+                pending=True; r["pendingBuy"]={"user":u,"cell":new}; log+=f" Satın alınabilir: {price}€."
+        elif typ=="tax": p["money"]-=200; log+=" Vergi: -200€."
+        elif typ=="bank": b=random.choice([50,75,100,150]); p["money"]+=b; log+=f" Banka: +{b}€."
+        elif typ=="bonus": b=random.choice([-50,50,100,150]); p["money"]+=b; log+=f" Enchères: {b}€."
+        elif typ=="jail": p["jailed"]=1; log+=" Prison."
+        if p["money"]<0:
+            p["bankrupt"]=True; log+=" İflas."
+            m_release_assets(r,u)
+        if not pending:
+            m_advance_turn(r)
+        m_check_winner(r)
+        r["lastDice"]=d; r["lastLog"]=log
     emit("monopoly_animate_move",{"username":u,"from":old,"to":new,"dice1":d1,"dice2":d2,"cellName":name,"cellPrice":price,"cellType":typ,"cellGroup":grp,"state":m_public(r),"pendingBuy":pending},room=c)
 
 @socketio.on("monopoly_buy_property")
 def mb(data):
-    c=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip(); r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]: return
-    p=r["players"][u]; pos=p["position"]; name,typ,price,rent,grp=METROPOLY_CELLS[pos]
-    if typ not in ["property","transport","utility"] or str(pos) in r["owners"] or p["money"]<price: emit("monopoly_error",{"code":"cannot_buy"}); return
-    p["money"]-=price; r["owners"][str(pos)]=u; r["lastLog"]=f"{u}, {name} aldı."
-    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
-    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
+    c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
+    if not r: return
+    u=m_by_sid(r,request.sid)
+    if not u: return
+    pb=r.get("pendingBuy")
+    if not pb or pb.get("user")!=u: emit("monopoly_error",{"code":"cannot_buy"}); return
+    with _state_lock:
+        pos=pb["cell"]; p=r["players"][u]; name,typ,price,rent,grp=METROPOLY_CELLS[pos]
+        if typ not in ["property","transport","utility"] or str(pos) in r["owners"] or p["money"]<price:
+            r["pendingBuy"]=None
+            emit("monopoly_error",{"code":"cannot_buy"}); return
+        p["money"]-=price; r["owners"][str(pos)]=u; r["lastLog"]=f"{u}, {name} aldı."
+        r["pendingBuy"]=None
+        m_advance_turn(r)
     emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_skip_buy")
 def monopoly_skip_buy(data):
-    c=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip(); r=METROPOLY_ROOMS.get(c)
+    c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
     if not r: return
-    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
-    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
-    r["lastLog"]=u+" achète pas."
+    u=m_by_sid(r,request.sid)
+    if not u: return
+    pb=r.get("pendingBuy")
+    if not pb or pb.get("user")!=u: return
+    with _state_lock:
+        r["pendingBuy"]=None
+        r["lastLog"]=u+" satın almadı."
+        m_advance_turn(r)
     emit("monopoly_room_state",m_public(r),room=c)
 
 
@@ -6392,8 +6478,11 @@ def monopoly_skip_buy(data):
 def me(data):
     c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
     if not r: return
-    names=[n for n,p in r["players"].items() if not p.get("bankrupt")]
-    if names: r["turnIndex"]=(r["turnIndex"]+1)%len(names); r["lastLog"]="Sıra: "+names[r["turnIndex"]]
+    u=m_by_sid(r,request.sid)
+    if not u or r.get("winner") or r.get("pendingBuy") or u!=m_current_turn_user(r): return
+    with _state_lock:
+        m_advance_turn(r)
+        r["lastLog"]="Sıra: "+(m_current_turn_user(r) or "-")
     emit("monopoly_room_state",m_public(r),room=c)
 
 
@@ -6416,8 +6505,10 @@ def me(data):
 @socketio.on("monopoly_chat")
 def monopoly_chat(data):
     c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip() or "Oyuncu"
-    msg=(data or {}).get("message","").strip()
+    r=METROPOLY_ROOMS.get(c)
+    if not r: return
+    u=m_by_sid(r,request.sid) or "Oyuncu"
+    msg=((data or {}).get("message","") or "").strip()[:200]
     if c and msg:
         emit("monopoly_chat_message",{"username":u,"message":msg},room=c)
 
@@ -6425,11 +6516,11 @@ def monopoly_chat(data):
 @socketio.on("monopoly_add_house")
 def monopoly_add_house(data):
     c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip()
     cell=str((data or {}).get("cell",""))
     r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]:
-        return
+    if not r: return
+    u=m_by_sid(r,request.sid)
+    if not u: return
     r.setdefault("houses",{})
     r.setdefault("hotels",{})
     try:
@@ -6462,19 +6553,20 @@ def monopoly_add_house(data):
     if r["players"][u]["money"]<50:
         emit("monopoly_error",{"code":"no_money_house"})
         return
-    r["players"][u]["money"]-=50
-    r["houses"][cell]=count+1
-    r["lastLog"]=u+" a construit une maison sur "+name+"."
+    with _state_lock:
+        r["players"][u]["money"]-=50
+        r["houses"][cell]=count+1
+        r["lastLog"]=u+" a construit une maison sur "+name+"."
     emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_add_hotel")
 def monopoly_add_hotel(data):
     c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip()
     cell=str((data or {}).get("cell",""))
     r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]:
-        return
+    if not r: return
+    u=m_by_sid(r,request.sid)
+    if not u: return
     r.setdefault("houses",{})
     r.setdefault("hotels",{})
     try:
@@ -6502,10 +6594,11 @@ def monopoly_add_hotel(data):
     if r["players"][u]["money"]<100:
         emit("monopoly_error",{"code":"no_money_hotel"})
         return
-    r["players"][u]["money"]-=100
-    r["houses"][cell]=0
-    r["hotels"][cell]=1
-    r["lastLog"]=u+" a construit un hôtel sur "+name+"."
+    with _state_lock:
+        r["players"][u]["money"]-=100
+        r["houses"][cell]=0
+        r["hotels"][cell]=1
+        r["lastLog"]=u+" a construit un hôtel sur "+name+"."
     emit("monopoly_room_state",m_public(r),room=c)
 
 

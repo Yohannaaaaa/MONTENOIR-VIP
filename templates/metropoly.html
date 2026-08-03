@@ -40,40 +40,9 @@
   .player-item:last-child { border-bottom: none; }
   #gameScreen { background: #0a0a0a; padding: 30px; overflow-y: auto; }
   .game-container { display: flex; gap: 30px; justify-content: center; align-items: flex-start; width: 100%; max-width: 1600px; margin: 0 auto; }
-  .board { position: relative; width: 1200px; height: 800px; border: 8px solid #d4af37; border-radius: 25px; background: linear-gradient(135deg, #0a0a0a, #1a1512); box-shadow: 0 0 70px rgba(212,175,55,0.8), inset 0 0 40px rgba(212,175,55,0.15); overflow: hidden; }
-  .board-inner { width: 100%; height: 100%; position: relative; background: linear-gradient(rgba(5,5,5,0.3), rgba(5,5,5,0.4)), url('/static/metroploy_plateau_lux.png.png') center/cover no-repeat; transform-style: preserve-3d; }
-  .board-title { display: none; }
-  .dices { position: absolute; top: 470px; left: 50%; transform: translateX(-50%); display: flex; gap: 100px; perspective: 3000px; z-index: 3; }
-  .dices::before { content: ''; position: absolute; left: 50%; bottom: -20px; width: 340px; height: 36px; background: radial-gradient(ellipse, rgba(0,0,0,0.6), transparent 70%); transform: translateX(-50%); z-index: -1; }
-  .dice-container { width: 140px; height: 140px; position: relative; transform-style: preserve-3d; }
-  .dice-3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.8s ease-out; }
-  .dice-3d.rolling { animation: spin 1.5s cubic-bezier(0.25,0.46,0.45,0.94); }
-  @keyframes spin {
-    0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
-    25% { transform: rotateX(720deg) rotateY(720deg) rotateZ(360deg); }
-    50% { transform: rotateX(1440deg) rotateY(1440deg) rotateZ(720deg); }
-    75% { transform: rotateX(2160deg) rotateY(2160deg) rotateZ(1080deg); }
-    100% { transform: rotateX(0) rotateY(0) rotateZ(0); }
-  }
-  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, #ffd700 0%, #ffed4e 15%, #ffe680 30%, #daa520 50%, #b8860b 70%, #8b6914 100%); border: 6px solid #8a7550; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: inset -8px -8px 25px rgba(0,0,0,0.5), inset 12px 12px 35px rgba(255,255,255,0.8), 0 20px 50px rgba(0,0,0,0.8), 0 0 60px rgba(212,175,55,1); }
-  .die-face::before { content: ''; position: absolute; width: 100%; height: 100%; background: radial-gradient(ellipse 60% 40% at 30% 30%, rgba(255,255,255,0.8), transparent 70%); border-radius: 20px; }
-  .pip-dot { position: absolute; width: 18px; height: 18px; background: radial-gradient(circle at 35% 35%, #2a2a2a, #000); border-radius: 50%; box-shadow: inset 0 3px 6px rgba(0,0,0,1), 0 2px 4px rgba(0,0,0,0.8); z-index: 2; }
-  .face-1 { transform: translateZ(70px); }
-  .face-2 { transform: rotateY(180deg) translateZ(70px); }
-  .face-3 { transform: rotateY(90deg) translateZ(70px); }
-  .face-4 { transform: rotateY(-90deg) translateZ(70px); }
-  .face-5 { transform: rotateX(90deg) translateZ(70px); }
-  .face-6 { transform: rotateX(-90deg) translateZ(70px); }
-  .tokens-layer { position: absolute; width: 100%; height: 100%; z-index: 2; pointer-events: none; transform-style: preserve-3d; }
-  .token { position: absolute; width: 60px; height: 60px; transition: left 0.35s cubic-bezier(0.25,0.46,0.45,0.94), top 0.35s cubic-bezier(0.25,0.46,0.45,0.94); transform: translate(-50%,-85%); z-index: 10; }
-  .token img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(212,175,55,0.9)) drop-shadow(0 12px 6px rgba(0,0,0,0.7)); }
-  .token::after { content: ''; position: absolute; left: 50%; bottom: -4px; width: 30px; height: 9px; background: radial-gradient(ellipse, rgba(0,0,0,0.6), transparent 70%); transform: translateX(-50%); z-index: -1; }
-  .token.landing { animation: tokenLand 0.35s ease-out; }
-  @keyframes tokenLand {
-    0% { transform: translate(-50%,-110%) scale(1.12); }
-    60% { transform: translate(-50%,-70%) scale(0.92); }
-    100% { transform: translate(-50%,-85%) scale(1); }
-  }
+  .board-column { width: 1200px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; }
+  .board { position: relative; width: 100%; aspect-ratio: 3/2; border: 8px solid #d4af37; border-radius: 25px; background: linear-gradient(135deg, #0a0a0a, #1a1512); box-shadow: 0 0 70px rgba(212,175,55,0.8), inset 0 0 40px rgba(212,175,55,0.15); overflow: hidden; }
+  #metropolyCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .panel { width: 320px; background: rgba(26,26,26,0.98); border: 2px solid #d4af37; border-radius: 20px; padding: 20px; box-shadow: 0 0 40px rgba(212,175,55,0.3); max-height: 900px; overflow-y: auto; }
   .panel-box { background: rgba(10,10,10,0.9); border: 1px solid #d4af37; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
   .panel-title { color: #d4af37; font-weight: bold; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #d4af37; }
@@ -89,8 +58,8 @@
   .buy-actions { display: flex; gap: 10px; }
   .buy-actions button { flex: 1; }
   .skip-btn { background: #444 !important; color: #f5e6d3 !important; border-color: #666 !important; }
-  .dice-total-badge { position: absolute; top: -58px; left: 50%; transform: translateX(-50%); width: 72px; height: 72px; border-radius: 50%; background: radial-gradient(circle, #1a1512, #000); border: 3px solid #d4af37; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; color: #d4af37; box-shadow: 0 0 25px rgba(212,175,55,0.7), inset 0 0 15px rgba(212,175,55,0.3); z-index: 4; }
-  .build-toolbar { width: 1200px; max-width: 100%; margin: 0 auto; padding: 10px 20px 25px; }
+  .dice-total-badge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 62px; height: 62px; border-radius: 50%; background: radial-gradient(circle, #1a1512, #000); border: 3px solid #d4af37; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #d4af37; box-shadow: 0 0 25px rgba(212,175,55,0.7), inset 0 0 15px rgba(212,175,55,0.3); z-index: 4; pointer-events: none; }
+  .build-toolbar { width: 100%; padding: 10px 16px 20px; background: rgba(10,10,10,0.9); border: 1px solid #d4af37; border-radius: 16px; }
   .build-toolbar-title { color: #d4af37; font-weight: bold; text-align: center; margin-bottom: 14px; letter-spacing: 1px; text-transform: uppercase; font-size: 14px; }
   .build-levels { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
   .build-level-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(10,10,10,0.85); border: 2px solid #d4af37; border-radius: 14px; padding: 14px 18px; min-width: 100px; cursor: pointer; transition: all 0.25s; font-family: inherit; }
@@ -144,33 +113,24 @@
 
 <div id="gameScreen" class="screen">
   <div class="game-container">
-    <div class="board">
-      <div class="board-inner">
-        <div class="board-title">METROPOLY</div>
-        <div class="tokens-layer" id="tokensLayer"></div>
-        <div class="dices">
-          <div class="dice-total-badge" id="diceTotalBadge" style="display:none;"></div>
-          <div class="dice-container">
-            <div class="dice-3d" id="dice1">
-              <div class="die-face face-1"><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div>
-              <div class="die-face face-2"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-3"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-4"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-5"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-6"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 20%;"></div><div class="pip-dot" style="top: 50%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-            </div>
-          </div>
-          <div class="dice-container">
-            <div class="dice-3d" id="dice2">
-              <div class="die-face face-1"><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div></div>
-              <div class="die-face face-2"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-3"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-4"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-5"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-              <div class="die-face face-6"><div class="pip-dot" style="top: 20%; left: 20%;"></div><div class="pip-dot" style="top: 20%; right: 20%;"></div><div class="pip-dot" style="top: 50%; left: 20%;"></div><div class="pip-dot" style="top: 50%; right: 20%;"></div><div class="pip-dot" style="bottom: 20%; left: 20%;"></div><div class="pip-dot" style="bottom: 20%; right: 20%;"></div></div>
-            </div>
-          </div>
+    <div class="board-column">
+      <div class="board">
+        <canvas id="metropolyCanvas"></canvas>
+        <div class="dice-total-badge" id="diceTotalBadge" style="display:none;"></div>
+      </div>
+
+      <div class="panel-box buy-box-under-board" id="buyBox" style="display:none;">
+        <div class="panel-title" data-i18n="title_free_property">🏠 Propriété Libre</div>
+        <div class="buy-info" id="buyInfo"></div>
+        <div class="buy-actions">
+          <button class="roll-btn" id="buyBtn" style="background:linear-gradient(135deg,#d4af37,#a0860d) !important; color:#1a1a1a !important;" data-i18n="btn_buy">ACHETER</button>
+          <button class="roll-btn skip-btn" id="skipBuyBtn" data-i18n="btn_skip">PASSER</button>
         </div>
+      </div>
+
+      <div class="build-toolbar" id="buildToolbar" style="display:none;">
+        <div class="build-toolbar-title" id="buildToolbarTitle"></div>
+        <div class="build-levels" id="buildLevels"></div>
       </div>
     </div>
 
@@ -179,14 +139,6 @@
         <div class="panel-title" data-i18n="title_roll">🎲 Lancer Les Dés</div>
         <div class="action-log" id="turnIndicator" style="margin-bottom:10px;"></div>
         <button class="roll-btn" id="rollBtn" data-i18n="btn_roll">LANCER</button>
-      </div>
-      <div class="panel-box" id="buyBox" style="display:none;">
-        <div class="panel-title" data-i18n="title_free_property">🏠 Propriété Libre</div>
-        <div class="buy-info" id="buyInfo"></div>
-        <div class="buy-actions">
-          <button class="roll-btn" id="buyBtn" style="background:linear-gradient(135deg,#d4af37,#a0860d) !important; color:#1a1a1a !important;" data-i18n="btn_buy">ACHETER</button>
-          <button class="roll-btn skip-btn" id="skipBuyBtn" data-i18n="btn_skip">PASSER</button>
-        </div>
       </div>
       <div class="panel-box">
         <div class="panel-title" data-i18n="title_players">👥 Joueurs</div>
@@ -198,14 +150,10 @@
       </div>
     </div>
   </div>
-
-  <div class="build-toolbar" id="buildToolbar" style="display:none;">
-    <div class="build-toolbar-title" id="buildToolbarTitle"></div>
-    <div class="build-levels" id="buildLevels"></div>
-  </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
 const socket = io();
 let user = '', token = 'hat', room = '', isRolling = false, playerTokens = {};
 
@@ -661,38 +609,133 @@ function buildPerimeter(n, w, h, marginX, marginY) {
 }
 const POS = buildPerimeter(N_CELLS, 1200, 800, 130, 110);
 
-function setDice(el, val) {
-  const rot = {1: 'rotateX(0) rotateY(0)', 2: 'rotateX(0) rotateY(180deg)', 3: 'rotateX(0) rotateY(-90deg)', 4: 'rotateX(0) rotateY(90deg)', 5: 'rotateX(-90deg) rotateY(0)', 6: 'rotateX(90deg) rotateY(0)'};
-  el.style.transform = rot[val] || 'rotateX(0) rotateY(0)';
-}
+// escape user-controlled text before it ever reaches innerHTML
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function show(s) {
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
   document.getElementById(s).classList.add('active');
 }
 
-const TOKEN_OFFSETS = [{dx:0,dy:0},{dx:-16,dy:-16},{dx:16,dy:-16},{dx:-16,dy:16},{dx:16,dy:16},{dx:0,dy:-22},{dx:0,dy:22}];
+// ==================== 3D board (Three.js) ====================
+const BOARD_W = 2.4, BOARD_H = 1.6;
+function worldPos(pixelPos) {
+  return { x: (pixelPos.x / 1200 - 0.5) * BOARD_W, z: (pixelPos.y / 800 - 0.5) * BOARD_H };
+}
+const WPOS = POS.map(worldPos);
 
-function placeToken(u, p, jump, offsetIndex, offsetCount) {
-  let el = document.querySelector(`[data-u="${u}"]`);
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'token';
-    el.dataset.u = u;
-    el.innerHTML = `<img src="${tokenIcon(playerTokens[u])}" alt="${u}">`;
-    document.getElementById('tokensLayer').appendChild(el);
-  }
-  const {x, y} = POS[p % N_CELLS];
-  const off = (offsetCount && offsetCount > 1) ? TOKEN_OFFSETS[offsetIndex % TOKEN_OFFSETS.length] : {dx: 0, dy: 0};
-  el.style.left = (x + off.dx) + 'px';
-  el.style.top = (y + off.dy) + 'px';
-  if (jump) {
-    el.classList.remove('landing');
-    void el.offsetWidth;
-    el.classList.add('landing');
-  }
+const metCanvas = document.getElementById('metropolyCanvas');
+const mRenderer = new THREE.WebGLRenderer({ canvas: metCanvas, antialias: true });
+mRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+mRenderer.outputColorSpace = THREE.SRGBColorSpace;
+mRenderer.shadowMap.enabled = true;
+mRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const mScene = new THREE.Scene();
+mScene.background = new THREE.Color(0x0a0a0a);
+
+const mCamera = new THREE.PerspectiveCamera(40, 1, 0.05, 20);
+mCamera.position.set(0, 2.3, 1.55);
+mCamera.lookAt(0, 0, 0);
+
+function resizeMetRenderer() {
+  const rect = metCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  mRenderer.setSize(rect.width, rect.height, false);
+  mCamera.aspect = rect.width / rect.height;
+  mCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeMetRenderer).observe(metCanvas.parentElement);
+
+mScene.add(new THREE.AmbientLight(0x9a8f80, 0.75));
+const mKey = new THREE.DirectionalLight(0xfff4d6, 2.2);
+mKey.position.set(0.6, 3, 1.2);
+mKey.castShadow = true;
+mKey.shadow.mapSize.set(1024, 1024);
+mScene.add(mKey);
+const mFill = new THREE.PointLight(0xffe6b0, 10, 6);
+mFill.position.set(-1.2, 1.6, -0.8);
+mScene.add(mFill);
+
+const mTexLoader = new THREE.TextureLoader();
+const boardTex = mTexLoader.load('/static/metroploy_plateau_lux.png.png');
+boardTex.colorSpace = THREE.SRGBColorSpace;
+const boardPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(BOARD_W, BOARD_H),
+  new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.6, metalness: 0.05 })
+);
+boardPlane.rotation.x = -Math.PI / 2;
+boardPlane.receiveShadow = true;
+mScene.add(boardPlane);
+
+// ---- dice ----
+function makePipTexture(n) {
+  const S = 128, c = document.createElement('canvas'); c.width = S; c.height = S;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffe680'; ctx.fillRect(0, 0, S, S);
+  ctx.strokeStyle = '#8a7550'; ctx.lineWidth = 6; ctx.strokeRect(3, 3, S - 6, S - 6);
+  const pts = {
+    1: [[0.5,0.5]], 2: [[0.28,0.28],[0.72,0.72]], 3: [[0.26,0.26],[0.5,0.5],[0.74,0.74]],
+    4: [[0.28,0.28],[0.72,0.28],[0.28,0.72],[0.72,0.72]],
+    5: [[0.28,0.28],[0.72,0.28],[0.5,0.5],[0.28,0.72],[0.72,0.72]],
+    6: [[0.28,0.24],[0.72,0.24],[0.28,0.5],[0.72,0.5],[0.28,0.76],[0.72,0.76]]
+  }[n] || [];
+  ctx.fillStyle = '#1a1410';
+  pts.forEach(([px,py]) => { ctx.beginPath(); ctx.arc(px*S, py*S, S*0.09, 0, Math.PI*2); ctx.fill(); });
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const pipTex = [1,2,3,4,5,6].map(makePipTexture);
+// BoxGeometry material order is [+X,-X,+Y,-Y,+Z,-Z]; assign pip counts so opposite faces sum to 7.
+const DIE_FACE_VALUES = [3, 4, 1, 6, 2, 5];
+const DIE_ROTATION = {
+  1: [0, 0, 0], 2: [-Math.PI/2, 0, 0], 3: [0, 0, Math.PI/2],
+  4: [0, 0, -Math.PI/2], 5: [Math.PI/2, 0, 0], 6: [Math.PI, 0, 0]
+};
+function makeDie() {
+  const mats = DIE_FACE_VALUES.map(v => new THREE.MeshStandardMaterial({ map: pipTex[v-1], roughness: 0.35 }));
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.15), mats);
+  mesh.castShadow = true;
+  return mesh;
+}
+const die1 = makeDie(); die1.position.set(-0.14, 0.4, 0);
+const die2 = makeDie(); die2.position.set(0.14, 0.4, 0);
+mScene.add(die1, die2);
+let diceSpinUntil = 0;
+function rollDiceAnimation(v1, v2) {
+  diceSpinUntil = performance.now() + 650;
+  const r1 = DIE_ROTATION[v1], r2 = DIE_ROTATION[v2];
+  setTimeout(() => {
+    die1.rotation.set(r1[0], r1[1], r1[2]);
+    die2.rotation.set(r2[0], r2[1], r2[2]);
+  }, 650);
 }
 
+// ---- tokens (billboards) ----
+const tokenSprites = {}; // username -> THREE.Sprite
+const TOKEN_OFFSETS = [{dx:0,dz:0},{dx:-0.05,dz:-0.05},{dx:0.05,dz:-0.05},{dx:-0.05,dz:0.05},{dx:0.05,dz:0.05},{dx:0,dz:-0.07},{dx:0,dz:0.07}];
+function getTokenSprite(u) {
+  let s = tokenSprites[u];
+  if (!s) {
+    const tex = mTexLoader.load(tokenIcon(playerTokens[u]));
+    tex.colorSpace = THREE.SRGBColorSpace;
+    s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+    s.scale.set(0.13, 0.13, 1);
+    mScene.add(s);
+    tokenSprites[u] = s;
+  }
+  return s;
+}
+function placeToken(u, p, jump, offsetIndex, offsetCount) {
+  const s = getTokenSprite(u);
+  const { x, z } = WPOS[p % N_CELLS];
+  const off = (offsetCount && offsetCount > 1) ? TOKEN_OFFSETS[offsetIndex % TOKEN_OFFSETS.length] : { dx: 0, dz: 0 };
+  s.position.set(x + off.dx, 0.075, z + off.dz);
+  if (jump) {
+    activeTweens.push({ mesh: s, from: s.position.clone(), to: s.position.clone(), start: performance.now(), duration: 260, bounce: true, onDone: () => {} });
+  }
+}
 function relayoutTokens(players) {
   const groups = {};
   Object.keys(players).forEach(u => {
@@ -704,7 +747,6 @@ function relayoutTokens(players) {
     groups[pos].forEach((u, i) => placeToken(u, Number(pos), false, i, groups[pos].length));
   });
 }
-
 function moveToken(u, f, t, players) {
   const steps = (t - f + N_CELLS) % N_CELLS || 1;
   let s = 0;
@@ -712,16 +754,71 @@ function moveToken(u, f, t, players) {
     const pos = (f + s) % N_CELLS;
     if (s === steps && players) {
       relayoutTokens(players);
-      const el = document.querySelector(`[data-u="${u}"]`);
-      if (el) { el.classList.remove('landing'); void el.offsetWidth; el.classList.add('landing'); }
     } else {
       placeToken(u, pos, true);
     }
     s++;
-    if (s <= steps) setTimeout(anim, 350);
+    if (s <= steps) setTimeout(anim, 220);
   };
   anim();
 }
+
+// ---- houses / hotels on the board ----
+const buildingMeshes = {}; // cellIdx -> THREE.Group
+function renderBuildings(state) {
+  Object.values(buildingMeshes).forEach(g => mScene.remove(g));
+  for (const k in buildingMeshes) delete buildingMeshes[k];
+  const houses = state.houses || {}, hotels = state.hotels || {}, owners = state.owners || {};
+  Object.keys(owners).forEach(cellStr => {
+    const idx = Number(cellStr);
+    const cell = CELLS[idx];
+    if (!cell || cell[1] !== 'property') return;
+    const grp = cell[4];
+    const color = new THREE.Color(GROUP_COLORS[grp] || '#d4af37');
+    const { x, z } = WPOS[idx];
+    const g = new THREE.Group();
+    if (hotels[cellStr]) {
+      const hotel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.4, roughness: 0.3 }));
+      hotel.position.set(0, 0.025, 0);
+      hotel.castShadow = true;
+      g.add(hotel);
+    } else {
+      const count = houses[cellStr] || 0;
+      for (let i = 0; i < count; i++) {
+        const house = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.026, 0.026), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
+        house.position.set((i - (count - 1) / 2) * 0.032, 0.013, 0);
+        house.castShadow = true;
+        g.add(house);
+      }
+    }
+    g.position.set(x, 0.003, z - 0.05);
+    mScene.add(g);
+    buildingMeshes[idx] = g;
+  });
+}
+
+// ---- animation loop with a small tween queue (token hops) ----
+const activeTweens = [];
+function tickTweens(now) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    const tw = activeTweens[i];
+    const t = Math.min(1, (now - tw.start) / tw.duration);
+    if (tw.bounce) tw.mesh.position.y = 0.075 + Math.sin(t * Math.PI) * 0.05;
+    if (t >= 1) { tw.onDone(); activeTweens.splice(i, 1); }
+  }
+}
+function animateMet(now) {
+  requestAnimationFrame(animateMet);
+  if (now < diceSpinUntil) {
+    die1.rotation.x += 0.35; die1.rotation.y += 0.28;
+    die2.rotation.x += 0.31; die2.rotation.y += 0.24;
+  }
+  tickTweens(now);
+  mRenderer.render(mScene, mCamera);
+}
+resizeMetRenderer();
+requestAnimationFrame(animateMet);
+// ==================== end 3D board ====================
 
 document.querySelectorAll('.token-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -753,23 +850,22 @@ document.getElementById('startBtn').addEventListener('click', () => {
 document.getElementById('rollBtn').addEventListener('click', () => {
   if (isRolling || document.getElementById('rollBtn').disabled) return;
   isRolling = true;
-  document.getElementById('dice1').classList.add('rolling');
-  document.getElementById('dice2').classList.add('rolling');
+  diceSpinUntil = performance.now() + 900;
   document.getElementById('diceTotalBadge').style.display = 'none';
   document.getElementById('rollBtn').disabled = true;
   setTimeout(() => {
     socket.emit('monopoly_roll_dice', {code: room, username: user});
-  }, 1500);
+  }, 900);
 });
 
 function updateTurnUI(state) {
-  const names = Object.keys(state.players);
-  if (!names.length) return;
-  const current = names[state.turnIndex % names.length];
+  const order = (state.turnOrder && state.turnOrder.length) ? state.turnOrder : Object.keys(state.players);
+  if (!order.length) return;
+  const current = order[state.turnIndex % order.length];
   const mine = current === user;
   const buyPending = document.getElementById('buyBox').style.display !== 'none';
-  document.getElementById('rollBtn').disabled = !mine || isRolling || buyPending;
-  document.getElementById('turnIndicator').textContent = mine ? (buyPending ? t('turn_buy_pending') : t('turn_mine')) : t('turn_other', {name: current});
+  document.getElementById('rollBtn').disabled = !mine || isRolling || buyPending || !!state.winner;
+  document.getElementById('turnIndicator').textContent = state.winner ? '' : (mine ? (buyPending ? t('turn_buy_pending') : t('turn_mine')) : t('turn_other', {name: current}));
 }
 
 const BUILD_COSTS = [50, 50, 50, 50, 100];
@@ -824,47 +920,55 @@ document.getElementById('skipBuyBtn').addEventListener('click', () => {
   document.getElementById('buyBox').style.display = 'none';
 });
 
+let lastWinner = null;
+function checkWinner(state) {
+  if (state.winner && state.winner !== lastWinner) {
+    lastWinner = state.winner;
+    setTimeout(() => alert(state.winner === user ? '🏆 Kazandın!' : '🏆 ' + state.winner + ' kazandı!'), 300);
+  } else if (!state.winner) {
+    lastWinner = null;
+  }
+}
+
 socket.on('monopoly_room_state', (state) => {
   room = state.code;
   Object.keys(state.players).forEach(u => playerTokens[u] = state.players[u].token);
   if (!state.started) {
     show('lobbyScreen');
     document.getElementById('roomCodeDisplay').textContent = state.code;
-    document.getElementById('lobbyPlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-item"><img src="${tokenIcon(state.players[u].token)}" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px;">${u}</div>`).join('');
+    document.getElementById('lobbyPlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-item"><img src="${tokenIcon(state.players[u].token)}" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px;">${esc(u)}</div>`).join('');
   } else {
     show('gameScreen');
-    setDice(document.getElementById('dice1'), 1);
-    setDice(document.getElementById('dice2'), 1);
     relayoutTokens(state.players);
-    document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${u}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
+    renderBuildings(state);
+    document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${esc(u)}${state.players[u].bankrupt ? ' 💀' : ''}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
     document.getElementById('buyBox').style.display = 'none';
     document.getElementById('diceTotalBadge').style.display = 'none';
     renderBuildToolbar(state);
     updateTurnUI(state);
+    checkWinner(state);
   }
 });
 
 socket.on('monopoly_animate_move', (data) => {
   const {username, from, to, dice1, dice2, state, cellName, cellPrice, cellType, pendingBuy} = data;
-  setDice(document.getElementById('dice1'), dice1);
-  setDice(document.getElementById('dice2'), dice2);
-  document.getElementById('dice1').classList.remove('rolling');
-  document.getElementById('dice2').classList.remove('rolling');
+  rollDiceAnimation(dice1, dice2);
   const badge = document.getElementById('diceTotalBadge');
-  badge.textContent = dice1 + dice2;
-  badge.style.display = 'flex';
-  setTimeout(() => moveToken(username, from, to, state.players), 700);
+  setTimeout(() => { badge.textContent = dice1 + dice2; badge.style.display = 'flex'; }, 650);
+  setTimeout(() => moveToken(username, from, to, state.players), 650);
   document.getElementById('lastAction').textContent = t('last_action', {user: username, d1: dice1, d2: dice2, sum: dice1 + dice2, to});
   isRolling = false;
-  document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${u}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
+  document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${esc(u)}${state.players[u].bankrupt ? ' 💀' : ''}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
   if (username === user && pendingBuy) {
     document.getElementById('buyInfo').textContent = t('buy_info', {name: cellName, price: cellPrice, type: t('cell_type_' + cellType)});
     document.getElementById('buyBox').style.display = 'block';
   } else {
     document.getElementById('buyBox').style.display = 'none';
   }
+  renderBuildings(state);
   renderBuildToolbar(state);
   updateTurnUI(state);
+  checkWinner(state);
 });
 
 socket.on('monopoly_error', (d) => {
