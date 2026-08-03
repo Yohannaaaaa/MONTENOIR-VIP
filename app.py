@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading
 try:
     import psycopg2
 except Exception:
@@ -17,6 +17,15 @@ app.config['SECRET_KEY'] = 'codenamesvip'
 socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 rooms = {}
 MAX_PLAYERS = 10
+# socketio runs each handler on its own OS thread (async_mode='threading'); this guards
+# the read-modify-write sections of shared room/user state that must not interleave
+# (e.g. two players revealing a card at the same instant).
+_state_lock = threading.RLock()
+# sid -> exact username key, set only once a socket connection has proven it knows
+# that account's password via register_account/login_account. Password-protected
+# accounts may only be claimed (sit, create_room, chips, ...) by an authenticated sid;
+# accounts with no password (casual/guest play) are unaffected and stay frictionless.
+authenticated_sids = {}
 OWNER_USERNAME = "yohanna"
 
 
@@ -227,8 +236,12 @@ def save_users(users):
     data_dir = os.path.dirname(USERS_FILE)
     if data_dir and not os.path.exists(data_dir):
         os.makedirs(data_dir, exist_ok=True)
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
+    # Write to a temp file and rename over the real one so a crash/interleaved write
+    # mid-dump can never leave users.json truncated or malformed.
+    tmp_path = USERS_FILE + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, USERS_FILE)
 
 def hash_password(password):
 
@@ -387,6 +400,18 @@ def ensure_user_account(account):
     users = load_users()
     key = find_user_key(users, account)
     if key:
+        # A password-protected account can only be claimed by a socket that has
+        # actually logged into it (register_account/login_account) — otherwise anyone
+        # could type a registered user's name and act as them (spend their chips,
+        # inflate their stats, etc). Accounts with no password (guest/casual play)
+        # keep working exactly as before.
+        if users[key].get('password_hash'):
+            try:
+                sid = request.sid
+            except RuntimeError:
+                sid = None
+            if authenticated_sids.get(sid) != key:
+                return None
         return key
     users[account] = {
         'email': '',
@@ -557,6 +582,9 @@ def is_admin(code):
 
 def switch_turn(g):
     g['clueActive'] = False; g['guessLimit'] = 0; g['guessesMade'] = 0; g['clue'] = 'İpucu: -'
+    for c in g['cards']:
+        if not c['open']:
+            c['guessedBy'] = []; c['guessed'] = False; c['guessedTeam'] = ''
     if g['turn'] == 'blue':
         g['turn'] = 'red'; g['phase'] = "🧠 Kırmızı takımın Spymaster'ı ipucu düşünüyor..."
     else:
@@ -585,8 +613,11 @@ def update_winner(code, text):
     save_users(users)
 
 def save_history(code, text):
-    st = rooms[code]['stats']; g = rooms[code]['game']; st['gameNo'] += 1
-    st['wordHistory'].append({'gameNo': st['gameNo'], 'winner': text, 'words': [c['word'] + '(' + c['role'] + ')' for c in g['cards']]})
+    # roundNo already reflects the number players saw for this round (set once,
+    # when the round started via new_game_event) — don't bump the counter again
+    # here, or every finished round skips a number relative to the next one.
+    st = rooms[code]['stats']; g = rooms[code]['game']
+    st['wordHistory'].append({'gameNo': g.get('roundNo', st.get('gameNo', 0)), 'winner': text, 'words': [c['word'] + '(' + c['role'] + ')' for c in g['cards']]})
 
 def can_clue(p, g):
     return bool(p and ((g['turn'] == 'blue' and p['role'] == 'blueSpy') or (g['turn'] == 'red' and p['role'] == 'redSpy')))
@@ -2437,6 +2468,16 @@ animation:luxShine 5s infinite;
     70%{transform:scale(.95) rotate(-2deg);filter:brightness(.6);}
     100%{transform:scale(1);filter:brightness(1);}
 }
+.card.justRevealed{
+    animation:cardRevealPop 1.1s cubic-bezier(.34,1.56,.64,1) both;
+    z-index:50;
+}
+@keyframes cardRevealPop{
+    0%{transform:perspective(900px) translateY(0) translateZ(0) scale(1) rotateX(0deg);box-shadow:0 0 0 rgba(212,175,55,0);}
+    30%{transform:perspective(900px) translateY(-90px) translateZ(140px) scale(1.6) rotateX(10deg);box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 45px rgba(255,215,0,.9);}
+    65%{transform:perspective(900px) translateY(-90px) translateZ(140px) scale(1.6) rotateX(10deg);box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 45px rgba(255,215,0,.9);}
+    100%{transform:perspective(900px) translateY(0) translateZ(0) scale(1) rotateX(0deg);box-shadow:0 0 0 rgba(212,175,55,0);}
+}
 
 .card .wordText{
     display:flex;
@@ -3109,6 +3150,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <button id="menuSettingsBtn" type="button">⚙️ Ayarlar</button>
 <button id="menuWordsBtn" type="button">📚 Kelimeler</button>
 <button id="menuBetBtn" type="button">🎰 Bahis</button>
+<button id="menuShopBtn" type="button">🛒 Mağaza</button>
 
 <button id="ownerPanelBtn" type="button" style="display:none;">👑 Owner Panel</button>
 </div>
@@ -3133,7 +3175,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <div id="ownerPanelResult" style="color:#ffd700;"></div><div id="ownerUserList"></div>
 </div></div>
 <div id="winnerOverlay"><div id="winnerText"></div></div>
-<div id="settingsModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2 data-i18n='settings'>⚙️ Ayarlar</h2><h3>Kurallar</h3><p>Spymaster ipucu vermeden kart açılamaz. Sadece sırası olan takım tahmin yapar ve kart açar. Seyirciler sadece izler ve sanal jetonla bahis yapabilir.</p><p>Doğru takım rengi açılırsa takım devam eder. Rakip renk veya nötr açılırsa sıra geçer. Suikastçı açılırsa açan takım kaybeder.</p><h3>Varsayılan Diller</h3><select id="languageSelect"><option>Türkçe</option><option>English</option><option>Français</option><option>Русский</option><option>Nederlands</option></select></div></div>
+<div id="settingsModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>⚙️ Ayarlar</h2><h3>Kurallar</h3><p>Spymaster ipucu vermeden kart açılamaz. Sadece sırası olan takım tahmin yapar ve kart açar. Seyirciler sadece izler ve sanal jetonla bahis yapabilir.</p><p>Doğru takım rengi açılırsa takım devam eder. Rakip renk veya nötr açılırsa sıra geçer. Suikastçı açılırsa açan takım kaybeder.</p><h3>Varsayılan Diller</h3><select id="languageSelect"><option>Türkçe</option><option>English</option><option>Français</option><option>Русский</option><option>Nederlands</option></select></div></div>
 <div id="wordsModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>📚 Kelime Serileri</h2><p>Yeni seri seçince yeni oyun başlatılır.</p><button onclick="setCategory('default')">📁 CodeNames8.txt</button><button onclick="setCategory('animals')">🐾 Hayvanlar Serisi</button><button onclick="setCategory('adult')">🔞 18+ Serisi</button></div></div>
 <div id="shopModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>🎰 Boutique VIP & Jetons</h2><p><b>Mode sécurisé :</b> Stripe/PayPal sont en mode démo. Aucun paiement réel n’est encaissé dans cette version.</p><p>Bakiyen: <b id="shopChips">1000</b> 🪙</p><h3>🪙 Jeton Al - Démo</h3><div class="paymentDemoBox"><b>Stripe Démo</b><br><button onclick="demoBuyChips(1000,\'Stripe\')">Stripe: +1000 🪙</button><button onclick="demoBuyChips(5000,\'Stripe\')">Stripe: +5000 🪙</button><button onclick="demoBuyChips(20000,\'Stripe\')">Stripe: +20000 🪙</button></div><div class="paymentDemoBox"><b>PayPal Démo</b><br><button onclick="demoBuyChips(1000,\'PayPal\')">PayPal: +1000 🪙</button><button onclick="demoBuyChips(5000,\'PayPal\')">PayPal: +5000 🪙</button><button onclick="demoBuyChips(20000,\'PayPal\')">PayPal: +20000 🪙</button></div><hr><h3>👑 VIP Ol</h3><div class="shopItem">VIP Bronze — 3000 🪙 / 7 gün <button onclick="buyVipWithChips(\'vip-bronze\')">VIP Al</button></div><div class="shopItem">VIP Gold — 9000 🪙 / 30 gün <button onclick="buyVipWithChips(\'vip-gold\')">VIP Al</button></div><div class="shopItem">VIP Diamond — 25000 🪙 / 90 gün <button onclick="buyVipWithChips(\'vip-diamond\')">VIP Al</button></div><hr><h3>🪙 Jeton Bonus</h3><button onclick="buyVirtualChips(1000)">Bonus +1000 🪙</button><button onclick="buyVirtualChips(5000)">Bonus +5000 🪙</button><button onclick="buyVirtualChips(20000)">Bonus +20000 🪙</button><button onclick="buyVirtualChips(75000)">Bonus +75000 🪙</button><hr><h3>🖼️ Avatar Cadres</h3><div class="shopItem">Altın Çerçeve — 1000 🪙 <button onclick="buyCosmetic('frame-gold')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('frame-gold')">Kullan</button></div><div class="shopItem">VIP Çerçeve — 5000 🪙 <button onclick="buyCosmetic('frame-vip')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('frame-vip')">Kullan</button></div><div class="shopItem">Efsanevi Çerçeve — 15000 🪙 <button onclick="buyCosmetic('frame-legendary')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('frame-legendary')">Kullan</button></div><hr><h3>🌈 İsim Renkleri</h3><div class="shopItem">Kırmızı İsim — 500 🪙 <button onclick="buyCosmetic('name-red')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-red')">Kullan</button></div><div class="shopItem">Mavi İsim — 500 🪙 <button onclick="buyCosmetic('name-blue')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-blue')">Kullan</button></div><div class="shopItem">Mor İsim — 1000 🪙 <button onclick="buyCosmetic('name-purple')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-purple')">Kullan</button></div><div class="shopItem">Yeşil İsim — 3000 🪙 <button onclick="buyCosmetic('name-green')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-green')">Kullan</button></div><div class="shopItem">Rainbow İsim — 10000 🪙 <button onclick="buyCosmetic('name-rainbow')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-rainbow')">Kullan</button></div></div></div>
 <div id="betModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>🎰 Sanal Bahis</h2><p>Bakiyen: <b id="betChips">1000</b> 🪙</p><div class="betBox"><label>Takım:</label><select id="betTeam"><option value="blue">🔵 Mavi Takım</option><option value="red">🔴 Kırmızı Takım</option></select><label>Miktar:</label><input id="betAmount" type="number" value="100" min="1"><button onclick="placeBet()">Bahis Yap</button></div><div id="betInfo">Henüz bahis yok.</div></div></div>
@@ -3150,6 +3192,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <div id="gameScreen" class="hidden"><div class="panel"><button class="closeTableBtn" onclick="closeCurrentTable()">❌ Bu Masayı Kapat / Yeni Oda Aç</button></div><div class="mainLayout"><div><div class="panel"><button onclick="startTimer()">▶ Süre Başlat</button><button onclick="pauseTimer()">⏸ Durdur</button><button onclick="setTimer(60)">1 dk</button><button onclick="setTimer(180)">3 dk</button><button onclick="setTimer(300)">5 dk</button><button onclick="setTimer(600)">10 dk</button><br>⏱ <span id="timer">05:00</span></div><div class="panel"><h3>🎙 Oda Mikrofonu</h3><button onclick="startMic()">🎙 Aç</button><button onclick="stopMic()">🔇 Kapat</button><span id="micStatus" class="micStatus">Kapalı</span><p style="font-size:12px;color:#d4af37;">Mikrofon sadece oda içinde çalışır. Konuşan kişinin ikonu yeşil yanar.</p></div><div class="panel"><p id="roundText" class="scoreBox">🎮 Tur: 1</p><p id="roleText">Rol: -</p><p id="phaseText" class="statusBox">🎰 Oyun bekliyor...</p><p id="scoreText" class="scoreBox">🏆 Mavi: 0 | Kırmızı: 0</p><p id="chipsText" class="scoreBox">🪙 Jeton: 1000</p></div><div class="teams"><div class="team blueTeam">🔵 MAVİ TAKIM<span class="teamCount">Kalan kelime: <span id="blueCount">9</span></span><div id="bluePlayers" class="playerList"></div></div><div class="team redTeam">🔴 KIRMIZI TAKIM<span class="teamCount">Kalan kelime: <span id="redCount">8</span></span><div id="redPlayers" class="playerList"></div></div></div><div class="panel"><input id="clueText" placeholder="İpucu yaz"><select id="clueNumber"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="∞">♾️</option></select><button onclick="sendClue()">İpucu Ver</button><button onclick="endTurn()" style="background:#008f4c;color:white;">✅ Sırayı Bitir</button><h2 id="clueDisplay">İpucu: -</h2><div id="clueLog">📜 Oyun bandı: Henüz ipucu yok.</div><h2 id="turnDisplay">Sıra: Belirlenmedi</h2></div><div class="board" id="board"></div><div class="panel"><h3>💬 Chat</h3><div class="chatTabs"><button onclick="setChatMode('global')">🌍 Genel</button><button onclick="setChatMode('team')">🔒 Takım</button><button onclick="setChatMode('dm')">📩 DM</button></div><div id="messages"></div><select id="dmTarget"><option value="">DM oyuncu seç</option></select><br><input id="chatInput" placeholder="Mesaj yaz"><button onclick="sendMessage()">Gönder</button><br><button class="emojiBtn" onclick="addEmoji('😂')">😂</button><button class="emojiBtn" onclick="addEmoji('🔥')">🔥</button><button class="emojiBtn" onclick="addEmoji('💀')">💀</button><button class="emojiBtn" onclick="addEmoji('👑')">👑</button><button class="emojiBtn" onclick="addEmoji('❤️')">❤️</button><button class="emojiBtn" onclick="addEmoji('😈')">😈</button><small id="chatModeText" style="color:#ffd700;">Mode: Genel</small></div></div><div class="sidePanel"><h3>👥 Bağlanan Oyuncular</h3><div id="onlinePlayers"></div><div class="spectatorBox"><h3>👀 Seyirciler</h3><div id="spectatorList">-</div></div><hr><h3>🔁 Join Team</h3><button onclick="joinTeam('blue','player')">🔵 Mavi Saha Ajanı</button><button onclick="joinTeam('blue','blueSpy')">🕵️ Mavi Spymaster</button><button onclick="joinTeam('red','player')">🔴 Kırmızı Saha Ajanı</button><button onclick="joinTeam('red','redSpy')">🕵️ Kırmızı Spymaster</button><button onclick="joinTeam('spectator','spectator')">👀 Seyirci</button><hr><h3>👑 Admin Paneli</h3><small>Admin sadece Codenames oyununu yönetir. Bahis, turnuva, jeton, üyelik, ödeme ve tarot yetkisi yoktur.</small><div id="adminPanel"><button onclick="toggleTeamLock('blue')">🔒 Mavi Kilitle</button><button onclick="toggleTeamLock('red')">🔒 Kırmızı Kilitle</button><button onclick="adminNewGame()">🎲 Yeni Oyun</button><button onclick="adminRevealAll()">🃏 Kartları Aç</button><button onclick="adminResetStats()">🏆 Skoru Sıfırla</button></div><hr><h3>🏆 Kazananlar / Oyun Kaydı</h3><div id="historyPanel"></div></div></div></div>
 <script>
 const socket=io();let roomCode='',myName='',myRole='',myTeam='',mySid='',joined=false,isAdmin=false,currentChips=1000;let seconds=300,timerRunning=false,timerInterval=null,micStream=null;let voicePeers={},voiceStarted=false,currentMicStates={},lastPlayers=[],lastLocks={blue:false,red:false},audioContext=null,speakingInterval=null,mySpeaking=false,currentAccount=null,currentProfile=null,pendingAutoSit=false;let lastOpenedStates=[],lastWinner='',dealSoundPlayed=false,chatMode='global',currentReady={};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function chipKey(n){return 'codenamesChips_'+(n||'guest')}function getSavedChips(n){let v=localStorage.getItem(chipKey(n));if(v===null)return 1000;let x=parseInt(v);return isNaN(x)?1000:x}function setSavedChips(n,a){localStorage.setItem(chipKey(n),String(a))}function saveLocalProfile(){localStorage.setItem('codenamesRoom',roomCode);localStorage.setItem('codenamesName',myName);localStorage.setItem('codenamesRole',myRole);localStorage.setItem('codenamesTeam',myTeam);localStorage.setItem('codenamesPassword',roomPassword.value||'')}function restoreLocalFields(){let r=localStorage.getItem('codenamesRoom')||'',n=localStorage.getItem('codenamesName')||'',ro=localStorage.getItem('codenamesRole')||'',t=localStorage.getItem('codenamesTeam')||'';if(r)roomInput.value=r;if(n)playerName.value=n;if(ro)roleChoice.value=ro;if(t)teamChoice.value=t}
 function avatarClass(f){return f==='woman.png'?'avatarImg femaleFrame':'avatarImg maleFrame'}function roleLabel(r){if(r==='player')return'Saha Ajanı';if(r==='blueSpy')return'Mavi Spymaster';if(r==='redSpy')return'Kırmızı Spymaster';if(r==='spectator')return'Seyirci';return r}function teamLabel(t){if(t==='blue')return'🔵 Mavi';if(t==='red')return'🔴 Kırmızı';return'👀 Seyirci'}
 function playerNameClass(p){
@@ -3534,6 +3577,7 @@ function loginAccount(){
     socket.emit('login_account',{username:u,password:p});
 }
 function logoutAccount(){
+    socket.emit('logout_account');
     currentAccount=null; currentProfile=null;
     localStorage.removeItem('codenamesAccount');
     localStorage.removeItem('loggedUser');
@@ -3545,7 +3589,7 @@ function logoutAccount(){
     updateProfileChip();alert('Çıkış yapıldı.');
 }
 
-function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a});closeModals()}
+function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];prevCardOpen=[];lastRenderedClue=null;lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();soundGuessToggle();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){soundEndTurnSfx();socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a});closeModals()}
 function demoBuyChips(amount, provider){
     if(!currentAccount){alert('Önce giriş yap.');openAuth();return}
     if(!confirm(provider+' démo ile '+amount+' jeton eklensin mi?')) return;
@@ -3605,7 +3649,7 @@ function refreshDmTargets(players){
     dmTarget.innerHTML='<option value="">DM oyuncu seç</option>';
     players.forEach(p=>{
         if(p.sid!==mySid){
-            dmTarget.innerHTML+=`<option value="${p.sid}">${p.name}</option>`;
+            dmTarget.innerHTML+=`<option value="${p.sid}">${esc(p.name)}</option>`;
         }
     });
     dmTarget.value=current;
@@ -3660,38 +3704,40 @@ function renderPlayers(players,locks){
         let av=mh.av;
 
         if(p.team==='blue'){
-            blueLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${p.name}</span>${crown} ${readyMark}</div>`;
-            bluePlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${p.name}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
+            blueLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${esc(p.name)}</span>${crown} ${readyMark}</div>`;
+            bluePlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${esc(p.name)}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
         }else if(p.team==='red'){
-            redLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${p.name}</span>${crown} ${readyMark}</div>`;
-            redPlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${p.name}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
+            redLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${esc(p.name)}</span>${crown} ${readyMark}</div>`;
+            redPlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${esc(p.name)}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
         }else{
-            spectatorLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${p.name}</span>${crown} ${readyMark}</div>`;
-            sp.push(`${p.name} 🪙 ${chips}`);
+            spectatorLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${esc(p.name)}</span>${crown} ${readyMark}</div>`;
+            sp.push(`${esc(p.name)} 🪙 ${chips}`);
         }
 
-        if(p.role==='blueSpy') bs.push(p.name);
-        else if(p.role==='redSpy') rs.push(p.name);
-        else if(p.team==='blue') ba.push(p.name);
-        else if(p.team==='red') ra.push(p.name);
+        if(p.role==='blueSpy') bs.push(esc(p.name));
+        else if(p.role==='redSpy') rs.push(esc(p.name));
+        else if(p.team==='blue') ba.push(esc(p.name));
+        else if(p.team==='red') ra.push(esc(p.name));
 
         let adm='';
         if(isAdmin&&p.sid!==mySid){
             adm=`<div class="adminActions"><button onclick="makeAdmin('${p.sid}')">👑 Admin Yap</button><button onclick="movePlayer('${p.sid}','blue')">🔵 Maviye Al</button><button onclick="movePlayer('${p.sid}','red')">🔴 Kırmızıya Al</button><button onclick="makeSpectator('${p.sid}')">👀 Seyirci</button><button onclick="kickPlayer('${p.sid}')">🚫 At</button></div>`;
         }
 
-        onlinePlayers.innerHTML+=`<div class="profileCard">${av} <b class="${mh.nameClass}">${p.name}</b>${crown}<br>${teamLabel(p.team)}<br>${roleLabel(p.role)}<br>🪙 ${chips}${adm}</div>`;
+        onlinePlayers.innerHTML+=`<div class="profileCard">${av} <b class="${mh.nameClass}">${esc(p.name)}</b>${crown}<br>${teamLabel(p.team)}<br>${roleLabel(p.role)}<br>🪙 ${chips}${adm}</div>`;
     });
 
     spectatorList.innerHTML=sp.length?sp.join('<br>'):'-';
     bluePlayers.innerHTML+=`<hr>🕵️ Mavi Spymaster: ${bs.join(', ')||'-'}<br>👤 Mavi Saha Ajanı: ${ba.join(', ')||'-'}`;
     redPlayers.innerHTML+=`<hr>🕵️ Kırmızı Spymaster: ${rs.join(', ')||'-'}<br>👤 Kırmızı Saha Ajanı: ${ra.join(', ')||'-'}`;
 }
-function renderStats(st){scoreText.innerHTML='🏆 Mavi: '+st.blueWins+' | Kırmızı: '+st.redWins;let h=st.history.length?st.history.slice(-8).reverse().map(w=>'🏆 '+w).join('<br>'):'Henüz kazanan yok.';if(st.betHistory&&st.betHistory.length)h+='<hr><b>🎰 Bahis Kaydı</b><br>'+st.betHistory.slice(-8).reverse().join('<br>');if(st.wordHistory&&st.wordHistory.length){h+='<hr><b>📝 Oyun Kaydı / Kelimeler</b><br>';st.wordHistory.slice(-5).reverse().forEach(g=>{h+=`<br><b>Parti ${g.gameNo}</b> — ${g.winner}<br><small>${g.words.join(', ')}</small><br>`})}historyPanel.innerHTML=h}function renderBets(b){let l=Object.values(b||{});betInfo.innerHTML=l.length?l.map(x=>`🎰 ${x.name}: ${x.amount} 🪙 → ${x.team==='blue'?'Mavi':'Kırmızı'}`).join('<br>'):'Henüz bahis yok.'}
+function renderStats(st){scoreText.innerHTML='🏆 Mavi: '+st.blueWins+' | Kırmızı: '+st.redWins;let h=st.history.length?st.history.slice(-8).reverse().map(w=>'🏆 '+w).join('<br>'):'Henüz kazanan yok.';if(st.betHistory&&st.betHistory.length)h+='<hr><b>🎰 Bahis Kaydı</b><br>'+st.betHistory.slice(-8).reverse().map(esc).join('<br>');if(st.wordHistory&&st.wordHistory.length){h+='<hr><b>📝 Oyun Kaydı / Kelimeler</b><br>';st.wordHistory.slice(-5).reverse().forEach(g=>{h+=`<br><b>Parti ${g.gameNo}</b> — ${g.winner}<br><small>${g.words.join(', ')}</small><br>`})}historyPanel.innerHTML=h}function renderBets(b){let l=Object.values(b||{});betInfo.innerHTML=l.length?l.map(x=>`🎰 ${esc(x.name)}: ${x.amount} 🪙 → ${x.team==='blue'?'Mavi':'Kırmızı'}`).join('<br>'):'Henüz bahis yok.'}
 
 let sfxCtx=null;
 let sfxUnlocked=false;
 let lastOpenedMeta=[];
+let prevCardOpen=[];
+let lastRenderedClue=null;
 
 function unlockSfx(){
     try{
@@ -3773,6 +3819,23 @@ function soundLose(team){
 function soundDeal(i){
     setTimeout(()=>playTone(220+(i%5)*35,.08,'triangle',.035), i*45);
 }
+function soundClue(){
+    playTone(660,.10,'sine',.06,0);
+    playTone(880,.09,'triangle',.05,.09);
+}
+function soundGuessToggle(){
+    playTone(500,.05,'square',.04,0);
+}
+function soundEndTurnSfx(){
+    playTone(300,.09,'triangle',.05,0);
+    playTone(200,.10,'sine',.04,.08);
+}
+function soundError(){
+    playTone(140,.18,'sawtooth',.07,0);
+}
+function soundChatPing(){
+    playTone(1000,.04,'sine',.03,0);
+}
 function soundCorrect(){ soundOwnTeam(myTeam); }
 function soundWrong(){ soundOpponentTeam(myTeam==='blue'?'red':'blue'); }
 function cardRoleClass(role){
@@ -3786,10 +3849,10 @@ function formatClueLog(logs){
     if(!logs || !logs.length) return '📜 Oyun bandı: Henüz ipucu yok.';
     return '📜 Oyun bandı:<br>' + logs.slice(-8).reverse().map(x=>{
         let cls = x.includes('Mavi Takım') ? 'blueClue' : (x.includes('Kırmızı Takım') ? 'redClue' : '');
-        return '<span class="clueNeon '+cls+'">💡 '+x+'</span>';
+        return '<span class="clueNeon '+cls+'">💡 '+esc(x)+'</span>';
     }).join('');
 }
-function leaveTable(){ lastOpenedMeta=[]; lastWinner='';
+function leaveTable(){ lastOpenedMeta=[]; prevCardOpen=[]; lastRenderedClue=null; lastWinner='';
     if(!roomCode){return;}
     joined=false;
     myTeam='spectator';
@@ -3800,7 +3863,7 @@ function leaveTable(){ lastOpenedMeta=[]; lastWinner='';
     if(gameScreen) gameScreen.classList.add('hidden');
     if(lobby) lobby.classList.remove('hidden');
 }
-function closeCurrentTable(){ lastOpenedMeta=[]; lastWinner='';
+function closeCurrentTable(){ lastOpenedMeta=[]; prevCardOpen=[]; lastRenderedClue=null; lastWinner='';
     try{ stopMic(); }catch(e){}
     roomCode='';
     joined=false;
@@ -3864,7 +3927,7 @@ function detectCardSounds(g){
         lastWinner = g.winner;
     }
 }
-function renderGame(g){board.innerHTML='';roundText.innerHTML='🎮 Tur: '+(g.roundNo||1);blueCount.innerHTML=g.blueCount;redCount.innerHTML=g.redCount;phaseText.innerHTML=g.phase+((g.guessLimit&&g.guessLimit>0)?'<br>🎯 Tahmin hakkı: '+g.guessesMade+' / '+g.guessLimit:'');clueDisplay.innerHTML=g.clue;turnDisplay.innerHTML=g.turn==='blue'?'🔵 Sıra Mavi Takımda':'🔴 Sıra Kırmızı Takımda';clueLog.innerHTML=formatClueLog(g.clueLog);if(g.moveLog&&g.moveLog.length)clueLog.innerHTML+='<hr>🃏 Kart kaydı:<br>'+g.moveLog.slice(-8).reverse().join('<br>');g.cards.forEach((c,i)=>{let cls='card dealCard';if(c.guessed)cls+=' guessed';if(c.open||canSeeRole()||g.winner)cls+=' open '+c.role+'Card';let names=(c.guessedBy||[]).join(', '),gb=names?`<div class='guessName'>🎯 ${names}</div>`:'';board.innerHTML+=`<div id="card_${i}" class="${cls}" style="animation-delay:${i*45}ms" onclick="toggleGuess(${i})"><button class="revealBtn" onclick="revealCard(${i}, event)">A♠</button><button class="guessBtn" onclick="showGuesses(${i}, event)">Tahmin</button><span class="wordText">${c.word}</span>${gb}</div>`;if(!dealSoundPlayed)soundDeal(i)});if(!dealSoundPlayed)dealSoundPlayed=true;setTimeout(()=>detectCardSounds(g),80);if(g.winner){showWinner(g.winner);showEndGame(g)}}function showWinner(t){winnerText.innerHTML=t;winnerOverlay.style.display='flex';setTimeout(()=>winnerOverlay.style.display='none',5000)}function showEndGame(g){endGameTitle.innerHTML=g.winner;endGameInfo.innerHTML='🎮 Tur: '+(g.roundNo||1)+'<br>🔵 Kalan: '+g.blueCount+' | 🔴 Kalan: '+g.redCount+'<br><br>Yeni manche başlatabilir veya lobbyye dönebilirsin.';endGameModal.style.display='flex'}function updateTimerDisplay(){let m=Math.floor(seconds/60),s=seconds%60;timer.innerHTML=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function startTimer(){if(timerRunning)return;timerRunning=true;timerInterval=setInterval(()=>{if(seconds>0){seconds--;updateTimerDisplay()}},1000)}function pauseTimer(){timerRunning=false;clearInterval(timerInterval)}function setTimer(v){pauseTimer();seconds=v;updateTimerDisplay()}
+function renderGame(g){board.innerHTML='';roundText.innerHTML='🎮 Tur: '+(g.roundNo||1);blueCount.innerHTML=g.blueCount;redCount.innerHTML=g.redCount;phaseText.innerHTML=g.phase+((g.guessLimit&&g.guessLimit>0)?'<br>🎯 Tahmin hakkı: '+g.guessesMade+' / '+g.guessLimit:'');clueDisplay.innerHTML=esc(g.clue);if(g.clue&&g.clue!==lastRenderedClue)soundClue();lastRenderedClue=g.clue;turnDisplay.innerHTML=g.turn==='blue'?'🔵 Sıra Mavi Takımda':'🔴 Sıra Kırmızı Takımda';clueLog.innerHTML=formatClueLog(g.clueLog);if(g.moveLog&&g.moveLog.length)clueLog.innerHTML+='<hr>🃏 Kart kaydı:<br>'+g.moveLog.slice(-8).reverse().map(esc).join('<br>');const justRevealedIdx=new Set();g.cards.forEach((c,i)=>{if(c.open&&!prevCardOpen[i])justRevealedIdx.add(i)});g.cards.forEach((c,i)=>{let cls='card dealCard';if(c.guessed)cls+=' guessed';if(c.open||canSeeRole()||g.winner)cls+=' open '+c.role+'Card';if(justRevealedIdx.has(i))cls+=' justRevealed';let names=(c.guessedBy||[]).map(esc).join(', '),gb=names?`<div class='guessName'>🎯 ${names}</div>`:'';board.innerHTML+=`<div id="card_${i}" class="${cls}" style="animation-delay:${i*45}ms" onclick="toggleGuess(${i})"><button class="revealBtn" onclick="revealCard(${i}, event)">A♠</button><button class="guessBtn" onclick="showGuesses(${i}, event)">Tahmin</button><span class="wordText">${c.word}</span>${gb}</div>`;if(!dealSoundPlayed)soundDeal(i)});prevCardOpen=g.cards.map(c=>!!c.open);if(!dealSoundPlayed)dealSoundPlayed=true;setTimeout(()=>detectCardSounds(g),80);if(g.winner){if(g.winner!==lastWinner){lastWinner=g.winner;showWinner(g.winner);showEndGame(g)}}else{lastWinner=''}}function showWinner(t){winnerText.innerHTML=t;winnerOverlay.style.display='flex';setTimeout(()=>winnerOverlay.style.display='none',5000)}function showEndGame(g){endGameTitle.innerHTML=g.winner;endGameInfo.innerHTML='🎮 Tur: '+(g.roundNo||1)+'<br>🔵 Kalan: '+g.blueCount+' | 🔴 Kalan: '+g.redCount+'<br><br>Yeni manche başlatabilir veya lobbyye dönebilirsin.';endGameModal.style.display='flex'}function updateTimerDisplay(){let m=Math.floor(seconds/60),s=seconds%60;timer.innerHTML=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function startTimer(){if(timerRunning)return;timerRunning=true;timerInterval=setInterval(()=>{if(seconds>0){seconds--;updateTimerDisplay()}},1000)}function pauseTimer(){timerRunning=false;clearInterval(timerInterval)}function setTimer(v){pauseTimer();seconds=v;updateTimerDisplay()}
 socket.on('register_result',d=>{
     if(!d.ok){alert(d.msg);return}
     applyLoggedProfile(d.profile);
@@ -3940,7 +4003,7 @@ socket.on('ranking_result',d=>{
         rankingInfo.innerHTML='Henüz sıralama yok.';
         return;
     }
-    rankingInfo.innerHTML=d.users.map((u,i)=>`${i+1}. <b>${u.username}</b> — 🪙 ${u.chips} — 🏆 ${u.wins} — 🎮 ${u.games}`).join('<br>');
+    rankingInfo.innerHTML=d.users.map((u,i)=>`${i+1}. <b>${esc(u.username)}</b> — 🪙 ${u.chips} — 🏆 ${u.wins} — 🎮 ${u.games}`).join('<br>');
 });
 
 socket.on('connect',()=>{
@@ -3965,7 +4028,7 @@ socket.on('connect',()=>{
         pendingAutoSit=true;
         if(currentAccount){socket.emit('join_room_code',{room:savedRoom,password:savedPassword,account:currentAccount});}
     }
-});socket.on('room_created',d=>{roomCode=d.room;isAdmin=true;roomText.innerHTML='Oda: '+roomCode+' 👑 Admin sensin';saveLocalProfile()});socket.on('room_joined',d=>{roomCode=d.room;isAdmin=false;roomText.innerHTML='Oda: '+roomCode;saveLocalProfile();if(pendingAutoSit){pendingAutoSit=false;setTimeout(()=>sitAtTable(),250)}});socket.on('error_msg',d=>alert(d.msg));socket.on('players_update',d=>{if(d.micStates) currentMicStates=d.micStates;if(d.ready) currentReady=d.ready;renderReady(d.players,d.ready||{});renderPlayers(d.players,d.locks)});socket.on('game_update',d=>{
+});socket.on('room_created',d=>{roomCode=d.room;isAdmin=true;roomText.innerHTML='Oda: '+roomCode+' 👑 Admin sensin';saveLocalProfile()});socket.on('room_joined',d=>{roomCode=d.room;isAdmin=false;roomText.innerHTML='Oda: '+roomCode;saveLocalProfile();if(pendingAutoSit){pendingAutoSit=false;setTimeout(()=>sitAtTable(),250)}});socket.on('error_msg',d=>{soundError();alert(d.msg)});socket.on('players_update',d=>{if(d.micStates) currentMicStates=d.micStates;if(d.ready) currentReady=d.ready;renderReady(d.players,d.ready||{});renderPlayers(d.players,d.locks)});socket.on('game_update',d=>{
     currentMicStates=d.micStates||currentMicStates||{};
     currentReady=d.ready||currentReady||{};
     let me=d.players.find(p=>p.sid===mySid||p.name===myName);
@@ -3999,7 +4062,7 @@ socket.on('connect',()=>{
         gameScreen.classList.add('hidden');
         lobby.classList.remove('hidden');
     }
-});socket.on('chat_update',d=>{messages.innerHTML+='<b>🌍 '+d.name+':</b> '+d.msg+'<br>'});socket.on('team_chat_update',d=>{messages.innerHTML+='<b>🔒 '+d.name+':</b> '+d.msg+'<br>'});socket.on('dm_chat_update',d=>{messages.innerHTML+='<b>📩 '+d.name+':</b> '+d.msg+'<br>'});socket.on('kicked',()=>{alert('Odadan çıkarıldın.');localStorage.clear();location.reload()});socket.on('made_spectator',()=>{myRole='spectator';myTeam='spectator';saveLocalProfile();alert('Seyirci moduna alındın.')});socket.on('guess_names',d=>{alert('Bu kartı tahmin edenler: '+((d.names&&d.names.length)?d.names.join(', '):'Henüz tahmin yok.'))});
+});socket.on('chat_update',d=>{soundChatPing();messages.innerHTML+='<b>🌍 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('team_chat_update',d=>{soundChatPing();messages.innerHTML+='<b>🔒 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('dm_chat_update',d=>{soundChatPing();messages.innerHTML+='<b>📩 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('kicked',()=>{alert('Odadan çıkarıldın.');localStorage.clear();location.reload()});socket.on('made_spectator',()=>{myRole='spectator';myTeam='spectator';saveLocalProfile();alert('Seyirci moduna alındın.')});socket.on('guess_names',d=>{alert('Bu kartı tahmin edenler: '+((d.names&&d.names.length)?d.names.join(', '):'Henüz tahmin yok.'))});
 
 socket.on('voice_existing_users',d=>{
     if(!voiceStarted) return;
@@ -4077,6 +4140,7 @@ function hardBindMainButtons(){
     bind('menuSettingsBtn',()=>{openSettings();closeMainMenu();});
     bind('menuWordsBtn',()=>{openWords();closeMainMenu();});
     bind('menuBetBtn',()=>{openBet();closeMainMenu();});
+    bind('menuShopBtn',()=>{openShop();closeMainMenu();});
     bind('ownerPanelBtn',()=>{openOwnerPanel();closeMainMenu();});
 }
 document.addEventListener('DOMContentLoaded',hardBindMainButtons);
@@ -4157,6 +4221,63 @@ def confirm_password_reset(data):
     data = data or {}
     emit('password_reset_confirmed', do_confirm_password_reset(data.get('token',''), data.get('newPassword','')))
 
+@socketio.on('register_account')
+def register_account(data):
+    data = data or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    email = (data.get('email') or '').strip()
+    if len(username) < 3:
+        emit('register_result', {'ok': False, 'msg': 'Kullanıcı adı en az 3 karakter olmalı.'})
+        return
+    if len(password) < 4:
+        emit('register_result', {'ok': False, 'msg': 'Şifre en az 4 karakter olmalı.'})
+        return
+    users = load_users()
+    if find_user_key(users, username):
+        emit('register_result', {'ok': False, 'msg': 'Bu kullanıcı adı zaten var.'})
+        return
+    users[username] = {
+        'email': email, 'password_hash': hash_password(password), 'chips': 1000,
+        'wins': 0, 'games': 0, 'avatar': data.get('avatar') or 'woman.png', 'avatarData': '',
+        'nameColor': 'default', 'avatarFrame': 'none', 'inventory': [],
+        'createdAt': str(int(time.time())),
+    }
+    save_users(users)
+    authenticated_sids[request.sid] = username
+    emit('register_result', {'ok': True, 'profile': private_profile(username, users[username])})
+
+@socketio.on('login_account')
+def login_account(data):
+    data = data or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    users = load_users()
+    key = find_user_key(users, username)
+    if not key or not verify_password(users[key], password):
+        emit('login_result', {'ok': False, 'msg': 'Kullanıcı adı veya şifre hatalı.'})
+        return
+    save_users(users)  # verify_password() may have upgraded a legacy plaintext password
+    authenticated_sids[request.sid] = key
+    emit('login_result', {'ok': True, 'profile': private_profile(key, users[key])})
+
+@socketio.on('request_profile')
+def request_profile(data):
+    account = ((data or {}).get('account') or '').strip()
+    users = load_users()
+    key = find_user_key(users, account)
+    if not key:
+        return
+    emit('profile_fresh', private_profile(key, users[key]))
+
+@socketio.on('logout_account')
+def logout_account():
+    authenticated_sids.pop(request.sid, None)
+
+@socketio.on('disconnect')
+def auth_disconnect_cleanup():
+    authenticated_sids.pop(request.sid, None)
+
 @app.route('/api/auth/request_reset', methods=['POST'])
 def api_request_password_reset():
     data = request.get_json(force=True, silent=True) or {}
@@ -4199,6 +4320,11 @@ def sit(data):
     code = data['room']
     if code not in rooms: return
     old = by_name(code, data['name'])
+    if old and old.get('account') and old.get('account') != account:
+        # Someone already sits under this display name with a *different* account —
+        # don't let a second account silently take over their seat/sid.
+        emit('error_msg', {'msg':'Bu isim zaten kullanımda. Başka bir isim seç.'})
+        return
     if len(rooms[code]['players']) >= MAX_PLAYERS and not old: emit('error_msg', {'msg':'Oda dolu. En fazla 10 oyuncu girebilir.'}); return
     if data['team'] in ['blue','red'] and rooms[code]['locks'][data['team']]: emit('error_msg', {'msg':'Bu takım kilitli.'}); return
     chips = int(data.get('chips', 1000))
@@ -4232,20 +4358,66 @@ def start_game(data):
     if active_players and not all(rooms[code].get('ready', {}).get(p['sid']) for p in active_players):
         emit('error_msg', {'msg':'Herkes hazır değil.'})
         return
+    for team, spy_role in (('blue', 'blueSpy'), ('red', 'redSpy')):
+        team_players = [p for p in active_players if p.get('team') == team]
+        if not team_players:
+            emit('error_msg', {'msg':'Her iki takımda da en az bir oyuncu olmalı.'})
+            return
+        if not any(p.get('role') == spy_role for p in team_players):
+            emit('error_msg', {'msg':'Her takımın bir Spymaster\'ı olmalı.'})
+            return
+        if not any(p.get('role') == 'player' for p in team_players):
+            emit('error_msg', {'msg':'Her takımın en az bir saha ajanı olmalı.'})
+            return
     rooms[code]['game']['started'] = True
     emit('game_update', pdata(code), to=code)
 
+def _refund_pending_bets(code):
+    r = rooms[code]
+    for sid, b in list(r.get('bets', {}).items()):
+        p = by_sid(code, sid) or by_name(code, b.get('name', ''))
+        if p:
+            p['chips'] += b.get('amount', 0)
+            save_player_to_user(p)
+    r['bets'] = {}
+
 @socketio.on('new_game')
 def new_game_event(data):
-    code = data['room']
-    if code in rooms:
-        rooms[code]['game'] = new_game(rooms[code].get('category','default')); rooms[code]['stats']['gameNo'] = int(rooms[code]['stats'].get('gameNo',0)) + 1; rooms[code]['game']['roundNo'] = rooms[code]['stats']['gameNo']; rooms[code]['bets'] = {}; rooms[code]['ready'] = {}; emit('game_update', pdata(code), to=code)
+    code = data.get('room')
+    if code not in rooms:
+        return
+    g = rooms[code]['game']
+    # A round already under way (started, no winner yet) can only be reset by the
+    # room admin — otherwise any player could wipe an ongoing game out from under
+    # the others. Once it's finished (or never started), anyone can start the next one.
+    if g.get('started') and not g.get('winner') and not is_admin(code):
+        emit('error_msg', {'msg':'Devam eden oyunu sadece oda sahibi sıfırlayabilir.'})
+        return
+    with _state_lock:
+        _refund_pending_bets(code)
+        was_started = g.get('started', False)
+        rooms[code]['stats']['gameNo'] = int(rooms[code]['stats'].get('gameNo', 0)) + 1
+        rooms[code]['game'] = new_game(rooms[code].get('category', 'default'))
+        rooms[code]['game']['roundNo'] = rooms[code]['stats']['gameNo']
+        # Keep straight into the next round instead of bouncing everyone back to the
+        # lobby and clearing "ready" — matches what the "yeni manche" button promises.
+        rooms[code]['game']['started'] = was_started
+    emit('game_update', pdata(code), to=code)
 
 @socketio.on('set_category')
 def set_category(data):
-    code = data['room']; cat = data.get('category','default')
-    if code in rooms:
-        rooms[code]['category'] = cat; rooms[code]['game'] = new_game(cat); rooms[code]['bets'] = {}; emit('game_update', pdata(code), to=code)
+    code = data.get('room'); cat = data.get('category', 'default')
+    if code not in rooms:
+        return
+    g = rooms[code]['game']
+    if g.get('started') and not g.get('winner') and not is_admin(code):
+        emit('error_msg', {'msg':'Devam eden oyunu sadece oda sahibi sıfırlayabilir.'})
+        return
+    with _state_lock:
+        _refund_pending_bets(code)
+        rooms[code]['category'] = cat
+        rooms[code]['game'] = new_game(cat)
+    emit('game_update', pdata(code), to=code)
 
 @socketio.on('join_team')
 def join_team(data):
@@ -4257,29 +4429,42 @@ def join_team(data):
     p['team']=team; p['role']='spectator' if team=='spectator' else role
     emit('players_update', {'players':rooms[code]['players'],'locks':rooms[code]['locks'],'micStates':rooms[code].get('micStates', {})}, to=code); emit('game_update', pdata(code), to=code)
 
+def _valid_card_idx(g, idx):
+    return isinstance(idx, int) and not isinstance(idx, bool) and 0 <= idx < len(g['cards'])
+
 @socketio.on('toggle_guess')
 def toggle_guess(data):
-    code=data['room']; idx=data['index']
+    code=data.get('room'); idx=data.get('index')
     if code not in rooms: return
     p=by_sid(code, request.sid); g=rooms[code]['game']
     if not p: return
     if p['team']=='spectator' or p['role']=='spectator': emit('error_msg', {'msg':'Seyirci tahmin yapamaz.'}); return
     if not g['clueActive']: emit('error_msg', {'msg':'Spymaster ipucu vermeden tahmin yapılamaz.'}); return
     if p['team'] != g['turn']: emit('error_msg', {'msg':'Sıra senin takımında değil.'}); return
-    card = g['cards'][idx]; names = card.get('guessedBy', [])
-    if p['name'] in names: names.remove(p['name'])
-    else: names.append(p['name'])
-    card['guessedBy'] = names; card['guessed'] = bool(names); card['guessedTeam'] = p['team'] if names else ''
+    if g['winner']: return
+    if not _valid_card_idx(g, idx): return
+    with _state_lock:
+        card = g['cards'][idx]
+        if card['open']: return
+        names = card.get('guessedBy', [])
+        if p['name'] in names: names.remove(p['name'])
+        else: names.append(p['name'])
+        card['guessedBy'] = names; card['guessed'] = bool(names); card['guessedTeam'] = p['team'] if names else ''
     emit('game_update', pdata(code), to=code)
 
 @socketio.on('show_guesses')
 def show_guesses(data):
-    code=data['room']; idx=data['index']
-    if code in rooms: emit('guess_names', {'names': rooms[code]['game']['cards'][idx].get('guessedBy', [])})
+    code=data.get('room'); idx=data.get('index')
+    if code not in rooms: return
+    p=by_sid(code, request.sid)
+    if not p: return
+    g=rooms[code]['game']
+    if not _valid_card_idx(g, idx): return
+    emit('guess_names', {'names': g['cards'][idx].get('guessedBy', [])})
 
 @socketio.on('reveal_card')
 def reveal_card(data):
-    code=data['room']; idx=data['index']
+    code=data.get('room'); idx=data.get('index')
     if code not in rooms: return
     p=by_sid(code, request.sid); g=rooms[code]['game']
     if not p: return
@@ -4287,47 +4472,66 @@ def reveal_card(data):
     if not g['clueActive']: emit('error_msg', {'msg':'Spymaster ipucu vermeden kart açılamaz.'}); return
     if p['team'] != g['turn']: emit('error_msg', {'msg':'Sıra senin takımında değil.'}); return
     if g['winner']: return
-    c=g['cards'][idx]
-    if c['open']: return
-    c['open']=True; c['guessed']=False; c['guessedBy']=[]; c['guessedTeam']=''
-    cur=g['turn']; g['guessesMade'] += 1; team_name='Mavi Takım' if cur=='blue' else 'Kırmızı Takım'; g['moveLog'].append(f"{team_name} - {p['name']} açtı: {c['word']} ({c['role']})")
-    def finish(wteam, text):
-        g['winner']=text; update_winner(code,text); save_history(code,text); settle_bets(code,wteam)
-        for cc in g['cards']: cc['open']=True
-    if c['role']=='assassin': finish('red' if cur=='blue' else 'blue', '🏆 KIRMIZI TAKIM KAZANDI' if cur=='blue' else '🏆 MAVİ TAKIM KAZANDI')
-    elif c['role']=='blue':
-        g['blueCount']-=1
-        if cur=='red': switch_turn(g)
-        elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
-        if g['blueCount']==0: finish('blue','🏆 MAVİ TAKIM KAZANDI')
-    elif c['role']=='red':
-        g['redCount']-=1
-        if cur=='blue': switch_turn(g)
-        elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
-        if g['redCount']==0: finish('red','🏆 KIRMIZI TAKIM KAZANDI')
-    else: switch_turn(g)
+    if not _valid_card_idx(g, idx): return
+    with _state_lock:
+        c=g['cards'][idx]
+        if c['open']: return
+        c['open']=True; c['guessed']=False; c['guessedBy']=[]; c['guessedTeam']=''
+        cur=g['turn']; g['guessesMade'] += 1; team_name='Mavi Takım' if cur=='blue' else 'Kırmızı Takım'; g['moveLog'].append(f"{team_name} - {p['name']} açtı: {c['word']} ({c['role']})")
+        def finish(wteam, text):
+            g['winner']=text; update_winner(code,text); save_history(code,text); settle_bets(code,wteam)
+            for cc in g['cards']: cc['open']=True
+        if c['role']=='assassin': finish('red' if cur=='blue' else 'blue', '🏆 KIRMIZI TAKIM KAZANDI' if cur=='blue' else '🏆 MAVİ TAKIM KAZANDI')
+        elif c['role']=='blue':
+            g['blueCount']-=1
+            if cur=='red': switch_turn(g)
+            elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
+            if g['blueCount']==0: finish('blue','🏆 MAVİ TAKIM KAZANDI')
+        elif c['role']=='red':
+            g['redCount']-=1
+            if cur=='blue': switch_turn(g)
+            elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
+            if g['redCount']==0: finish('red','🏆 KIRMIZI TAKIM KAZANDI')
+        else: switch_turn(g)
     emit('game_update', pdata(code), to=code)
 
 @socketio.on('send_clue')
 def send_clue(data):
-    code=data['room']; name=data.get('name','')
+    code=data.get('room')
     if code not in rooms: return
-    g=rooms[code]['game']; p=by_name(code, name)
+    g=rooms[code]['game']
+    # Resolve the clue-giver from the connected socket, not a client-supplied name —
+    # otherwise anyone could emit send_clue with someone else's name and speak for them.
+    p=by_sid(code, request.sid)
     if not can_clue(p,g): emit('error_msg', {'msg':"İpucunu sadece sıradaki takımın Spymaster'ı verebilir."}); return
-    g['clue']='İpucu: '+data['clue']+' / '+data['number']; g['clueActive']=True; g['guessesMade']=0
-    g['guessLimit'] = 99 if data['number']=='∞' else int(data['number'])+1
-    tname='Mavi Takım' if g['turn']=='blue' else 'Kırmızı Takım'; g['clueLog'].append(f"{tname} - {p['name']}: {data['clue']} {data['number']}")
+    if g['winner']: return
+    clue_text = str(data.get('clue',''))[:200]
+    number_raw = str(data.get('number',''))
+    if number_raw == '∞':
+        guess_limit = 99
+    else:
+        try:
+            n = int(number_raw)
+        except (TypeError, ValueError):
+            emit('error_msg', {'msg':'Geçersiz ipucu sayısı.'}); return
+        if n < 0:
+            emit('error_msg', {'msg':'Geçersiz ipucu sayısı.'}); return
+        guess_limit = n + 1
+    g['clue']='İpucu: '+clue_text+' / '+number_raw; g['clueActive']=True; g['guessesMade']=0
+    g['guessLimit'] = guess_limit
+    tname='Mavi Takım' if g['turn']=='blue' else 'Kırmızı Takım'; g['clueLog'].append(f"{tname} - {p['name']}: {clue_text} {number_raw}")
     g['phase']='🎯 Mavi takım ajanları tahmin yapıyor...' if g['turn']=='blue' else '🎯 Kırmızı takım ajanları tahmin yapıyor...'
     emit('game_update', pdata(code), to=code)
 
 @socketio.on('end_turn')
 def end_turn(data):
-    code=data['room']
+    code=data.get('room')
     if code not in rooms: return
     g=rooms[code]['game']; p=by_sid(code, request.sid)
     if not p: emit('error_msg', {'msg':'Oyuncu bulunamadı.'}); return
     if p['team']=='spectator' or p['role']=='spectator': emit('error_msg', {'msg':'Seyirci sırayı değiştiremez.'}); return
     if p['team'] != g['turn']: emit('error_msg', {'msg':'Sıra senin takımında değil.'}); return
+    if g['winner']: return
     switch_turn(g); emit('game_update', pdata(code), to=code)
 
 
@@ -4513,11 +4717,19 @@ def equip_cosmetic(data):
         emit('game_update', pdata(code), to=code)
     emit('cosmetic_result', {'ok': True, 'msg': 'Kozmetik aktif edildi.', 'profile': private_profile(account, users[account])})
 
+DEMO_CHIP_AMOUNTS = {1000, 5000, 20000, 75000}
+
 @socketio.on('buy_virtual_chips')
 def buy_virtual_chips(data):
     code = data.get('room', '')
-    amount = int(data.get('amount', 0))
-    if amount <= 0:
+    try:
+        amount = int(data.get('amount', 0))
+    except (TypeError, ValueError):
+        return
+    # This is the "démo" bonus-chip button (no real payment) — restrict to the exact
+    # denominations offered in the shop UI so a raw socket call can't mint arbitrary
+    # amounts of the fake currency that also buys VIP/cosmetics.
+    if amount not in DEMO_CHIP_AMOUNTS:
         return
 
     player = by_sid(code, request.sid) if code in rooms else None
@@ -4540,16 +4752,34 @@ def buy_virtual_chips(data):
 
 @socketio.on('place_bet')
 def place_bet(data):
-    code=data['room']; team=data['team']; amount=int(data.get('amount',0))
+    code=data.get('room'); team=data.get('team')
     if code not in rooms or team not in ['blue','red']: return
+    try:
+        amount=int(data.get('amount',0))
+    except (TypeError, ValueError):
+        emit('error_msg', {'msg':'Geçerli jeton miktarı yaz.'}); return
     p=by_sid(code, request.sid)
     if not p: return
+    g=rooms[code]['game']
+    if g.get('winner') or not g.get('started'):
+        emit('error_msg', {'msg':'Bahis sadece devam eden bir oyunda yapılabilir.'}); return
     if amount<=0: emit('error_msg', {'msg':'Geçerli jeton miktarı yaz.'}); return
     if int(p.get('chips',1000))<amount: emit('error_msg', {'msg':'Yeterli jeton yok.'}); return
-    old=rooms[code]['bets'].get(request.sid)
-    if old: p['chips'] += old['amount']
-    p['chips'] -= amount; rooms[code]['bets'][request.sid]={'name':p['name'],'team':team,'amount':amount}; save_player_to_user(p)
+    with _state_lock:
+        old=rooms[code]['bets'].get(request.sid)
+        if old: p['chips'] += old['amount']
+        p['chips'] -= amount; rooms[code]['bets'][request.sid]={'name':p['name'],'team':team,'amount':amount}
+    save_player_to_user(p)
     emit('game_update', pdata(code), to=code)
+
+@socketio.on('get_ranking')
+def get_ranking():
+    users = load_users()
+    rows = []
+    for username, u in users.items():
+        rows.append({'username': username, 'chips': int(u.get('chips', 1000)), 'wins': int(u.get('wins', 0)), 'games': int(u.get('games', 0))})
+    rows.sort(key=lambda r: (r['wins'], r['chips']), reverse=True)
+    emit('ranking_result', {'users': rows[:20]})
 
 @socketio.on('admin_new_game')
 def admin_new_game(data): new_game_event(data)
@@ -4616,6 +4846,24 @@ def leave_table(data):
     rooms[code]['ready'].pop(request.sid, None)
     emit('players_update', {'players': rooms[code]['players'], 'locks': rooms[code]['locks'], 'micStates': rooms[code].get('micStates', {}), 'ready': rooms[code].get('ready', {})}, to=code)
     emit('game_update', pdata(code), to=code)
+
+@socketio.on('disconnect')
+def codenames_disconnect_cleanup():
+    # Nothing removed a player from a room's roster on tab-close/refresh, so a single
+    # ghost player could permanently block start_game (never ready) or freeze a turn
+    # (their team can never act again). Drop them from every room they were sitting in.
+    sid = request.sid
+    for code, r in list(rooms.items()):
+        p = by_sid(code, sid)
+        if not p:
+            continue
+        with _state_lock:
+            r['players'] = [pl for pl in r['players'] if pl['sid'] != sid]
+            r.get('ready', {}).pop(sid, None)
+            r.get('bets', {}).pop(sid, None)
+            r.get('micStates', {}).pop(sid, None)
+        emit('players_update', {'players': r['players'], 'locks': r['locks'], 'micStates': r.get('micStates', {}), 'ready': r.get('ready', {})}, to=code)
+        emit('game_update', pdata(code), to=code)
 
 @socketio.on('toggle_ready')
 def toggle_ready(data):
@@ -6059,10 +6307,10 @@ def owns_full_group(room, username, group):
     return bool(cells) and all(room["owners"].get(str(i))==username for i in cells)
 
 def m_room(code,owner):
-    return {"code":code,"owner":owner,"started":False,"turnIndex":0,"players":{},"owners":{},"houses":{},"hotels":{},"mortgages":{},"lastLog":"Oda hazır.","lastDice":None}
+    return {"code":code,"owner":owner,"started":False,"turnIndex":0,"turnOrder":[],"players":{},"owners":{},"houses":{},"hotels":{},"mortgages":{},"pendingBuy":None,"winner":None,"lastLog":"Oda hazır.","lastDice":None}
 
 def m_public(r):
-    return {"code":r["code"],"started":r["started"],"turnIndex":r["turnIndex"],"players":r["players"],"owners":r["owners"],"houses":r.get("houses",{}),"hotels":r.get("hotels",{}),"mortgages":r.get("mortgages",{}),"lastLog":r["lastLog"],"lastDice":r["lastDice"],"settings":r.get("settings",{"players":4,"turns":"illimite","target":7000})}
+    return {"code":r["code"],"started":r["started"],"turnIndex":r["turnIndex"],"turnOrder":r.get("turnOrder",[]),"players":r["players"],"owners":r["owners"],"houses":r.get("houses",{}),"hotels":r.get("hotels",{}),"mortgages":r.get("mortgages",{}),"pendingBuy":r.get("pendingBuy"),"winner":r.get("winner"),"lastLog":r["lastLog"],"lastDice":r["lastDice"],"settings":r.get("settings",{"players":4,"turns":"illimite","target":7000})}
 
 def m_code():
     while True:
@@ -6070,73 +6318,159 @@ def m_code():
         if c not in METROPOLY_ROOMS:
             return c
 
+MONOPOLY_TOKENS={"car","jackpot","boat","horse","hat","cat"}
+
+def m_by_sid(r,sid):
+    # Resolve the acting player from the socket connection itself instead of trusting
+    # a client-supplied username — otherwise anyone who knows another player's name
+    # could roll their dice, buy their properties, or spend their turn for them.
+    for name,p in r["players"].items():
+        if p.get("sid")==sid:
+            return name
+    return None
+
+def m_current_turn_user(r):
+    order=r.get("turnOrder") or list(r["players"].keys())
+    if not order: return None
+    return order[r["turnIndex"]%len(order)]
+
+def m_advance_turn(r):
+    order=r.get("turnOrder") or list(r["players"].keys())
+    n=len(order)
+    if n==0: return
+    for _ in range(n):
+        r["turnIndex"]=(r["turnIndex"]+1)%n
+        if not r["players"].get(order[r["turnIndex"]],{}).get("bankrupt"):
+            return
+
+def m_release_assets(r,username):
+    # A bankrupt player's properties/houses/hotels go back to the bank instead of
+    # staying locked forever (unbuyable by anyone, but still un-payable rent for them).
+    for cell,owner in list(r["owners"].items()):
+        if owner==username:
+            del r["owners"][cell]
+            r.get("houses",{}).pop(cell,None)
+            r.get("hotels",{}).pop(cell,None)
+
+def m_check_winner(r):
+    if r.get("winner") or not r.get("started"): return
+    if len(r["players"])<2: return
+    alive=[n for n,p in r["players"].items() if not p.get("bankrupt")]
+    if len(alive)==1:
+        r["winner"]=alive[0]
+        r["lastLog"]=alive[0]+" tüm rakiplerini iflas ettirdi ve oyunu kazandı! 🏆"
 
 @socketio.on("monopoly_create_room")
 def mc(data):
-    u=(data or {}).get("username","Misafir").strip() or "Misafir"; t=(data or {}).get("token","🎩")
+    u=(data or {}).get("username","Misafir").strip()[:20] or "Misafir"
+    t=(data or {}).get("token","hat")
+    if t not in MONOPOLY_TOKENS: t="hat"
     c=m_code(); r=m_room(c,u); METROPOLY_ROOMS[c]=r; join_room(c)
-    r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False}
+    r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False,"sid":request.sid}
     r["lastLog"]=u+" odayı kurdu."; emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_join_room")
 def mj(data):
-    u=(data or {}).get("username","Misafir").strip() or "Misafir"; t=(data or {}).get("token","🎩"); c=((data or {}).get("code","") or "").strip().upper()
+    u=(data or {}).get("username","Misafir").strip()[:20] or "Misafir"
+    t=(data or {}).get("token","hat")
+    if t not in MONOPOLY_TOKENS: t="hat"
+    c=((data or {}).get("code","") or "").strip().upper()
     if c not in METROPOLY_ROOMS: emit("monopoly_error",{"code":"room_not_found"}); return
-    r=METROPOLY_ROOMS[c]; join_room(c)
+    r=METROPOLY_ROOMS[c]
+    if r["started"] and u not in r["players"]:
+        emit("monopoly_error",{"code":"room_not_found"}); return
+    join_room(c)
     if u not in r["players"]:
-        r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False}
+        r["players"][u]={"name":u,"token":t,"money":1000,"position":0,"jailed":0,"bankrupt":False,"hasRolled":False,"sid":request.sid}
+    else:
+        r["players"][u]["sid"]=request.sid
     r["lastLog"]=u+" odaya girdi."; emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_start_game")
 def ms(data):
     c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
-    if r: r["started"]=True; r["lastLog"]="Oyun başladı."; emit("monopoly_room_state",m_public(r),room=c)
+    if not r or r["started"]: return
+    u=m_by_sid(r,request.sid)
+    if u!=r["owner"]: emit("monopoly_error",{"code":"not_owner"}); return
+    with _state_lock:
+        r["started"]=True
+        r["turnOrder"]=list(r["players"].keys())
+        r["turnIndex"]=0
+        r["lastLog"]="Oyun başladı."
+    emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_roll_dice")
 def mr(data):
-    c=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip(); r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]: emit("monopoly_error",{"code":"missing"}); return
-    names=[n for n,p in r["players"].items() if not p.get("bankrupt")]
-    if u!=names[r["turnIndex"]%len(names)]: emit("monopoly_error",{"code":"not_your_turn"}); return
-    p=r["players"][u]; d1=random.randint(1,6); d2=random.randint(1,6); d=d1+d2; old=p["position"]; new=(old+d)%len(METROPOLY_CELLS)
-    if new<old: p["money"]+=200
-    p["position"]=new; name,typ,price,rent,grp=METROPOLY_CELLS[new]; log=f"{u} zar: {d1}+{d2}. {name}."
-    pending=False
-    if typ in ["property","transport","utility"]:
-        owner=r["owners"].get(str(new))
-        if owner and owner!=u:
-            pay=rent+int(r["houses"].get(str(new),0))*15
-            if r.get("hotels",{}).get(str(new)): pay=rent*5
-            p["money"]-=pay; r["players"][owner]["money"]+=pay; log+=f" {owner} sahibine {pay}€ kira ödedi."
-        elif not owner: pending=True; log+=f" Satın alınabilir: {price}€."
-    elif typ=="tax": p["money"]-=200; log+=" Vergi: -200€."
-    elif typ=="bank": b=random.choice([50,75,100,150]); p["money"]+=b; log+=f" Banka: +{b}€."
-    elif typ=="bonus": b=random.choice([-50,50,100,150]); p["money"]+=b; log+=f" Enchères: {b}€."
-    elif typ=="jail": p["jailed"]=1; log+=" Prison."
-    if p["money"]<0: p["bankrupt"]=True; log+=" İflas."
-    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
-    if names2 and not pending: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
-    r["lastDice"]=d; r["lastLog"]=log
+    c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
+    if not r: emit("monopoly_error",{"code":"missing"}); return
+    u=m_by_sid(r,request.sid)
+    if not u: emit("monopoly_error",{"code":"missing"}); return
+    if r.get("winner"): return
+    if r.get("pendingBuy"): emit("monopoly_error",{"code":"not_your_turn"}); return
+    if u!=m_current_turn_user(r): emit("monopoly_error",{"code":"not_your_turn"}); return
+    with _state_lock:
+        p=r["players"][u]; d1=random.randint(1,6); d2=random.randint(1,6); d=d1+d2; old=p["position"]; new=(old+d)%len(METROPOLY_CELLS)
+        if new<old: p["money"]+=200
+        p["position"]=new; name,typ,price,rent,grp=METROPOLY_CELLS[new]; log=f"{u} zar: {d1}+{d2}. {name}."
+        pending=False
+        if typ in ["property","transport","utility"]:
+            owner=r["owners"].get(str(new))
+            if owner and owner!=u:
+                if typ=="utility":
+                    pay=d*(10 if owns_full_group(r,owner,"utility") else 4)
+                elif r.get("hotels",{}).get(str(new)):
+                    pay=rent*5
+                else:
+                    pay=rent+int(r["houses"].get(str(new),0))*15
+                # Never invent money: the payer can only hand over what they actually have.
+                actual=min(pay,max(p["money"],0))
+                p["money"]-=actual; r["players"][owner]["money"]+=actual
+                log+=f" {owner} sahibine {actual}€ kira ödedi."
+            elif not owner:
+                pending=True; r["pendingBuy"]={"user":u,"cell":new}; log+=f" Satın alınabilir: {price}€."
+        elif typ=="tax": p["money"]-=200; log+=" Vergi: -200€."
+        elif typ=="bank": b=random.choice([50,75,100,150]); p["money"]+=b; log+=f" Banka: +{b}€."
+        elif typ=="bonus": b=random.choice([-50,50,100,150]); p["money"]+=b; log+=f" Enchères: {b}€."
+        elif typ=="jail": p["jailed"]=1; log+=" Prison."
+        if p["money"]<0:
+            p["bankrupt"]=True; log+=" İflas."
+            m_release_assets(r,u)
+        if not pending:
+            m_advance_turn(r)
+        m_check_winner(r)
+        r["lastDice"]=d; r["lastLog"]=log
     emit("monopoly_animate_move",{"username":u,"from":old,"to":new,"dice1":d1,"dice2":d2,"cellName":name,"cellPrice":price,"cellType":typ,"cellGroup":grp,"state":m_public(r),"pendingBuy":pending},room=c)
 
 @socketio.on("monopoly_buy_property")
 def mb(data):
-    c=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip(); r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]: return
-    p=r["players"][u]; pos=p["position"]; name,typ,price,rent,grp=METROPOLY_CELLS[pos]
-    if typ not in ["property","transport","utility"] or str(pos) in r["owners"] or p["money"]<price: emit("monopoly_error",{"code":"cannot_buy"}); return
-    p["money"]-=price; r["owners"][str(pos)]=u; r["lastLog"]=f"{u}, {name} aldı."
-    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
-    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
+    c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
+    if not r: return
+    u=m_by_sid(r,request.sid)
+    if not u: return
+    pb=r.get("pendingBuy")
+    if not pb or pb.get("user")!=u: emit("monopoly_error",{"code":"cannot_buy"}); return
+    with _state_lock:
+        pos=pb["cell"]; p=r["players"][u]; name,typ,price,rent,grp=METROPOLY_CELLS[pos]
+        if typ not in ["property","transport","utility"] or str(pos) in r["owners"] or p["money"]<price:
+            r["pendingBuy"]=None
+            emit("monopoly_error",{"code":"cannot_buy"}); return
+        p["money"]-=price; r["owners"][str(pos)]=u; r["lastLog"]=f"{u}, {name} aldı."
+        r["pendingBuy"]=None
+        m_advance_turn(r)
     emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_skip_buy")
 def monopoly_skip_buy(data):
-    c=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip(); r=METROPOLY_ROOMS.get(c)
+    c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
     if not r: return
-    names2=[n for n,pl in r["players"].items() if not pl.get("bankrupt")]
-    if names2: r["turnIndex"]=(r["turnIndex"]+1)%len(names2)
-    r["lastLog"]=u+" achète pas."
+    u=m_by_sid(r,request.sid)
+    if not u: return
+    pb=r.get("pendingBuy")
+    if not pb or pb.get("user")!=u: return
+    with _state_lock:
+        r["pendingBuy"]=None
+        r["lastLog"]=u+" satın almadı."
+        m_advance_turn(r)
     emit("monopoly_room_state",m_public(r),room=c)
 
 
@@ -6144,8 +6478,11 @@ def monopoly_skip_buy(data):
 def me(data):
     c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
     if not r: return
-    names=[n for n,p in r["players"].items() if not p.get("bankrupt")]
-    if names: r["turnIndex"]=(r["turnIndex"]+1)%len(names); r["lastLog"]="Sıra: "+names[r["turnIndex"]]
+    u=m_by_sid(r,request.sid)
+    if not u or r.get("winner") or r.get("pendingBuy") or u!=m_current_turn_user(r): return
+    with _state_lock:
+        m_advance_turn(r)
+        r["lastLog"]="Sıra: "+(m_current_turn_user(r) or "-")
     emit("monopoly_room_state",m_public(r),room=c)
 
 
@@ -6168,8 +6505,10 @@ def me(data):
 @socketio.on("monopoly_chat")
 def monopoly_chat(data):
     c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip() or "Oyuncu"
-    msg=(data or {}).get("message","").strip()
+    r=METROPOLY_ROOMS.get(c)
+    if not r: return
+    u=m_by_sid(r,request.sid) or "Oyuncu"
+    msg=((data or {}).get("message","") or "").strip()[:200]
     if c and msg:
         emit("monopoly_chat_message",{"username":u,"message":msg},room=c)
 
@@ -6177,11 +6516,11 @@ def monopoly_chat(data):
 @socketio.on("monopoly_add_house")
 def monopoly_add_house(data):
     c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip()
     cell=str((data or {}).get("cell",""))
     r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]:
-        return
+    if not r: return
+    u=m_by_sid(r,request.sid)
+    if not u: return
     r.setdefault("houses",{})
     r.setdefault("hotels",{})
     try:
@@ -6214,19 +6553,20 @@ def monopoly_add_house(data):
     if r["players"][u]["money"]<50:
         emit("monopoly_error",{"code":"no_money_house"})
         return
-    r["players"][u]["money"]-=50
-    r["houses"][cell]=count+1
-    r["lastLog"]=u+" a construit une maison sur "+name+"."
+    with _state_lock:
+        r["players"][u]["money"]-=50
+        r["houses"][cell]=count+1
+        r["lastLog"]=u+" a construit une maison sur "+name+"."
     emit("monopoly_room_state",m_public(r),room=c)
 
 @socketio.on("monopoly_add_hotel")
 def monopoly_add_hotel(data):
     c=((data or {}).get("code","") or "").strip().upper()
-    u=(data or {}).get("username","").strip()
     cell=str((data or {}).get("cell",""))
     r=METROPOLY_ROOMS.get(c)
-    if not r or u not in r["players"]:
-        return
+    if not r: return
+    u=m_by_sid(r,request.sid)
+    if not u: return
     r.setdefault("houses",{})
     r.setdefault("hotels",{})
     try:
@@ -6254,10 +6594,11 @@ def monopoly_add_hotel(data):
     if r["players"][u]["money"]<100:
         emit("monopoly_error",{"code":"no_money_hotel"})
         return
-    r["players"][u]["money"]-=100
-    r["houses"][cell]=0
-    r["hotels"][cell]=1
-    r["lastLog"]=u+" a construit un hôtel sur "+name+"."
+    with _state_lock:
+        r["players"][u]["money"]-=100
+        r["houses"][cell]=0
+        r["hotels"][cell]=1
+        r["lastLog"]=u+" a construit un hôtel sur "+name+"."
     emit("monopoly_room_state",m_public(r),room=c)
 
 
