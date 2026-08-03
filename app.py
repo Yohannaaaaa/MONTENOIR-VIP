@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading
 try:
     import psycopg2
 except Exception:
@@ -17,6 +17,10 @@ app.config['SECRET_KEY'] = 'codenamesvip'
 socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 rooms = {}
 MAX_PLAYERS = 10
+# socketio runs each handler on its own OS thread (async_mode='threading'); this guards
+# the read-modify-write sections of shared room/user state that must not interleave
+# (e.g. two players revealing a card at the same instant).
+_state_lock = threading.RLock()
 OWNER_USERNAME = "yohanna"
 
 
@@ -227,8 +231,12 @@ def save_users(users):
     data_dir = os.path.dirname(USERS_FILE)
     if data_dir and not os.path.exists(data_dir):
         os.makedirs(data_dir, exist_ok=True)
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
+    # Write to a temp file and rename over the real one so a crash/interleaved write
+    # mid-dump can never leave users.json truncated or malformed.
+    tmp_path = USERS_FILE + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, USERS_FILE)
 
 def hash_password(password):
 
@@ -557,6 +565,9 @@ def is_admin(code):
 
 def switch_turn(g):
     g['clueActive'] = False; g['guessLimit'] = 0; g['guessesMade'] = 0; g['clue'] = 'İpucu: -'
+    for c in g['cards']:
+        if not c['open']:
+            c['guessedBy'] = []; c['guessed'] = False; c['guessedTeam'] = ''
     if g['turn'] == 'blue':
         g['turn'] = 'red'; g['phase'] = "🧠 Kırmızı takımın Spymaster'ı ipucu düşünüyor..."
     else:
@@ -585,8 +596,11 @@ def update_winner(code, text):
     save_users(users)
 
 def save_history(code, text):
-    st = rooms[code]['stats']; g = rooms[code]['game']; st['gameNo'] += 1
-    st['wordHistory'].append({'gameNo': st['gameNo'], 'winner': text, 'words': [c['word'] + '(' + c['role'] + ')' for c in g['cards']]})
+    # roundNo already reflects the number players saw for this round (set once,
+    # when the round started via new_game_event) — don't bump the counter again
+    # here, or every finished round skips a number relative to the next one.
+    st = rooms[code]['stats']; g = rooms[code]['game']
+    st['wordHistory'].append({'gameNo': g.get('roundNo', st.get('gameNo', 0)), 'winner': text, 'words': [c['word'] + '(' + c['role'] + ')' for c in g['cards']]})
 
 def can_clue(p, g):
     return bool(p and ((g['turn'] == 'blue' and p['role'] == 'blueSpy') or (g['turn'] == 'red' and p['role'] == 'redSpy')))
@@ -3109,6 +3123,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <button id="menuSettingsBtn" type="button">⚙️ Ayarlar</button>
 <button id="menuWordsBtn" type="button">📚 Kelimeler</button>
 <button id="menuBetBtn" type="button">🎰 Bahis</button>
+<button id="menuShopBtn" type="button">🛒 Mağaza</button>
 
 <button id="ownerPanelBtn" type="button" style="display:none;">👑 Owner Panel</button>
 </div>
@@ -3133,7 +3148,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <div id="ownerPanelResult" style="color:#ffd700;"></div><div id="ownerUserList"></div>
 </div></div>
 <div id="winnerOverlay"><div id="winnerText"></div></div>
-<div id="settingsModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2 data-i18n='settings'>⚙️ Ayarlar</h2><h3>Kurallar</h3><p>Spymaster ipucu vermeden kart açılamaz. Sadece sırası olan takım tahmin yapar ve kart açar. Seyirciler sadece izler ve sanal jetonla bahis yapabilir.</p><p>Doğru takım rengi açılırsa takım devam eder. Rakip renk veya nötr açılırsa sıra geçer. Suikastçı açılırsa açan takım kaybeder.</p><h3>Varsayılan Diller</h3><select id="languageSelect"><option>Türkçe</option><option>English</option><option>Français</option><option>Русский</option><option>Nederlands</option></select></div></div>
+<div id="settingsModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>⚙️ Ayarlar</h2><h3>Kurallar</h3><p>Spymaster ipucu vermeden kart açılamaz. Sadece sırası olan takım tahmin yapar ve kart açar. Seyirciler sadece izler ve sanal jetonla bahis yapabilir.</p><p>Doğru takım rengi açılırsa takım devam eder. Rakip renk veya nötr açılırsa sıra geçer. Suikastçı açılırsa açan takım kaybeder.</p><h3>Varsayılan Diller</h3><select id="languageSelect"><option>Türkçe</option><option>English</option><option>Français</option><option>Русский</option><option>Nederlands</option></select></div></div>
 <div id="wordsModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>📚 Kelime Serileri</h2><p>Yeni seri seçince yeni oyun başlatılır.</p><button onclick="setCategory('default')">📁 CodeNames8.txt</button><button onclick="setCategory('animals')">🐾 Hayvanlar Serisi</button><button onclick="setCategory('adult')">🔞 18+ Serisi</button></div></div>
 <div id="shopModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>🎰 Boutique VIP & Jetons</h2><p><b>Mode sécurisé :</b> Stripe/PayPal sont en mode démo. Aucun paiement réel n’est encaissé dans cette version.</p><p>Bakiyen: <b id="shopChips">1000</b> 🪙</p><h3>🪙 Jeton Al - Démo</h3><div class="paymentDemoBox"><b>Stripe Démo</b><br><button onclick="demoBuyChips(1000,\'Stripe\')">Stripe: +1000 🪙</button><button onclick="demoBuyChips(5000,\'Stripe\')">Stripe: +5000 🪙</button><button onclick="demoBuyChips(20000,\'Stripe\')">Stripe: +20000 🪙</button></div><div class="paymentDemoBox"><b>PayPal Démo</b><br><button onclick="demoBuyChips(1000,\'PayPal\')">PayPal: +1000 🪙</button><button onclick="demoBuyChips(5000,\'PayPal\')">PayPal: +5000 🪙</button><button onclick="demoBuyChips(20000,\'PayPal\')">PayPal: +20000 🪙</button></div><hr><h3>👑 VIP Ol</h3><div class="shopItem">VIP Bronze — 3000 🪙 / 7 gün <button onclick="buyVipWithChips(\'vip-bronze\')">VIP Al</button></div><div class="shopItem">VIP Gold — 9000 🪙 / 30 gün <button onclick="buyVipWithChips(\'vip-gold\')">VIP Al</button></div><div class="shopItem">VIP Diamond — 25000 🪙 / 90 gün <button onclick="buyVipWithChips(\'vip-diamond\')">VIP Al</button></div><hr><h3>🪙 Jeton Bonus</h3><button onclick="buyVirtualChips(1000)">Bonus +1000 🪙</button><button onclick="buyVirtualChips(5000)">Bonus +5000 🪙</button><button onclick="buyVirtualChips(20000)">Bonus +20000 🪙</button><button onclick="buyVirtualChips(75000)">Bonus +75000 🪙</button><hr><h3>🖼️ Avatar Cadres</h3><div class="shopItem">Altın Çerçeve — 1000 🪙 <button onclick="buyCosmetic('frame-gold')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('frame-gold')">Kullan</button></div><div class="shopItem">VIP Çerçeve — 5000 🪙 <button onclick="buyCosmetic('frame-vip')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('frame-vip')">Kullan</button></div><div class="shopItem">Efsanevi Çerçeve — 15000 🪙 <button onclick="buyCosmetic('frame-legendary')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('frame-legendary')">Kullan</button></div><hr><h3>🌈 İsim Renkleri</h3><div class="shopItem">Kırmızı İsim — 500 🪙 <button onclick="buyCosmetic('name-red')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-red')">Kullan</button></div><div class="shopItem">Mavi İsim — 500 🪙 <button onclick="buyCosmetic('name-blue')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-blue')">Kullan</button></div><div class="shopItem">Mor İsim — 1000 🪙 <button onclick="buyCosmetic('name-purple')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-purple')">Kullan</button></div><div class="shopItem">Yeşil İsim — 3000 🪙 <button onclick="buyCosmetic('name-green')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-green')">Kullan</button></div><div class="shopItem">Rainbow İsim — 10000 🪙 <button onclick="buyCosmetic('name-rainbow')">Satın Al</button> <button data-base-label='Satın Al' onclick="equipCosmetic('name-rainbow')">Kullan</button></div></div></div>
 <div id="betModal" class="modal"><div class="modalContent"><button class="closeBtn" onclick="closeModals()">X</button><h2>🎰 Sanal Bahis</h2><p>Bakiyen: <b id="betChips">1000</b> 🪙</p><div class="betBox"><label>Takım:</label><select id="betTeam"><option value="blue">🔵 Mavi Takım</option><option value="red">🔴 Kırmızı Takım</option></select><label>Miktar:</label><input id="betAmount" type="number" value="100" min="1"><button onclick="placeBet()">Bahis Yap</button></div><div id="betInfo">Henüz bahis yok.</div></div></div>
@@ -3150,6 +3165,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <div id="gameScreen" class="hidden"><div class="panel"><button class="closeTableBtn" onclick="closeCurrentTable()">❌ Bu Masayı Kapat / Yeni Oda Aç</button></div><div class="mainLayout"><div><div class="panel"><button onclick="startTimer()">▶ Süre Başlat</button><button onclick="pauseTimer()">⏸ Durdur</button><button onclick="setTimer(60)">1 dk</button><button onclick="setTimer(180)">3 dk</button><button onclick="setTimer(300)">5 dk</button><button onclick="setTimer(600)">10 dk</button><br>⏱ <span id="timer">05:00</span></div><div class="panel"><h3>🎙 Oda Mikrofonu</h3><button onclick="startMic()">🎙 Aç</button><button onclick="stopMic()">🔇 Kapat</button><span id="micStatus" class="micStatus">Kapalı</span><p style="font-size:12px;color:#d4af37;">Mikrofon sadece oda içinde çalışır. Konuşan kişinin ikonu yeşil yanar.</p></div><div class="panel"><p id="roundText" class="scoreBox">🎮 Tur: 1</p><p id="roleText">Rol: -</p><p id="phaseText" class="statusBox">🎰 Oyun bekliyor...</p><p id="scoreText" class="scoreBox">🏆 Mavi: 0 | Kırmızı: 0</p><p id="chipsText" class="scoreBox">🪙 Jeton: 1000</p></div><div class="teams"><div class="team blueTeam">🔵 MAVİ TAKIM<span class="teamCount">Kalan kelime: <span id="blueCount">9</span></span><div id="bluePlayers" class="playerList"></div></div><div class="team redTeam">🔴 KIRMIZI TAKIM<span class="teamCount">Kalan kelime: <span id="redCount">8</span></span><div id="redPlayers" class="playerList"></div></div></div><div class="panel"><input id="clueText" placeholder="İpucu yaz"><select id="clueNumber"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="∞">♾️</option></select><button onclick="sendClue()">İpucu Ver</button><button onclick="endTurn()" style="background:#008f4c;color:white;">✅ Sırayı Bitir</button><h2 id="clueDisplay">İpucu: -</h2><div id="clueLog">📜 Oyun bandı: Henüz ipucu yok.</div><h2 id="turnDisplay">Sıra: Belirlenmedi</h2></div><div class="board" id="board"></div><div class="panel"><h3>💬 Chat</h3><div class="chatTabs"><button onclick="setChatMode('global')">🌍 Genel</button><button onclick="setChatMode('team')">🔒 Takım</button><button onclick="setChatMode('dm')">📩 DM</button></div><div id="messages"></div><select id="dmTarget"><option value="">DM oyuncu seç</option></select><br><input id="chatInput" placeholder="Mesaj yaz"><button onclick="sendMessage()">Gönder</button><br><button class="emojiBtn" onclick="addEmoji('😂')">😂</button><button class="emojiBtn" onclick="addEmoji('🔥')">🔥</button><button class="emojiBtn" onclick="addEmoji('💀')">💀</button><button class="emojiBtn" onclick="addEmoji('👑')">👑</button><button class="emojiBtn" onclick="addEmoji('❤️')">❤️</button><button class="emojiBtn" onclick="addEmoji('😈')">😈</button><small id="chatModeText" style="color:#ffd700;">Mode: Genel</small></div></div><div class="sidePanel"><h3>👥 Bağlanan Oyuncular</h3><div id="onlinePlayers"></div><div class="spectatorBox"><h3>👀 Seyirciler</h3><div id="spectatorList">-</div></div><hr><h3>🔁 Join Team</h3><button onclick="joinTeam('blue','player')">🔵 Mavi Saha Ajanı</button><button onclick="joinTeam('blue','blueSpy')">🕵️ Mavi Spymaster</button><button onclick="joinTeam('red','player')">🔴 Kırmızı Saha Ajanı</button><button onclick="joinTeam('red','redSpy')">🕵️ Kırmızı Spymaster</button><button onclick="joinTeam('spectator','spectator')">👀 Seyirci</button><hr><h3>👑 Admin Paneli</h3><small>Admin sadece Codenames oyununu yönetir. Bahis, turnuva, jeton, üyelik, ödeme ve tarot yetkisi yoktur.</small><div id="adminPanel"><button onclick="toggleTeamLock('blue')">🔒 Mavi Kilitle</button><button onclick="toggleTeamLock('red')">🔒 Kırmızı Kilitle</button><button onclick="adminNewGame()">🎲 Yeni Oyun</button><button onclick="adminRevealAll()">🃏 Kartları Aç</button><button onclick="adminResetStats()">🏆 Skoru Sıfırla</button></div><hr><h3>🏆 Kazananlar / Oyun Kaydı</h3><div id="historyPanel"></div></div></div></div>
 <script>
 const socket=io();let roomCode='',myName='',myRole='',myTeam='',mySid='',joined=false,isAdmin=false,currentChips=1000;let seconds=300,timerRunning=false,timerInterval=null,micStream=null;let voicePeers={},voiceStarted=false,currentMicStates={},lastPlayers=[],lastLocks={blue:false,red:false},audioContext=null,speakingInterval=null,mySpeaking=false,currentAccount=null,currentProfile=null,pendingAutoSit=false;let lastOpenedStates=[],lastWinner='',dealSoundPlayed=false,chatMode='global',currentReady={};
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function chipKey(n){return 'codenamesChips_'+(n||'guest')}function getSavedChips(n){let v=localStorage.getItem(chipKey(n));if(v===null)return 1000;let x=parseInt(v);return isNaN(x)?1000:x}function setSavedChips(n,a){localStorage.setItem(chipKey(n),String(a))}function saveLocalProfile(){localStorage.setItem('codenamesRoom',roomCode);localStorage.setItem('codenamesName',myName);localStorage.setItem('codenamesRole',myRole);localStorage.setItem('codenamesTeam',myTeam);localStorage.setItem('codenamesPassword',roomPassword.value||'')}function restoreLocalFields(){let r=localStorage.getItem('codenamesRoom')||'',n=localStorage.getItem('codenamesName')||'',ro=localStorage.getItem('codenamesRole')||'',t=localStorage.getItem('codenamesTeam')||'';if(r)roomInput.value=r;if(n)playerName.value=n;if(ro)roleChoice.value=ro;if(t)teamChoice.value=t}
 function avatarClass(f){return f==='woman.png'?'avatarImg femaleFrame':'avatarImg maleFrame'}function roleLabel(r){if(r==='player')return'Saha Ajanı';if(r==='blueSpy')return'Mavi Spymaster';if(r==='redSpy')return'Kırmızı Spymaster';if(r==='spectator')return'Seyirci';return r}function teamLabel(t){if(t==='blue')return'🔵 Mavi';if(t==='red')return'🔴 Kırmızı';return'👀 Seyirci'}
 function playerNameClass(p){
@@ -3605,7 +3621,7 @@ function refreshDmTargets(players){
     dmTarget.innerHTML='<option value="">DM oyuncu seç</option>';
     players.forEach(p=>{
         if(p.sid!==mySid){
-            dmTarget.innerHTML+=`<option value="${p.sid}">${p.name}</option>`;
+            dmTarget.innerHTML+=`<option value="${p.sid}">${esc(p.name)}</option>`;
         }
     });
     dmTarget.value=current;
@@ -3660,34 +3676,34 @@ function renderPlayers(players,locks){
         let av=mh.av;
 
         if(p.team==='blue'){
-            blueLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${p.name}</span>${crown} ${readyMark}</div>`;
-            bluePlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${p.name}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
+            blueLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${esc(p.name)}</span>${crown} ${readyMark}</div>`;
+            bluePlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${esc(p.name)}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
         }else if(p.team==='red'){
-            redLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${p.name}</span>${crown} ${readyMark}</div>`;
-            redPlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${p.name}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
+            redLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${esc(p.name)}</span>${crown} ${readyMark}</div>`;
+            redPlayers.innerHTML+=`${av} <span class="${mh.nameClass}">${esc(p.name)}</span>${crown} — ${roleLabel(p.role)} — 🪙 ${chips}<br>`;
         }else{
-            spectatorLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${p.name}</span>${crown} ${readyMark}</div>`;
-            sp.push(`${p.name} 🪙 ${chips}`);
+            spectatorLobby.innerHTML+=`<div>${av}<br><span class="${mh.nameClass}">${esc(p.name)}</span>${crown} ${readyMark}</div>`;
+            sp.push(`${esc(p.name)} 🪙 ${chips}`);
         }
 
-        if(p.role==='blueSpy') bs.push(p.name);
-        else if(p.role==='redSpy') rs.push(p.name);
-        else if(p.team==='blue') ba.push(p.name);
-        else if(p.team==='red') ra.push(p.name);
+        if(p.role==='blueSpy') bs.push(esc(p.name));
+        else if(p.role==='redSpy') rs.push(esc(p.name));
+        else if(p.team==='blue') ba.push(esc(p.name));
+        else if(p.team==='red') ra.push(esc(p.name));
 
         let adm='';
         if(isAdmin&&p.sid!==mySid){
             adm=`<div class="adminActions"><button onclick="makeAdmin('${p.sid}')">👑 Admin Yap</button><button onclick="movePlayer('${p.sid}','blue')">🔵 Maviye Al</button><button onclick="movePlayer('${p.sid}','red')">🔴 Kırmızıya Al</button><button onclick="makeSpectator('${p.sid}')">👀 Seyirci</button><button onclick="kickPlayer('${p.sid}')">🚫 At</button></div>`;
         }
 
-        onlinePlayers.innerHTML+=`<div class="profileCard">${av} <b class="${mh.nameClass}">${p.name}</b>${crown}<br>${teamLabel(p.team)}<br>${roleLabel(p.role)}<br>🪙 ${chips}${adm}</div>`;
+        onlinePlayers.innerHTML+=`<div class="profileCard">${av} <b class="${mh.nameClass}">${esc(p.name)}</b>${crown}<br>${teamLabel(p.team)}<br>${roleLabel(p.role)}<br>🪙 ${chips}${adm}</div>`;
     });
 
     spectatorList.innerHTML=sp.length?sp.join('<br>'):'-';
     bluePlayers.innerHTML+=`<hr>🕵️ Mavi Spymaster: ${bs.join(', ')||'-'}<br>👤 Mavi Saha Ajanı: ${ba.join(', ')||'-'}`;
     redPlayers.innerHTML+=`<hr>🕵️ Kırmızı Spymaster: ${rs.join(', ')||'-'}<br>👤 Kırmızı Saha Ajanı: ${ra.join(', ')||'-'}`;
 }
-function renderStats(st){scoreText.innerHTML='🏆 Mavi: '+st.blueWins+' | Kırmızı: '+st.redWins;let h=st.history.length?st.history.slice(-8).reverse().map(w=>'🏆 '+w).join('<br>'):'Henüz kazanan yok.';if(st.betHistory&&st.betHistory.length)h+='<hr><b>🎰 Bahis Kaydı</b><br>'+st.betHistory.slice(-8).reverse().join('<br>');if(st.wordHistory&&st.wordHistory.length){h+='<hr><b>📝 Oyun Kaydı / Kelimeler</b><br>';st.wordHistory.slice(-5).reverse().forEach(g=>{h+=`<br><b>Parti ${g.gameNo}</b> — ${g.winner}<br><small>${g.words.join(', ')}</small><br>`})}historyPanel.innerHTML=h}function renderBets(b){let l=Object.values(b||{});betInfo.innerHTML=l.length?l.map(x=>`🎰 ${x.name}: ${x.amount} 🪙 → ${x.team==='blue'?'Mavi':'Kırmızı'}`).join('<br>'):'Henüz bahis yok.'}
+function renderStats(st){scoreText.innerHTML='🏆 Mavi: '+st.blueWins+' | Kırmızı: '+st.redWins;let h=st.history.length?st.history.slice(-8).reverse().map(w=>'🏆 '+w).join('<br>'):'Henüz kazanan yok.';if(st.betHistory&&st.betHistory.length)h+='<hr><b>🎰 Bahis Kaydı</b><br>'+st.betHistory.slice(-8).reverse().map(esc).join('<br>');if(st.wordHistory&&st.wordHistory.length){h+='<hr><b>📝 Oyun Kaydı / Kelimeler</b><br>';st.wordHistory.slice(-5).reverse().forEach(g=>{h+=`<br><b>Parti ${g.gameNo}</b> — ${g.winner}<br><small>${g.words.join(', ')}</small><br>`})}historyPanel.innerHTML=h}function renderBets(b){let l=Object.values(b||{});betInfo.innerHTML=l.length?l.map(x=>`🎰 ${esc(x.name)}: ${x.amount} 🪙 → ${x.team==='blue'?'Mavi':'Kırmızı'}`).join('<br>'):'Henüz bahis yok.'}
 
 let sfxCtx=null;
 let sfxUnlocked=false;
@@ -3786,7 +3802,7 @@ function formatClueLog(logs){
     if(!logs || !logs.length) return '📜 Oyun bandı: Henüz ipucu yok.';
     return '📜 Oyun bandı:<br>' + logs.slice(-8).reverse().map(x=>{
         let cls = x.includes('Mavi Takım') ? 'blueClue' : (x.includes('Kırmızı Takım') ? 'redClue' : '');
-        return '<span class="clueNeon '+cls+'">💡 '+x+'</span>';
+        return '<span class="clueNeon '+cls+'">💡 '+esc(x)+'</span>';
     }).join('');
 }
 function leaveTable(){ lastOpenedMeta=[]; lastWinner='';
@@ -3864,7 +3880,7 @@ function detectCardSounds(g){
         lastWinner = g.winner;
     }
 }
-function renderGame(g){board.innerHTML='';roundText.innerHTML='🎮 Tur: '+(g.roundNo||1);blueCount.innerHTML=g.blueCount;redCount.innerHTML=g.redCount;phaseText.innerHTML=g.phase+((g.guessLimit&&g.guessLimit>0)?'<br>🎯 Tahmin hakkı: '+g.guessesMade+' / '+g.guessLimit:'');clueDisplay.innerHTML=g.clue;turnDisplay.innerHTML=g.turn==='blue'?'🔵 Sıra Mavi Takımda':'🔴 Sıra Kırmızı Takımda';clueLog.innerHTML=formatClueLog(g.clueLog);if(g.moveLog&&g.moveLog.length)clueLog.innerHTML+='<hr>🃏 Kart kaydı:<br>'+g.moveLog.slice(-8).reverse().join('<br>');g.cards.forEach((c,i)=>{let cls='card dealCard';if(c.guessed)cls+=' guessed';if(c.open||canSeeRole()||g.winner)cls+=' open '+c.role+'Card';let names=(c.guessedBy||[]).join(', '),gb=names?`<div class='guessName'>🎯 ${names}</div>`:'';board.innerHTML+=`<div id="card_${i}" class="${cls}" style="animation-delay:${i*45}ms" onclick="toggleGuess(${i})"><button class="revealBtn" onclick="revealCard(${i}, event)">A♠</button><button class="guessBtn" onclick="showGuesses(${i}, event)">Tahmin</button><span class="wordText">${c.word}</span>${gb}</div>`;if(!dealSoundPlayed)soundDeal(i)});if(!dealSoundPlayed)dealSoundPlayed=true;setTimeout(()=>detectCardSounds(g),80);if(g.winner){showWinner(g.winner);showEndGame(g)}}function showWinner(t){winnerText.innerHTML=t;winnerOverlay.style.display='flex';setTimeout(()=>winnerOverlay.style.display='none',5000)}function showEndGame(g){endGameTitle.innerHTML=g.winner;endGameInfo.innerHTML='🎮 Tur: '+(g.roundNo||1)+'<br>🔵 Kalan: '+g.blueCount+' | 🔴 Kalan: '+g.redCount+'<br><br>Yeni manche başlatabilir veya lobbyye dönebilirsin.';endGameModal.style.display='flex'}function updateTimerDisplay(){let m=Math.floor(seconds/60),s=seconds%60;timer.innerHTML=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function startTimer(){if(timerRunning)return;timerRunning=true;timerInterval=setInterval(()=>{if(seconds>0){seconds--;updateTimerDisplay()}},1000)}function pauseTimer(){timerRunning=false;clearInterval(timerInterval)}function setTimer(v){pauseTimer();seconds=v;updateTimerDisplay()}
+function renderGame(g){board.innerHTML='';roundText.innerHTML='🎮 Tur: '+(g.roundNo||1);blueCount.innerHTML=g.blueCount;redCount.innerHTML=g.redCount;phaseText.innerHTML=g.phase+((g.guessLimit&&g.guessLimit>0)?'<br>🎯 Tahmin hakkı: '+g.guessesMade+' / '+g.guessLimit:'');clueDisplay.innerHTML=esc(g.clue);turnDisplay.innerHTML=g.turn==='blue'?'🔵 Sıra Mavi Takımda':'🔴 Sıra Kırmızı Takımda';clueLog.innerHTML=formatClueLog(g.clueLog);if(g.moveLog&&g.moveLog.length)clueLog.innerHTML+='<hr>🃏 Kart kaydı:<br>'+g.moveLog.slice(-8).reverse().map(esc).join('<br>');g.cards.forEach((c,i)=>{let cls='card dealCard';if(c.guessed)cls+=' guessed';if(c.open||canSeeRole()||g.winner)cls+=' open '+c.role+'Card';let names=(c.guessedBy||[]).map(esc).join(', '),gb=names?`<div class='guessName'>🎯 ${names}</div>`:'';board.innerHTML+=`<div id="card_${i}" class="${cls}" style="animation-delay:${i*45}ms" onclick="toggleGuess(${i})"><button class="revealBtn" onclick="revealCard(${i}, event)">A♠</button><button class="guessBtn" onclick="showGuesses(${i}, event)">Tahmin</button><span class="wordText">${c.word}</span>${gb}</div>`;if(!dealSoundPlayed)soundDeal(i)});if(!dealSoundPlayed)dealSoundPlayed=true;setTimeout(()=>detectCardSounds(g),80);if(g.winner){if(g.winner!==lastWinner){lastWinner=g.winner;showWinner(g.winner);showEndGame(g)}}else{lastWinner=''}}function showWinner(t){winnerText.innerHTML=t;winnerOverlay.style.display='flex';setTimeout(()=>winnerOverlay.style.display='none',5000)}function showEndGame(g){endGameTitle.innerHTML=g.winner;endGameInfo.innerHTML='🎮 Tur: '+(g.roundNo||1)+'<br>🔵 Kalan: '+g.blueCount+' | 🔴 Kalan: '+g.redCount+'<br><br>Yeni manche başlatabilir veya lobbyye dönebilirsin.';endGameModal.style.display='flex'}function updateTimerDisplay(){let m=Math.floor(seconds/60),s=seconds%60;timer.innerHTML=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function startTimer(){if(timerRunning)return;timerRunning=true;timerInterval=setInterval(()=>{if(seconds>0){seconds--;updateTimerDisplay()}},1000)}function pauseTimer(){timerRunning=false;clearInterval(timerInterval)}function setTimer(v){pauseTimer();seconds=v;updateTimerDisplay()}
 socket.on('register_result',d=>{
     if(!d.ok){alert(d.msg);return}
     applyLoggedProfile(d.profile);
@@ -3940,7 +3956,7 @@ socket.on('ranking_result',d=>{
         rankingInfo.innerHTML='Henüz sıralama yok.';
         return;
     }
-    rankingInfo.innerHTML=d.users.map((u,i)=>`${i+1}. <b>${u.username}</b> — 🪙 ${u.chips} — 🏆 ${u.wins} — 🎮 ${u.games}`).join('<br>');
+    rankingInfo.innerHTML=d.users.map((u,i)=>`${i+1}. <b>${esc(u.username)}</b> — 🪙 ${u.chips} — 🏆 ${u.wins} — 🎮 ${u.games}`).join('<br>');
 });
 
 socket.on('connect',()=>{
@@ -3999,7 +4015,7 @@ socket.on('connect',()=>{
         gameScreen.classList.add('hidden');
         lobby.classList.remove('hidden');
     }
-});socket.on('chat_update',d=>{messages.innerHTML+='<b>🌍 '+d.name+':</b> '+d.msg+'<br>'});socket.on('team_chat_update',d=>{messages.innerHTML+='<b>🔒 '+d.name+':</b> '+d.msg+'<br>'});socket.on('dm_chat_update',d=>{messages.innerHTML+='<b>📩 '+d.name+':</b> '+d.msg+'<br>'});socket.on('kicked',()=>{alert('Odadan çıkarıldın.');localStorage.clear();location.reload()});socket.on('made_spectator',()=>{myRole='spectator';myTeam='spectator';saveLocalProfile();alert('Seyirci moduna alındın.')});socket.on('guess_names',d=>{alert('Bu kartı tahmin edenler: '+((d.names&&d.names.length)?d.names.join(', '):'Henüz tahmin yok.'))});
+});socket.on('chat_update',d=>{messages.innerHTML+='<b>🌍 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('team_chat_update',d=>{messages.innerHTML+='<b>🔒 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('dm_chat_update',d=>{messages.innerHTML+='<b>📩 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('kicked',()=>{alert('Odadan çıkarıldın.');localStorage.clear();location.reload()});socket.on('made_spectator',()=>{myRole='spectator';myTeam='spectator';saveLocalProfile();alert('Seyirci moduna alındın.')});socket.on('guess_names',d=>{alert('Bu kartı tahmin edenler: '+((d.names&&d.names.length)?d.names.join(', '):'Henüz tahmin yok.'))});
 
 socket.on('voice_existing_users',d=>{
     if(!voiceStarted) return;
@@ -4077,6 +4093,7 @@ function hardBindMainButtons(){
     bind('menuSettingsBtn',()=>{openSettings();closeMainMenu();});
     bind('menuWordsBtn',()=>{openWords();closeMainMenu();});
     bind('menuBetBtn',()=>{openBet();closeMainMenu();});
+    bind('menuShopBtn',()=>{openShop();closeMainMenu();});
     bind('ownerPanelBtn',()=>{openOwnerPanel();closeMainMenu();});
 }
 document.addEventListener('DOMContentLoaded',hardBindMainButtons);
@@ -4199,6 +4216,11 @@ def sit(data):
     code = data['room']
     if code not in rooms: return
     old = by_name(code, data['name'])
+    if old and old.get('account') and old.get('account') != account:
+        # Someone already sits under this display name with a *different* account —
+        # don't let a second account silently take over their seat/sid.
+        emit('error_msg', {'msg':'Bu isim zaten kullanımda. Başka bir isim seç.'})
+        return
     if len(rooms[code]['players']) >= MAX_PLAYERS and not old: emit('error_msg', {'msg':'Oda dolu. En fazla 10 oyuncu girebilir.'}); return
     if data['team'] in ['blue','red'] and rooms[code]['locks'][data['team']]: emit('error_msg', {'msg':'Bu takım kilitli.'}); return
     chips = int(data.get('chips', 1000))
@@ -4232,20 +4254,66 @@ def start_game(data):
     if active_players and not all(rooms[code].get('ready', {}).get(p['sid']) for p in active_players):
         emit('error_msg', {'msg':'Herkes hazır değil.'})
         return
+    for team, spy_role in (('blue', 'blueSpy'), ('red', 'redSpy')):
+        team_players = [p for p in active_players if p.get('team') == team]
+        if not team_players:
+            emit('error_msg', {'msg':'Her iki takımda da en az bir oyuncu olmalı.'})
+            return
+        if not any(p.get('role') == spy_role for p in team_players):
+            emit('error_msg', {'msg':'Her takımın bir Spymaster\'ı olmalı.'})
+            return
+        if not any(p.get('role') == 'player' for p in team_players):
+            emit('error_msg', {'msg':'Her takımın en az bir saha ajanı olmalı.'})
+            return
     rooms[code]['game']['started'] = True
     emit('game_update', pdata(code), to=code)
 
+def _refund_pending_bets(code):
+    r = rooms[code]
+    for sid, b in list(r.get('bets', {}).items()):
+        p = by_sid(code, sid) or by_name(code, b.get('name', ''))
+        if p:
+            p['chips'] += b.get('amount', 0)
+            save_player_to_user(p)
+    r['bets'] = {}
+
 @socketio.on('new_game')
 def new_game_event(data):
-    code = data['room']
-    if code in rooms:
-        rooms[code]['game'] = new_game(rooms[code].get('category','default')); rooms[code]['stats']['gameNo'] = int(rooms[code]['stats'].get('gameNo',0)) + 1; rooms[code]['game']['roundNo'] = rooms[code]['stats']['gameNo']; rooms[code]['bets'] = {}; rooms[code]['ready'] = {}; emit('game_update', pdata(code), to=code)
+    code = data.get('room')
+    if code not in rooms:
+        return
+    g = rooms[code]['game']
+    # A round already under way (started, no winner yet) can only be reset by the
+    # room admin — otherwise any player could wipe an ongoing game out from under
+    # the others. Once it's finished (or never started), anyone can start the next one.
+    if g.get('started') and not g.get('winner') and not is_admin(code):
+        emit('error_msg', {'msg':'Devam eden oyunu sadece oda sahibi sıfırlayabilir.'})
+        return
+    with _state_lock:
+        _refund_pending_bets(code)
+        was_started = g.get('started', False)
+        rooms[code]['stats']['gameNo'] = int(rooms[code]['stats'].get('gameNo', 0)) + 1
+        rooms[code]['game'] = new_game(rooms[code].get('category', 'default'))
+        rooms[code]['game']['roundNo'] = rooms[code]['stats']['gameNo']
+        # Keep straight into the next round instead of bouncing everyone back to the
+        # lobby and clearing "ready" — matches what the "yeni manche" button promises.
+        rooms[code]['game']['started'] = was_started
+    emit('game_update', pdata(code), to=code)
 
 @socketio.on('set_category')
 def set_category(data):
-    code = data['room']; cat = data.get('category','default')
-    if code in rooms:
-        rooms[code]['category'] = cat; rooms[code]['game'] = new_game(cat); rooms[code]['bets'] = {}; emit('game_update', pdata(code), to=code)
+    code = data.get('room'); cat = data.get('category', 'default')
+    if code not in rooms:
+        return
+    g = rooms[code]['game']
+    if g.get('started') and not g.get('winner') and not is_admin(code):
+        emit('error_msg', {'msg':'Devam eden oyunu sadece oda sahibi sıfırlayabilir.'})
+        return
+    with _state_lock:
+        _refund_pending_bets(code)
+        rooms[code]['category'] = cat
+        rooms[code]['game'] = new_game(cat)
+    emit('game_update', pdata(code), to=code)
 
 @socketio.on('join_team')
 def join_team(data):
@@ -4257,29 +4325,42 @@ def join_team(data):
     p['team']=team; p['role']='spectator' if team=='spectator' else role
     emit('players_update', {'players':rooms[code]['players'],'locks':rooms[code]['locks'],'micStates':rooms[code].get('micStates', {})}, to=code); emit('game_update', pdata(code), to=code)
 
+def _valid_card_idx(g, idx):
+    return isinstance(idx, int) and not isinstance(idx, bool) and 0 <= idx < len(g['cards'])
+
 @socketio.on('toggle_guess')
 def toggle_guess(data):
-    code=data['room']; idx=data['index']
+    code=data.get('room'); idx=data.get('index')
     if code not in rooms: return
     p=by_sid(code, request.sid); g=rooms[code]['game']
     if not p: return
     if p['team']=='spectator' or p['role']=='spectator': emit('error_msg', {'msg':'Seyirci tahmin yapamaz.'}); return
     if not g['clueActive']: emit('error_msg', {'msg':'Spymaster ipucu vermeden tahmin yapılamaz.'}); return
     if p['team'] != g['turn']: emit('error_msg', {'msg':'Sıra senin takımında değil.'}); return
-    card = g['cards'][idx]; names = card.get('guessedBy', [])
-    if p['name'] in names: names.remove(p['name'])
-    else: names.append(p['name'])
-    card['guessedBy'] = names; card['guessed'] = bool(names); card['guessedTeam'] = p['team'] if names else ''
+    if g['winner']: return
+    if not _valid_card_idx(g, idx): return
+    with _state_lock:
+        card = g['cards'][idx]
+        if card['open']: return
+        names = card.get('guessedBy', [])
+        if p['name'] in names: names.remove(p['name'])
+        else: names.append(p['name'])
+        card['guessedBy'] = names; card['guessed'] = bool(names); card['guessedTeam'] = p['team'] if names else ''
     emit('game_update', pdata(code), to=code)
 
 @socketio.on('show_guesses')
 def show_guesses(data):
-    code=data['room']; idx=data['index']
-    if code in rooms: emit('guess_names', {'names': rooms[code]['game']['cards'][idx].get('guessedBy', [])})
+    code=data.get('room'); idx=data.get('index')
+    if code not in rooms: return
+    p=by_sid(code, request.sid)
+    if not p: return
+    g=rooms[code]['game']
+    if not _valid_card_idx(g, idx): return
+    emit('guess_names', {'names': g['cards'][idx].get('guessedBy', [])})
 
 @socketio.on('reveal_card')
 def reveal_card(data):
-    code=data['room']; idx=data['index']
+    code=data.get('room'); idx=data.get('index')
     if code not in rooms: return
     p=by_sid(code, request.sid); g=rooms[code]['game']
     if not p: return
@@ -4287,47 +4368,66 @@ def reveal_card(data):
     if not g['clueActive']: emit('error_msg', {'msg':'Spymaster ipucu vermeden kart açılamaz.'}); return
     if p['team'] != g['turn']: emit('error_msg', {'msg':'Sıra senin takımında değil.'}); return
     if g['winner']: return
-    c=g['cards'][idx]
-    if c['open']: return
-    c['open']=True; c['guessed']=False; c['guessedBy']=[]; c['guessedTeam']=''
-    cur=g['turn']; g['guessesMade'] += 1; team_name='Mavi Takım' if cur=='blue' else 'Kırmızı Takım'; g['moveLog'].append(f"{team_name} - {p['name']} açtı: {c['word']} ({c['role']})")
-    def finish(wteam, text):
-        g['winner']=text; update_winner(code,text); save_history(code,text); settle_bets(code,wteam)
-        for cc in g['cards']: cc['open']=True
-    if c['role']=='assassin': finish('red' if cur=='blue' else 'blue', '🏆 KIRMIZI TAKIM KAZANDI' if cur=='blue' else '🏆 MAVİ TAKIM KAZANDI')
-    elif c['role']=='blue':
-        g['blueCount']-=1
-        if cur=='red': switch_turn(g)
-        elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
-        if g['blueCount']==0: finish('blue','🏆 MAVİ TAKIM KAZANDI')
-    elif c['role']=='red':
-        g['redCount']-=1
-        if cur=='blue': switch_turn(g)
-        elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
-        if g['redCount']==0: finish('red','🏆 KIRMIZI TAKIM KAZANDI')
-    else: switch_turn(g)
+    if not _valid_card_idx(g, idx): return
+    with _state_lock:
+        c=g['cards'][idx]
+        if c['open']: return
+        c['open']=True; c['guessed']=False; c['guessedBy']=[]; c['guessedTeam']=''
+        cur=g['turn']; g['guessesMade'] += 1; team_name='Mavi Takım' if cur=='blue' else 'Kırmızı Takım'; g['moveLog'].append(f"{team_name} - {p['name']} açtı: {c['word']} ({c['role']})")
+        def finish(wteam, text):
+            g['winner']=text; update_winner(code,text); save_history(code,text); settle_bets(code,wteam)
+            for cc in g['cards']: cc['open']=True
+        if c['role']=='assassin': finish('red' if cur=='blue' else 'blue', '🏆 KIRMIZI TAKIM KAZANDI' if cur=='blue' else '🏆 MAVİ TAKIM KAZANDI')
+        elif c['role']=='blue':
+            g['blueCount']-=1
+            if cur=='red': switch_turn(g)
+            elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
+            if g['blueCount']==0: finish('blue','🏆 MAVİ TAKIM KAZANDI')
+        elif c['role']=='red':
+            g['redCount']-=1
+            if cur=='blue': switch_turn(g)
+            elif g['guessesMade']>=g['guessLimit']: switch_turn(g)
+            if g['redCount']==0: finish('red','🏆 KIRMIZI TAKIM KAZANDI')
+        else: switch_turn(g)
     emit('game_update', pdata(code), to=code)
 
 @socketio.on('send_clue')
 def send_clue(data):
-    code=data['room']; name=data.get('name','')
+    code=data.get('room')
     if code not in rooms: return
-    g=rooms[code]['game']; p=by_name(code, name)
+    g=rooms[code]['game']
+    # Resolve the clue-giver from the connected socket, not a client-supplied name —
+    # otherwise anyone could emit send_clue with someone else's name and speak for them.
+    p=by_sid(code, request.sid)
     if not can_clue(p,g): emit('error_msg', {'msg':"İpucunu sadece sıradaki takımın Spymaster'ı verebilir."}); return
-    g['clue']='İpucu: '+data['clue']+' / '+data['number']; g['clueActive']=True; g['guessesMade']=0
-    g['guessLimit'] = 99 if data['number']=='∞' else int(data['number'])+1
-    tname='Mavi Takım' if g['turn']=='blue' else 'Kırmızı Takım'; g['clueLog'].append(f"{tname} - {p['name']}: {data['clue']} {data['number']}")
+    if g['winner']: return
+    clue_text = str(data.get('clue',''))[:200]
+    number_raw = str(data.get('number',''))
+    if number_raw == '∞':
+        guess_limit = 99
+    else:
+        try:
+            n = int(number_raw)
+        except (TypeError, ValueError):
+            emit('error_msg', {'msg':'Geçersiz ipucu sayısı.'}); return
+        if n < 0:
+            emit('error_msg', {'msg':'Geçersiz ipucu sayısı.'}); return
+        guess_limit = n + 1
+    g['clue']='İpucu: '+clue_text+' / '+number_raw; g['clueActive']=True; g['guessesMade']=0
+    g['guessLimit'] = guess_limit
+    tname='Mavi Takım' if g['turn']=='blue' else 'Kırmızı Takım'; g['clueLog'].append(f"{tname} - {p['name']}: {clue_text} {number_raw}")
     g['phase']='🎯 Mavi takım ajanları tahmin yapıyor...' if g['turn']=='blue' else '🎯 Kırmızı takım ajanları tahmin yapıyor...'
     emit('game_update', pdata(code), to=code)
 
 @socketio.on('end_turn')
 def end_turn(data):
-    code=data['room']
+    code=data.get('room')
     if code not in rooms: return
     g=rooms[code]['game']; p=by_sid(code, request.sid)
     if not p: emit('error_msg', {'msg':'Oyuncu bulunamadı.'}); return
     if p['team']=='spectator' or p['role']=='spectator': emit('error_msg', {'msg':'Seyirci sırayı değiştiremez.'}); return
     if p['team'] != g['turn']: emit('error_msg', {'msg':'Sıra senin takımında değil.'}); return
+    if g['winner']: return
     switch_turn(g); emit('game_update', pdata(code), to=code)
 
 
@@ -4513,11 +4613,19 @@ def equip_cosmetic(data):
         emit('game_update', pdata(code), to=code)
     emit('cosmetic_result', {'ok': True, 'msg': 'Kozmetik aktif edildi.', 'profile': private_profile(account, users[account])})
 
+DEMO_CHIP_AMOUNTS = {1000, 5000, 20000, 75000}
+
 @socketio.on('buy_virtual_chips')
 def buy_virtual_chips(data):
     code = data.get('room', '')
-    amount = int(data.get('amount', 0))
-    if amount <= 0:
+    try:
+        amount = int(data.get('amount', 0))
+    except (TypeError, ValueError):
+        return
+    # This is the "démo" bonus-chip button (no real payment) — restrict to the exact
+    # denominations offered in the shop UI so a raw socket call can't mint arbitrary
+    # amounts of the fake currency that also buys VIP/cosmetics.
+    if amount not in DEMO_CHIP_AMOUNTS:
         return
 
     player = by_sid(code, request.sid) if code in rooms else None
@@ -4540,16 +4648,34 @@ def buy_virtual_chips(data):
 
 @socketio.on('place_bet')
 def place_bet(data):
-    code=data['room']; team=data['team']; amount=int(data.get('amount',0))
+    code=data.get('room'); team=data.get('team')
     if code not in rooms or team not in ['blue','red']: return
+    try:
+        amount=int(data.get('amount',0))
+    except (TypeError, ValueError):
+        emit('error_msg', {'msg':'Geçerli jeton miktarı yaz.'}); return
     p=by_sid(code, request.sid)
     if not p: return
+    g=rooms[code]['game']
+    if g.get('winner') or not g.get('started'):
+        emit('error_msg', {'msg':'Bahis sadece devam eden bir oyunda yapılabilir.'}); return
     if amount<=0: emit('error_msg', {'msg':'Geçerli jeton miktarı yaz.'}); return
     if int(p.get('chips',1000))<amount: emit('error_msg', {'msg':'Yeterli jeton yok.'}); return
-    old=rooms[code]['bets'].get(request.sid)
-    if old: p['chips'] += old['amount']
-    p['chips'] -= amount; rooms[code]['bets'][request.sid]={'name':p['name'],'team':team,'amount':amount}; save_player_to_user(p)
+    with _state_lock:
+        old=rooms[code]['bets'].get(request.sid)
+        if old: p['chips'] += old['amount']
+        p['chips'] -= amount; rooms[code]['bets'][request.sid]={'name':p['name'],'team':team,'amount':amount}
+    save_player_to_user(p)
     emit('game_update', pdata(code), to=code)
+
+@socketio.on('get_ranking')
+def get_ranking():
+    users = load_users()
+    rows = []
+    for username, u in users.items():
+        rows.append({'username': username, 'chips': int(u.get('chips', 1000)), 'wins': int(u.get('wins', 0)), 'games': int(u.get('games', 0))})
+    rows.sort(key=lambda r: (r['wins'], r['chips']), reverse=True)
+    emit('ranking_result', {'users': rows[:20]})
 
 @socketio.on('admin_new_game')
 def admin_new_game(data): new_game_event(data)
@@ -4616,6 +4742,24 @@ def leave_table(data):
     rooms[code]['ready'].pop(request.sid, None)
     emit('players_update', {'players': rooms[code]['players'], 'locks': rooms[code]['locks'], 'micStates': rooms[code].get('micStates', {}), 'ready': rooms[code].get('ready', {})}, to=code)
     emit('game_update', pdata(code), to=code)
+
+@socketio.on('disconnect')
+def codenames_disconnect_cleanup():
+    # Nothing removed a player from a room's roster on tab-close/refresh, so a single
+    # ghost player could permanently block start_game (never ready) or freeze a turn
+    # (their team can never act again). Drop them from every room they were sitting in.
+    sid = request.sid
+    for code, r in list(rooms.items()):
+        p = by_sid(code, sid)
+        if not p:
+            continue
+        with _state_lock:
+            r['players'] = [pl for pl in r['players'] if pl['sid'] != sid]
+            r.get('ready', {}).pop(sid, None)
+            r.get('bets', {}).pop(sid, None)
+            r.get('micStates', {}).pop(sid, None)
+        emit('players_update', {'players': r['players'], 'locks': r['locks'], 'micStates': r.get('micStates', {}), 'ready': r.get('ready', {})}, to=code)
+        emit('game_update', pdata(code), to=code)
 
 @socketio.on('toggle_ready')
 def toggle_ready(data):
