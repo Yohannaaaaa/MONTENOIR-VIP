@@ -610,6 +610,11 @@ function buildPerimeter(n, w, h, marginX, marginY) {
   return pts;
 }
 const POS = buildPerimeter(N_CELLS, 1200, 800, 130, 110);
+// buildPerimeter's point 0 lands on the board art's "Banque" cell (index 1), not on
+// "ALLEZ" (index 0) -- shift by one so cell index p renders at its actual drawn cell
+// (verified against the board texture: ALLEZ sits right next to Banque going the
+// other way around the loop).
+function cellWorldPos(p) { return WPOS[(p - 1 + N_CELLS) % N_CELLS]; }
 
 // escape user-controlled text before it ever reaches innerHTML
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -731,7 +736,7 @@ function getTokenSprite(u) {
 }
 function placeToken(u, p, jump, offsetIndex, offsetCount) {
   const s = getTokenSprite(u);
-  const { x, z } = WPOS[p % N_CELLS];
+  const { x, z } = cellWorldPos(p);
   const off = (offsetCount && offsetCount > 1) ? TOKEN_OFFSETS[offsetIndex % TOKEN_OFFSETS.length] : { dx: 0, dz: 0 };
   s.position.set(x + off.dx, 0.075, z + off.dz);
   if (jump) {
@@ -777,7 +782,7 @@ function renderBuildings(state) {
     if (!cell || cell[1] !== 'property') return;
     const grp = cell[4];
     const color = new THREE.Color(GROUP_COLORS[grp] || '#d4af37');
-    const { x, z } = WPOS[idx];
+    const { x, z } = cellWorldPos(idx);
     const g = new THREE.Group();
     if (hotels[cellStr]) {
       const hotel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.4, roughness: 0.3 }));
