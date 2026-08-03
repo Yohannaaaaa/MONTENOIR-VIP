@@ -291,10 +291,11 @@ function show(s) {
 
 // ==================== 3D lane scene (Three.js) ====================
 const LANE_HALF_WIDTH = 1.05;               // gutter-to-gutter half width (world units)
-const LANE_LENGTH = 9;                      // foul line (z=0) to back wall
-const PIN_DECK_Z = 7.2;                     // headpin distance from the foul line
-const PIN_SPACING = 0.85;                   // center-to-center pin spacing
+const PIN_DECK_Z = 3.6;                     // headpin distance from the foul line
+const PIN_SPACING = 0.42;                   // center-to-center pin spacing — tight triangle
 const PIN_ROW_DEPTH = PIN_SPACING * Math.sqrt(3) / 2;
+const PIN_HEIGHT = 0.68;                    // target rendered pin height
+const LANE_LENGTH = PIN_DECK_Z + 3 * PIN_ROW_DEPTH + 0.6; // extend floor past the back pin row
 const BALL_RADIUS = 0.32;
 
 const laneCanvas = document.getElementById('laneCanvas');
@@ -310,9 +311,9 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x04060c);
 scene.fog = new THREE.Fog(0x04060c, 11, 22);
 
-const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 60);
-camera.position.set(0, 1.15, -3.0);
-camera.lookAt(0, 0.5, PIN_DECK_Z - 1.5);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
+camera.position.set(0, 3.1, -1.0);
+camera.lookAt(0, 0.15, PIN_DECK_Z * 0.55);
 
 function resizeLaneRenderer() {
   const rect = laneCanvas.parentElement.getBoundingClientRect();
@@ -347,6 +348,14 @@ const frontFill = new THREE.DirectionalLight(0xfff4d6, 3.4);
 frontFill.position.set(0, 3, -2);
 frontFill.target.position.set(0, 0.5, PIN_DECK_Z);
 scene.add(frontFill, frontFill.target);
+
+// Dedicated close-range light aimed only at the pin deck, so the pins read as
+// bright/white and clearly separated from the dark background regardless of
+// how the other lane-wide lights are balanced. Kept close + short range so it
+// doesn't spill back and blow out the ball near the camera.
+const pinSpot = new THREE.PointLight(0xfffaf0, 30, 5, 1.1);
+pinSpot.position.set(0, 1.6, PIN_DECK_Z - 0.4);
+scene.add(pinSpot);
 
 function makeLaneTexture() {
   const c = document.createElement('canvas'); c.width = 128; c.height = 512;
@@ -433,11 +442,12 @@ gltfLoader.load('/static/models/pins_rig.glb', (gltf) => {
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide });
   root.traverse(o => { if (o.isMesh) { o.material = material; o.geometry.computeVertexNormals(); o.castShadow = true; o.receiveShadow = true; } });
 
-  const box0 = new THREE.Box3().setFromObject(root.children[0]);
-  const pinScale = 0.42 / (box0.max.y - box0.min.y);
+  const srcNodes = root.children.slice(); // snapshot: wrapper.add() below mutates root.children live
+  const box0 = new THREE.Box3().setFromObject(srcNodes[0]);
+  const pinScale = PIN_HEIGHT / (box0.max.y - box0.min.y);
 
   for (let i = 0; i < 10; i++) {
-    const srcNode = root.children[i];
+    const srcNode = srcNodes[i];
     if (!srcNode) continue;
     const wrapper = new THREE.Object3D();
     wrapper.position.set(PIN_LAYOUT[i].x, 0, PIN_LAYOUT[i].z);
