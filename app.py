@@ -2342,7 +2342,7 @@ COMING_SOON_HTML = r'''
 '''
 
 HTML = r'''
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"><title>CODENAMES VIP</title><script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CODENAMES VIP</title><script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
 body{
 margin:0;
@@ -3138,32 +3138,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 .compactMenu button{display:block!important;width:100%!important;text-align:left!important;margin:4px 0!important;font-size:12px!important;}
 .tarotTopBtn{position:static!important;display:block!important;width:190px!important;max-width:190px!important;white-space:normal!important;line-height:1.05!important;font-size:10px!important;padding:7px 8px!important;}
 .vipCasinoMarks,.casinoMarks,body::before,body::after{pointer-events:none!important;}
-
-/* === PHONE MODE FIX: earlier fixed-position patches above pinned the top-left menu
-   and the bottom-left language bar over the page content on narrow screens; this is
-   the real reason the mobile @media rules further up never looked right in practice.
-   Placed last on purpose so it wins the !important cascade on phones. === */
-@media(max-width:800px){
-    .topLeftFixed{
-        position:static!important;
-        flex-direction:row!important;
-        flex-wrap:wrap!important;
-        justify-content:center!important;
-        max-width:100%!important;
-        margin:10px auto!important;
-    }
-    .topLeftFixed button{width:auto!important;min-width:110px!important;}
-    .compactMenuWrap{width:auto!important;}
-    .compactMenu{position:absolute!important;top:42px!important;left:50%!important;transform:translateX(-50%)!important;}
-    #langSelector{
-        position:static!important;
-        bottom:auto!important;
-        left:auto!important;
-        margin:14px auto!important;
-        max-width:94vw!important;
-        justify-content:center!important;
-    }
-}
 </style></head><body>
 <div class="vipCasinoMarks"><span class="m1">A♠</span><span class="m2">K♥</span><span class="m3">Q♣</span><span class="m4">J♦</span><span class="m5">♠♥♣♦</span><span class="m6">A K Q J</span></div><div id="profileChip" class="vipProfileChip" onclick="openProfile()">👤 Profil</div><div class="topLeftFixed">
 
