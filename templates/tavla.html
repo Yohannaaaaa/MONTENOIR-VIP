@@ -185,6 +185,7 @@ function savedProfileUser(){ return localStorage.getItem("montenoirUser") || loc
   }
 })();
 let user = '', avatar = '⚪', room = '', lastState = null, isOwner = false, armedDie = null, prevDiceLen = 0, selectedSrc = null, prevMyTurn = false, prevStage = null;
+let prevBoardSnapshot = null;
 
 const TOP_ORDER = [12,13,14,15,16,17,18,19,20,21,22,23];
 const BOTTOM_ORDER = [11,10,9,8,7,6,5,4,3,2,1,0];
@@ -359,6 +360,82 @@ function fillStack(group, count, color) {
   }
 }
 
+// ---- move animation: slide a checker from its old spot to its new one instead of
+// having it teleport into place when the board stacks get rebuilt on every update ----
+const activeTweens = [];
+function slotWorldPos(group, slotIndex) {
+  return new THREE.Vector3(
+    group.position.x,
+    BOARD_SURFACE_Y + CHECKER_HEIGHT / 2 + slotIndex * 0.0035,
+    group.position.z + group.userData.dir * slotIndex * CHECKER_FAN_SPACING
+  );
+}
+function offTrayWorldPos(color) {
+  return new THREE.Vector3(PLAY_X_MIN - 0.12, BOARD_SURFACE_Y + 0.08, color === 'white' ? Z_TOP_STACK : Z_BOTTOM_STACK);
+}
+function locationWorldPos(loc, color, slotIndex) {
+  if (loc.type === 'point') return slotWorldPos(pointGroups[loc.idx], slotIndex);
+  if (loc.type === 'bar') return slotWorldPos(color === 'white' ? barGroupWhite : barGroupBlack, slotIndex);
+  return offTrayWorldPos(color);
+}
+function colorCountsAt(points, color) {
+  const sign = color === 'white' ? 1 : -1;
+  return points.map(v => (Math.sign(v || 0) === sign ? Math.abs(v) : 0));
+}
+// Diff two board snapshots for one color and, if exactly one checker of that color
+// moved, return where it came from and where it went (point/bar/off). Returns null
+// for anything else (new game, multi-move batch, etc.) so callers just skip the tween.
+function findColorMove(prev, next, color) {
+  const prevCounts = colorCountsAt(prev.points, color);
+  const nextCounts = colorCountsAt(next.points, color);
+  const decreases = [], increases = [];
+  for (let i = 0; i < 24; i++) {
+    const d = nextCounts[i] - prevCounts[i];
+    if (d < 0) decreases.push({ idx: i, count: prevCounts[i] });
+    if (d > 0) increases.push({ idx: i, count: nextCounts[i] });
+  }
+  const prevBar = prev.bar[color] || 0, nextBar = next.bar[color] || 0;
+  const prevOff = prev.off[color] || 0, nextOff = next.off[color] || 0;
+  const barDelta = nextBar - prevBar;
+  const totalDecrease = decreases.length + Math.max(0, -barDelta);
+  const totalIncrease = increases.length + Math.max(0, barDelta) + Math.max(0, nextOff - prevOff);
+  if (totalDecrease !== 1 || totalIncrease !== 1) return null;
+  const from = decreases.length ? { type: 'point', idx: decreases[0].idx, oldCount: prevCounts[decreases[0].idx] }
+    : (barDelta < 0 ? { type: 'bar', oldCount: prevBar } : null);
+  const to = increases.length ? { type: 'point', idx: increases[0].idx, newCount: nextCounts[increases[0].idx] }
+    : (barDelta > 0 ? { type: 'bar', newCount: nextBar } : (nextOff > prevOff ? { type: 'off' } : null));
+  if (!from || !to) return null;
+  return { from, to };
+}
+function animateCheckerMove(move, color) {
+  const fromPos = locationWorldPos(move.from, color, Math.max(0, move.from.oldCount - 1));
+  const toPos = locationWorldPos(move.to, color, Math.max(0, (move.to.newCount || 1) - 1));
+  let hiddenMesh = null;
+  if (move.to.type === 'point') hiddenMesh = pointGroups[move.to.idx].children[pointGroups[move.to.idx].children.length - 1] || null;
+  else if (move.to.type === 'bar') {
+    const g = color === 'white' ? barGroupWhite : barGroupBlack;
+    hiddenMesh = g.children[g.children.length - 1] || null;
+  }
+  if (hiddenMesh) hiddenMesh.visible = false;
+  const flying = makeChecker(color);
+  flying.position.copy(fromPos);
+  tScene.add(flying);
+  activeTweens.push({
+    mesh: flying, from: fromPos, to: toPos, start: performance.now(), duration: 320,
+    onDone: () => { tScene.remove(flying); if (hiddenMesh) hiddenMesh.visible = true; }
+  });
+}
+function tickTweens(now) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    const tw = activeTweens[i];
+    const t = Math.min(1, (now - tw.start) / tw.duration);
+    const e = 1 - Math.pow(1 - t, 3);
+    tw.mesh.position.lerpVectors(tw.from, tw.to, e);
+    tw.mesh.position.y += Math.sin(t * Math.PI) * 0.05;
+    if (t >= 1) { tw.onDone(); activeTweens.splice(i, 1); }
+  }
+}
+
 // ---- click/selection highlight rings ----
 const ringGeo = new THREE.RingGeometry(CHECKER_RADIUS * 1.05, CHECKER_RADIUS * 1.35, 32);
 const highlightRings = {};
@@ -416,7 +493,14 @@ tavlaCanvas.addEventListener('click', (e) => {
   }
 });
 
-function updateBoard3D(state, myTurn, legalMoves) {
+function updateBoard3D(state, myTurn, legalMoves, prevSnapshot) {
+  const moves = [];
+  if (prevSnapshot) {
+    ['white', 'black'].forEach(color => {
+      const mv = findColorMove(prevSnapshot, state, color);
+      if (mv) moves.push({ ...mv, color });
+    });
+  }
   for (let idx = 0; idx < 24; idx++) {
     const val = state.points[idx];
     const color = val > 0 ? 'white' : (val < 0 ? 'black' : null);
@@ -431,10 +515,12 @@ function updateBoard3D(state, myTurn, legalMoves) {
   const barClickable = myTurn && (armedDie !== null ? (legalMoves[armedDie] || []).includes('bar') : diceForSource('bar', legalMoves).length > 0);
   barRing.visible = barClickable || selectedSrc === 'bar';
   barRing.material.color.set(selectedSrc === 'bar' ? 0xd4af37 : 0x3a9d6d);
+  moves.forEach(mv => animateCheckerMove(mv, mv.color));
 }
 
 function animateTavla() {
   requestAnimationFrame(animateTavla);
+  tickTweens(performance.now());
   tRenderer.render(tScene, tCamera);
 }
 resizeTavlaRenderer();

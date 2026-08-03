@@ -21,6 +21,11 @@ MAX_PLAYERS = 10
 # the read-modify-write sections of shared room/user state that must not interleave
 # (e.g. two players revealing a card at the same instant).
 _state_lock = threading.RLock()
+# sid -> exact username key, set only once a socket connection has proven it knows
+# that account's password via register_account/login_account. Password-protected
+# accounts may only be claimed (sit, create_room, chips, ...) by an authenticated sid;
+# accounts with no password (casual/guest play) are unaffected and stay frictionless.
+authenticated_sids = {}
 OWNER_USERNAME = "yohanna"
 
 
@@ -395,6 +400,18 @@ def ensure_user_account(account):
     users = load_users()
     key = find_user_key(users, account)
     if key:
+        # A password-protected account can only be claimed by a socket that has
+        # actually logged into it (register_account/login_account) — otherwise anyone
+        # could type a registered user's name and act as them (spend their chips,
+        # inflate their stats, etc). Accounts with no password (guest/casual play)
+        # keep working exactly as before.
+        if users[key].get('password_hash'):
+            try:
+                sid = request.sid
+            except RuntimeError:
+                sid = None
+            if authenticated_sids.get(sid) != key:
+                return None
         return key
     users[account] = {
         'email': '',
@@ -3550,6 +3567,7 @@ function loginAccount(){
     socket.emit('login_account',{username:u,password:p});
 }
 function logoutAccount(){
+    socket.emit('logout_account');
     currentAccount=null; currentProfile=null;
     localStorage.removeItem('codenamesAccount');
     localStorage.removeItem('loggedUser');
@@ -4173,6 +4191,63 @@ def request_password_reset(data):
 def confirm_password_reset(data):
     data = data or {}
     emit('password_reset_confirmed', do_confirm_password_reset(data.get('token',''), data.get('newPassword','')))
+
+@socketio.on('register_account')
+def register_account(data):
+    data = data or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    email = (data.get('email') or '').strip()
+    if len(username) < 3:
+        emit('register_result', {'ok': False, 'msg': 'Kullanıcı adı en az 3 karakter olmalı.'})
+        return
+    if len(password) < 4:
+        emit('register_result', {'ok': False, 'msg': 'Şifre en az 4 karakter olmalı.'})
+        return
+    users = load_users()
+    if find_user_key(users, username):
+        emit('register_result', {'ok': False, 'msg': 'Bu kullanıcı adı zaten var.'})
+        return
+    users[username] = {
+        'email': email, 'password_hash': hash_password(password), 'chips': 1000,
+        'wins': 0, 'games': 0, 'avatar': data.get('avatar') or 'woman.png', 'avatarData': '',
+        'nameColor': 'default', 'avatarFrame': 'none', 'inventory': [],
+        'createdAt': str(int(time.time())),
+    }
+    save_users(users)
+    authenticated_sids[request.sid] = username
+    emit('register_result', {'ok': True, 'profile': private_profile(username, users[username])})
+
+@socketio.on('login_account')
+def login_account(data):
+    data = data or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password') or ''
+    users = load_users()
+    key = find_user_key(users, username)
+    if not key or not verify_password(users[key], password):
+        emit('login_result', {'ok': False, 'msg': 'Kullanıcı adı veya şifre hatalı.'})
+        return
+    save_users(users)  # verify_password() may have upgraded a legacy plaintext password
+    authenticated_sids[request.sid] = key
+    emit('login_result', {'ok': True, 'profile': private_profile(key, users[key])})
+
+@socketio.on('request_profile')
+def request_profile(data):
+    account = ((data or {}).get('account') or '').strip()
+    users = load_users()
+    key = find_user_key(users, account)
+    if not key:
+        return
+    emit('profile_fresh', private_profile(key, users[key]))
+
+@socketio.on('logout_account')
+def logout_account():
+    authenticated_sids.pop(request.sid, None)
+
+@socketio.on('disconnect')
+def auth_disconnect_cleanup():
+    authenticated_sids.pop(request.sid, None)
 
 @app.route('/api/auth/request_reset', methods=['POST'])
 def api_request_password_reset():
