@@ -7,6 +7,14 @@
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
 <script src="/static/js/site_sfx.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js",
+    "three/addons/": "/static/js/vendor/three/examples/jsm/"
+  }
+}
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -44,29 +52,11 @@
   .swatch.white { background: radial-gradient(circle at 35% 30%, #fff, #ccc); border: 1px solid #888; }
   .swatch.black { background: radial-gradient(circle at 35% 30%, #555, #111); border: 1px solid #000; }
 
-  .board-wrap { padding: 6px 0 26px; position: relative; }
-  .board-wrap::before { content: ''; position: absolute; left: 8%; right: 8%; bottom: 6px; height: 26px; background: radial-gradient(ellipse, rgba(0,0,0,.65), transparent 75%); z-index: -1; }
-  .board-wrap::after { content: ''; position: absolute; top: -50px; left: 50%; width: 560px; max-width: 90vw; height: 260px; transform: translateX(-50%); background: radial-gradient(ellipse at center, rgba(255,225,160,.14), transparent 72%); pointer-events: none; z-index: -1; }
-  .board { display: flex; flex-direction: column; gap: 8px; background: linear-gradient(160deg, #4a2f15, #2e1c0b 60%, #3a2410); border: 8px solid #1a1006; border-radius: 10px; padding: 12px; box-shadow: 0 4px 0 #241606, 0 22px 45px rgba(0,0,0,.8), inset 0 2px 4px rgba(255,220,150,.15), inset 0 0 0 3px rgba(212,175,55,.55); }
-  .board-row { display: flex; gap: 3px; height: 160px; background: linear-gradient(180deg, #6b4a1e, #4a3013); border-radius: 3px; }
-  .point { flex: 1; position: relative; display: flex; align-items: center; }
-  .point.top { flex-direction: column; justify-content: flex-start; }
-  .point.bottom { flex-direction: column-reverse; justify-content: flex-start; }
-  .triangle { position: absolute; inset: 0; z-index: 0; }
-  .point.top .triangle { clip-path: polygon(0 0, 100% 0, 50% 100%); }
-  .point.bottom .triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-  .point.light .triangle { background: linear-gradient(180deg, #e0c48a, #c9a869 55%, #ab8a52); }
-  .point.dark .triangle { background: linear-gradient(180deg, #90593a, #7a4a25 55%, #5e3618); }
-  .point.highlight { cursor: pointer; }
-  .point.highlight .triangle { box-shadow: inset 0 0 0 3px #3a9d6d; }
-  .point.selected .triangle { box-shadow: inset 0 0 0 3px #d4af37, inset 0 0 14px rgba(212,175,55,.7); }
-  .bar-gap.selected { box-shadow: inset 0 0 0 3px #d4af37, inset 0 0 10px rgba(212,175,55,.7); }
-  .bar-gap { width: 24px; background: linear-gradient(180deg, #3a2410, #150d05); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6px 0; cursor: default; position: relative; }
-  .bar-gap::before { content: ''; position: absolute; top: 4px; bottom: 4px; left: 50%; width: 2px; background: linear-gradient(180deg, rgba(212,175,55,.75), rgba(212,175,55,.1)); transform: translateX(-50%); }
-  .bar-gap.highlight { box-shadow: inset 0 0 0 3px #3a9d6d; cursor: pointer; }
-  .bar-half { display: flex; flex-direction: column; align-items: center; gap: 2px; z-index: 1; }
-  .checker { width: 28px; height: 28px; border-radius: 50%; z-index: 1; margin-top: -14px; position: relative; box-shadow: 0 5px 10px rgba(0,0,0,.75), inset 0 -4px 6px rgba(0,0,0,.4), inset 0 4px 5px rgba(255,255,255,.5), 0 0 0 2px #8a6c2a, 0 0 0 3px rgba(0,0,0,.5); }
-  .checker:first-child { margin-top: 0; }
+  .board-wrap { padding: 6px 0 10px; position: relative; width: 100%; max-width: 760px; margin: 0 auto; }
+  .board-3d-scene { position: relative; width: 100%; aspect-ratio: 16/11; border-radius: 14px; overflow: hidden; background: #060402;
+    box-shadow: 0 25px 55px rgba(0,0,0,.85), 0 0 0 1px rgba(255,236,180,.35), inset 0 0 0 3px rgba(212,175,55,.5); }
+  #tavlaCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: default; }
+  .checker { width: 28px; height: 28px; border-radius: 50%; position: relative; box-shadow: 0 5px 10px rgba(0,0,0,.75), inset 0 -4px 6px rgba(0,0,0,.4), inset 0 4px 5px rgba(255,255,255,.5), 0 0 0 2px #8a6c2a, 0 0 0 3px rgba(0,0,0,.5); }
   .checker.white { background: radial-gradient(circle at 35% 26%, #fffef6, #e8dcb8 55%, #b89b5e 100%); }
   .checker.black { background: radial-gradient(circle at 35% 26%, #5a5a5a, #262626 55%, #000 100%); }
   .checker .count-badge { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
@@ -89,7 +79,7 @@
     0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
     100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
   }
-  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(160deg,#fffdf5,#f0e6c8 60%,#ddc999); border: 2px solid #8a6c2a; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: inset -3px -3px 7px rgba(0,0,0,.25), inset 3px 3px 8px rgba(255,255,255,.9); }
+  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(160deg,#fffdf5,#f0e6c8 60%,#ddc999); border: 2px solid #8a6c2a; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: inset -3px -3px 7px rgba(0,0,0,.25), inset 3px 3px 8px rgba(255,255,255,.9); pointer-events: none; }
   .pip-dot { position: absolute; width: 7px; height: 7px; background: radial-gradient(circle at 35% 35%, #333, #000); border-radius: 50%; box-shadow: inset 0 1px 2px rgba(0,0,0,.9); }
   .face-1 { transform: translateZ(26px); }
   .face-2 { transform: rotateY(180deg) translateZ(26px); }
@@ -155,9 +145,8 @@
   </div>
   <div class="players-row" id="playersRow"></div>
   <div class="board-wrap">
-    <div class="board">
-      <div class="board-row" id="topRow"></div>
-      <div class="board-row" id="bottomRow"></div>
+    <div class="board-3d-scene">
+      <canvas id="tavlaCanvas"></canvas>
     </div>
   </div>
   <div class="off-trays">
@@ -180,7 +169,10 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 const socket = io();
 function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
 (function(){
@@ -209,6 +201,245 @@ function setDice(el, val) {
   const rot = {1: 'rotateX(0) rotateY(0)', 2: 'rotateX(0) rotateY(180deg)', 3: 'rotateX(0) rotateY(-90deg)', 4: 'rotateX(0) rotateY(90deg)', 5: 'rotateX(-90deg) rotateY(0)', 6: 'rotateX(90deg) rotateY(0)'};
   el.style.transform = rot[val] || 'rotateX(0) rotateY(0)';
 }
+
+// ==================== 3D backgammon board (Three.js) ====================
+const PLANE_HALF_X = 0.84, PLANE_HALF_Z = 0.72; // playing-surface overlay extent
+const PLAY_X_MIN = -0.80, PLAY_X_MAX = 0.80;
+const BAR_HALF_W = 0.05;
+const Z_TOP_EDGE = 0.66, Z_BOTTOM_EDGE = -0.66; // outer border where triangle bases sit
+const Z_TOP_STACK = 0.48, Z_BOTTOM_STACK = -0.48; // where checker stacks sit within each row
+const BOARD_SURFACE_Y = 0.062;
+const CHECKER_RADIUS = 0.058, CHECKER_HEIGHT = 0.022;
+
+function colX(i) { // i = 0..11, left-to-right across both halves (matches TOP_ORDER/BOTTOM_ORDER DOM order)
+  const colW = (PLAY_X_MAX - BAR_HALF_W) / 6;
+  if (i < 6) return PLAY_X_MIN + colW * (i + 0.5);
+  const j = i - 6;
+  return BAR_HALF_W + colW * (j + 0.5);
+}
+
+// pointIdx (0..23, matches state.points) -> layout. Checkers fan side-by-side along the
+// triangle from the outer edge toward the center (like real checkers laid on a point),
+// rather than stacking straight up.
+const POINT_LAYOUT = {};
+TOP_ORDER.forEach((pointIdx, i) => { POINT_LAYOUT[pointIdx] = { x: colX(i), z: Z_TOP_STACK, edgeZ: Z_TOP_EDGE - 0.09, dir: -1, top: true }; });
+BOTTOM_ORDER.forEach((pointIdx, i) => { POINT_LAYOUT[pointIdx] = { x: colX(i), z: Z_BOTTOM_STACK, edgeZ: Z_BOTTOM_EDGE + 0.09, dir: 1, top: false }; });
+const CHECKER_FAN_SPACING = CHECKER_RADIUS * 2 * 0.58;
+
+const tavlaCanvas = document.getElementById('tavlaCanvas');
+const tRenderer = new THREE.WebGLRenderer({ canvas: tavlaCanvas, antialias: true });
+tRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+tRenderer.outputColorSpace = THREE.SRGBColorSpace;
+tRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+tRenderer.shadowMap.enabled = true;
+tRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const tScene = new THREE.Scene();
+tScene.background = new THREE.Color(0x0c0806);
+
+const tCamera = new THREE.PerspectiveCamera(38, 1, 0.05, 20);
+tCamera.position.set(0, 2.35, 0.85);
+tCamera.lookAt(0, 0, 0);
+
+function resizeTavlaRenderer() {
+  const rect = tavlaCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  tRenderer.setSize(rect.width, rect.height, false);
+  tCamera.aspect = rect.width / rect.height;
+  tCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeTavlaRenderer).observe(tavlaCanvas.parentElement);
+
+tScene.add(new THREE.AmbientLight(0x9a8f80, 0.7));
+const tKey = new THREE.DirectionalLight(0xfff4d6, 2.4);
+tKey.position.set(0.6, 3, 1.2);
+tKey.castShadow = true;
+tKey.shadow.mapSize.set(1024, 1024);
+tKey.shadow.camera.near = 1; tKey.shadow.camera.far = 8;
+tKey.shadow.camera.left = -1.2; tKey.shadow.camera.right = 1.2;
+tKey.shadow.camera.top = 1.2; tKey.shadow.camera.bottom = -1.2;
+tKey.shadow.bias = -0.0015;
+tScene.add(tKey);
+const tFill = new THREE.PointLight(0xffe6b0, 12, 6);
+tFill.position.set(-1.2, 1.6, -0.8);
+tScene.add(tFill);
+
+const tGltfLoader = new GLTFLoader();
+tGltfLoader.load('/static/models/tavla_board.glb', (gltf) => {
+  const root = gltf.scene;
+  const material = new THREE.MeshStandardMaterial({ color: 0x6b4522, roughness: 0.45, metalness: 0.12 });
+  root.traverse(o => { if (o.isMesh) { o.material = material; o.geometry.computeVertexNormals(); o.receiveShadow = true; o.castShadow = true; } });
+  tScene.add(root);
+});
+
+function makeBoardSurfaceTexture() {
+  const W = 1024, H = 878;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const mapX = x => (x + PLANE_HALF_X) / (2 * PLANE_HALF_X) * W;
+  const mapZ = z => (1 - (z + PLANE_HALF_Z) / (2 * PLANE_HALF_Z)) * H;
+
+  ctx.fillStyle = '#241408';
+  ctx.fillRect(0, 0, W, H);
+
+  const colW = (PLAY_X_MAX - BAR_HALF_W) / 6;
+  const centerY = mapZ(0);
+  const topEdgeY = mapZ(Z_TOP_EDGE);
+  const bottomEdgeY = mapZ(Z_BOTTOM_EDGE);
+  const LIGHT = '#dcbb84', DARK = '#7a3f22';
+
+  function triangleColX(i) { return i < 6 ? PLAY_X_MIN + colW * i : BAR_HALF_W + colW * (i - 6); }
+
+  for (let i = 0; i < 12; i++) {
+    const xLeft = mapX(triangleColX(i));
+    const xRight = mapX(triangleColX(i) + colW);
+    const xMid = (xLeft + xRight) / 2;
+    ctx.fillStyle = i % 2 === 0 ? LIGHT : DARK;
+    // top row: base at outer edge, tip toward center
+    ctx.beginPath();
+    ctx.moveTo(xLeft, topEdgeY); ctx.lineTo(xRight, topEdgeY); ctx.lineTo(xMid, centerY);
+    ctx.closePath(); ctx.fill();
+    // bottom row: base at outer edge, tip toward center
+    ctx.fillStyle = i % 2 === 0 ? DARK : LIGHT;
+    ctx.beginPath();
+    ctx.moveTo(xLeft, bottomEdgeY); ctx.lineTo(xRight, bottomEdgeY); ctx.lineTo(xMid, centerY);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // bar strip
+  ctx.fillStyle = '#150c05';
+  ctx.fillRect(mapX(-BAR_HALF_W), 0, mapX(BAR_HALF_W) - mapX(-BAR_HALF_W), H);
+
+  const tex = new THREE.CanvasTexture(c);
+  return tex;
+}
+
+const surfacePlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(PLANE_HALF_X * 2, PLANE_HALF_Z * 2),
+  new THREE.MeshStandardMaterial({ map: makeBoardSurfaceTexture(), roughness: 0.5, metalness: 0.05 })
+);
+surfacePlane.rotation.x = -Math.PI / 2;
+surfacePlane.position.y = BOARD_SURFACE_Y + 0.003;
+surfacePlane.receiveShadow = true;
+tScene.add(surfacePlane);
+
+// ---- checkers ----
+const checkerGeo = new THREE.CylinderGeometry(CHECKER_RADIUS, CHECKER_RADIUS, CHECKER_HEIGHT, 28);
+const whiteCheckerMat = new THREE.MeshStandardMaterial({ color: 0xf3ecd8, roughness: 0.4, metalness: 0.05 });
+const blackCheckerMat = new THREE.MeshStandardMaterial({ color: 0x2a2622, roughness: 0.4, metalness: 0.05 });
+function makeChecker(color) {
+  const mesh = new THREE.Mesh(checkerGeo, color === 'white' ? whiteCheckerMat : blackCheckerMat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+const pointGroups = {}; // pointIdx -> THREE.Group holding its checkers, anchored at the point's outer edge
+for (let idx = 0; idx < 24; idx++) {
+  const g = new THREE.Group();
+  const layout = POINT_LAYOUT[idx];
+  g.position.set(layout.x, BOARD_SURFACE_Y, layout.edgeZ);
+  g.userData.dir = layout.dir;
+  tScene.add(g);
+  pointGroups[idx] = g;
+}
+const barGroupWhite = new THREE.Group(); barGroupWhite.position.set(0, BOARD_SURFACE_Y, 0.34); barGroupWhite.userData.dir = -1; tScene.add(barGroupWhite);
+const barGroupBlack = new THREE.Group(); barGroupBlack.position.set(0, BOARD_SURFACE_Y, -0.34); barGroupBlack.userData.dir = 1; tScene.add(barGroupBlack);
+
+// Checkers fan side-by-side (slightly overlapping) from the point's outer edge toward the
+// center, rather than stacking straight up — matches how a real board looks at a glance.
+function fillStack(group, count, color) {
+  while (group.children.length > count) group.remove(group.children[group.children.length - 1]);
+  while (group.children.length < count) {
+    const checker = makeChecker(color);
+    const i = group.children.length;
+    checker.position.z = group.userData.dir * i * CHECKER_FAN_SPACING;
+    checker.position.y = CHECKER_HEIGHT / 2 + i * 0.0035;
+    group.add(checker);
+  }
+}
+
+// ---- click/selection highlight rings ----
+const ringGeo = new THREE.RingGeometry(CHECKER_RADIUS * 1.05, CHECKER_RADIUS * 1.35, 32);
+const highlightRings = {};
+const hitTargets = []; // raycast targets, userData.pointIdx set
+for (let idx = 0; idx < 24; idx++) {
+  const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x3a9d6d, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2;
+  const layout = POINT_LAYOUT[idx];
+  ring.position.set(layout.x, BOARD_SURFACE_Y + 0.004, layout.z);
+  ring.visible = false;
+  tScene.add(ring);
+  highlightRings[idx] = ring;
+
+  const hitGeo = new THREE.PlaneGeometry((PLAY_X_MAX - BAR_HALF_W) / 6 * 0.95, 1.25);
+  const hit = new THREE.Mesh(hitGeo, new THREE.MeshBasicMaterial({ visible: false }));
+  hit.rotation.x = -Math.PI / 2;
+  hit.position.set(layout.x, BOARD_SURFACE_Y + 0.01, layout.top ? Z_TOP_EDGE / 2 : Z_BOTTOM_EDGE / 2);
+  hit.userData.pointIdx = idx;
+  tScene.add(hit);
+  hitTargets.push(hit);
+}
+const barRing = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x3a9d6d, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+barRing.rotation.x = -Math.PI / 2;
+barRing.position.set(0, BOARD_SURFACE_Y + 0.004, 0);
+barRing.visible = false;
+tScene.add(barRing);
+const barHit = new THREE.Mesh(new THREE.PlaneGeometry(BAR_HALF_W * 2 * 0.95, 1.3), new THREE.MeshBasicMaterial({ visible: false }));
+barHit.rotation.x = -Math.PI / 2;
+barHit.position.set(0, BOARD_SURFACE_Y + 0.01, 0);
+barHit.userData.pointIdx = 'bar';
+tScene.add(barHit);
+hitTargets.push(barHit);
+
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+tavlaCanvas.addEventListener('click', (e) => {
+  if (!lastState || !lastState.started) return;
+  const rect = tavlaCanvas.getBoundingClientRect();
+  pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointerNDC, tCamera);
+  const hits = raycaster.intersectObjects(hitTargets, false);
+  if (!hits.length) return;
+  const pointIdx = hits[0].object.userData.pointIdx;
+  const myTurn = lastState.turn === user && lastState.stage === 'playing';
+  const legalMoves = lastState.legalMoves || {};
+  if (!myTurn) return;
+  if (pointIdx === 'bar') {
+    const barClickable = armedDie !== null ? (legalMoves[armedDie] || []).includes('bar') : diceForSource('bar', legalMoves).length > 0;
+    if (!barClickable) return;
+    attemptMove('bar', legalMoves);
+  } else {
+    if (!pointClickable(pointIdx, myTurn, legalMoves)) return;
+    attemptMove(pointIdx, legalMoves);
+  }
+});
+
+function updateBoard3D(state, myTurn, legalMoves) {
+  for (let idx = 0; idx < 24; idx++) {
+    const val = state.points[idx];
+    const color = val > 0 ? 'white' : (val < 0 ? 'black' : null);
+    fillStack(pointGroups[idx], color ? Math.abs(val) : 0, color || 'white');
+    const clickable = pointClickable(idx, myTurn, legalMoves);
+    const selected = selectedSrc === idx;
+    highlightRings[idx].visible = clickable || selected;
+    highlightRings[idx].material.color.set(selected ? 0xd4af37 : 0x3a9d6d);
+  }
+  fillStack(barGroupWhite, Math.min(state.bar.white, 15), 'white');
+  fillStack(barGroupBlack, Math.min(state.bar.black, 15), 'black');
+  const barClickable = myTurn && (armedDie !== null ? (legalMoves[armedDie] || []).includes('bar') : diceForSource('bar', legalMoves).length > 0);
+  barRing.visible = barClickable || selectedSrc === 'bar';
+  barRing.material.color.set(selectedSrc === 'bar' ? 0xd4af37 : 0x3a9d6d);
+}
+
+function animateTavla() {
+  requestAnimationFrame(animateTavla);
+  tRenderer.render(tScene, tCamera);
+}
+resizeTavlaRenderer();
+requestAnimationFrame(animateTavla);
+// ==================== end 3D backgammon board ====================
 
 const I18N = {
   fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🎨 Choisis ton avatar',
@@ -411,16 +642,6 @@ document.getElementById('rollBtn').addEventListener('click', () => {
   setTimeout(() => socket.emit('tavla_roll_dice', {code: room, username: user}), 550);
 });
 
-function renderCheckerStack(idx, count, color) {
-  const abs = Math.min(Math.abs(count), 5);
-  let html = '';
-  for (let i = 0; i < abs; i++) {
-    const isLast = i === abs - 1 && Math.abs(count) > 5;
-    html += `<div class="checker ${color}">${isLast ? `<span class="count-badge">${Math.abs(count)}</span>` : ''}</div>`;
-  }
-  return html;
-}
-
 function diceForSource(src, legalMoves) {
   return Object.keys(legalMoves || {}).filter(d => (legalMoves[d] || []).includes(src));
 }
@@ -457,18 +678,6 @@ function attemptMove(src, legalMoves) {
   render(lastState);
 }
 
-function renderPoint(idx, rowClass, myTurn, legalMoves) {
-  const val = lastState.points[idx];
-  const color = val > 0 ? 'white' : (val < 0 ? 'black' : null);
-  const lightDark = idx % 2 === 0 ? 'light' : 'dark';
-  const clickable = pointClickable(idx, myTurn, legalMoves);
-  const selected = selectedSrc === idx;
-  const checkersHtml = color ? renderCheckerStack(idx, val, color) : '';
-  return `<div class="point ${rowClass} ${lightDark}${clickable ? ' highlight' : ''}${selected ? ' selected' : ''}" data-point-idx="${idx}">
-    <div class="triangle"></div>${checkersHtml}
-  </div>`;
-}
-
 function render(state) {
   lastState = state;
   room = state.code;
@@ -502,35 +711,7 @@ function render(state) {
     return `<div class="${cls}"><span class="swatch ${p.color || 'white'}"></span>${p.name === user ? t('you_label') : p.name} (${p.color || '?'})</div>`;
   }).join('');
 
-  document.getElementById('topRow').innerHTML = TOP_ORDER.map((idx, i) => {
-    const html = renderPoint(idx, 'top', myTurn, legalMoves);
-    return i === 6 ? barGapHtml('top') + html : html;
-  }).join('');
-  document.getElementById('bottomRow').innerHTML = BOTTOM_ORDER.map((idx, i) => {
-    const html = renderPoint(idx, 'bottom', myTurn, legalMoves);
-    return i === 6 ? barGapHtml('bottom') + html : html;
-  }).join('');
-
-  document.querySelectorAll('.point[data-point-idx]').forEach(el => {
-    el.addEventListener('click', () => {
-      if (!el.classList.contains('highlight')) return;
-      attemptMove(parseInt(el.dataset.pointIdx, 10), legalMoves);
-    });
-  });
-
-  const me = state.players.find(p => p.name === user);
-  const myColor = me ? me.color : null;
-  const barClickable = myTurn && (armedDie !== null ? (legalMoves[armedDie] || []).includes('bar') : diceForSource('bar', legalMoves).length > 0);
-  document.querySelectorAll('.bar-gap').forEach(el => {
-    el.classList.toggle('highlight', barClickable);
-    el.classList.toggle('selected', selectedSrc === 'bar');
-  });
-  document.querySelectorAll('.bar-gap').forEach(el => {
-    el.onclick = () => {
-      if (!barClickable) return;
-      attemptMove('bar', legalMoves);
-    };
-  });
+  updateBoard3D(state, myTurn, legalMoves);
 
   document.getElementById('offWhite').innerHTML = Array.from({length: state.off.white}).map(() => '<div class="checker white"></div>').join('');
   document.getElementById('offBlack').innerHTML = Array.from({length: state.off.black}).map(() => '<div class="checker black"></div>').join('');
@@ -586,13 +767,6 @@ function render(state) {
   if (over) {
     document.getElementById('winnerMsg').textContent = state.winner ? t('win_msg', {name: state.winner}) : '';
   }
-}
-
-function barGapHtml(rowClass) {
-  return `<div class="bar-gap" data-bar-row="${rowClass}">
-    <div class="bar-half">${lastState ? Array.from({length: Math.min(lastState.bar.white,5)}).map(()=>'<div class="checker white" style="margin-top:0;"></div>').join('') : ''}</div>
-    <div class="bar-half">${lastState ? Array.from({length: Math.min(lastState.bar.black,5)}).map(()=>'<div class="checker black" style="margin-top:0;"></div>').join('') : ''}</div>
-  </div>`;
 }
 
 socket.on('tavla_state', render);
