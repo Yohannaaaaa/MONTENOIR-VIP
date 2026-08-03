@@ -463,27 +463,46 @@ const PIN_LAYOUT = []; // index 0..9 => {x,z} for pin numbers 1..10
 const pinObjects = [];
 let pinDownState = Array(10).fill(false);
 
-gltfLoader.load('/static/models/pins_rig.glb', (gltf) => {
-  const root = gltf.scene;
-  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide });
-  root.traverse(o => { if (o.isMesh) { o.material = material; o.geometry.computeVertexNormals(); o.castShadow = true; o.receiveShadow = true; } });
+// Procedural pin: the scanned "pins in formation" model was reconstructed from a
+// single photo, so its backside is missing (holes/torn edges) — fine as a small
+// distant prop, but glaring once pins are this big and close. A clean lathe
+// profile gives a crisp, watertight silhouette at any distance.
+function createPinMesh() {
+  const profile = [
+    [0.000, 0.000], [0.135, 0.000], [0.135, 0.030], [0.110, 0.100], [0.100, 0.200],
+    [0.120, 0.320], [0.158, 0.440], [0.150, 0.540], [0.110, 0.640], [0.075, 0.710],
+    [0.050, 0.775], [0.060, 0.840], [0.085, 0.900], [0.095, 0.940], [0.070, 0.980],
+    [0.000, 1.015],
+  ].map(([r, y]) => new THREE.Vector2(r, y));
+  const geometry = new THREE.LatheGeometry(profile, 24);
 
-  const srcNodes = root.children.slice(); // snapshot: wrapper.add() below mutates root.children live
-  const box0 = new THREE.Box3().setFromObject(srcNodes[0]);
-  const pinScale = PIN_HEIGHT / (box0.max.y - box0.min.y);
-
-  for (let i = 0; i < 10; i++) {
-    const srcNode = srcNodes[i];
-    if (!srcNode) continue;
-    const wrapper = new THREE.Object3D();
-    wrapper.position.set(PIN_LAYOUT[i].x, 0, PIN_LAYOUT[i].z);
-    srcNode.scale.setScalar(pinScale);
-    wrapper.add(srcNode);
-    scene.add(wrapper);
-    pinObjects[i] = wrapper;
-    setPinStanding(i, !pinDownState[i], false); // sync with any state already known before load finished
+  const positions = geometry.attributes.position;
+  const colors = new Float32Array(positions.count * 3);
+  const IVORY = [0.93, 0.90, 0.82], RED = [0.68, 0.10, 0.10];
+  for (let i = 0; i < positions.count; i++) {
+    const yFrac = positions.getY(i); // profile Y already spans ~0..1
+    const inNeckBand = yFrac > 0.73 && yFrac < 0.87;
+    const col = inNeckBand ? RED : IVORY;
+    colors[i * 3] = col[0]; colors[i * 3 + 1] = col[1]; colors[i * 3 + 2] = col[2];
   }
-});
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: 0.05 });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.scale.setScalar(PIN_HEIGHT); // profile is unit-height (y in [0,1.015])
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+for (let i = 0; i < 10; i++) {
+  const wrapper = new THREE.Object3D();
+  wrapper.position.set(PIN_LAYOUT[i].x, 0, PIN_LAYOUT[i].z);
+  wrapper.add(createPinMesh());
+  scene.add(wrapper);
+  pinObjects[i] = wrapper;
+}
 
 function setPinStanding(i, standing, animate, delay = 0) {
   const wrapper = pinObjects[i];
