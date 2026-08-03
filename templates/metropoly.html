@@ -599,12 +599,14 @@ const TOKEN_ICONS = {
 function tokenIcon(id) { return TOKEN_ICONS[id] || TOKEN_ICONS.hat; }
 const N_CELLS = 28; // doit correspondre à len(METROPOLY_CELLS) côté serveur
 function buildPerimeter(n, w, h, marginX, marginY) {
+  // +0.5 centers each point within its cell's span along the track instead of
+  // landing on the boundary between two cells (which made tokens sit on the edges).
   const per = n / 4;
   const loX = marginX, hiX = w - marginX, loY = marginY, hiY = h - marginY, pts = [];
-  for (let i = 0; i < per; i++) pts.push({x: hiX - (hiX - loX) * i / per, y: hiY});
-  for (let i = 0; i < per; i++) pts.push({x: loX, y: hiY - (hiY - loY) * i / per});
-  for (let i = 0; i < per; i++) pts.push({x: loX + (hiX - loX) * i / per, y: loY});
-  for (let i = 0; i < per; i++) pts.push({x: hiX, y: loY + (hiY - loY) * i / per});
+  for (let i = 0; i < per; i++) pts.push({x: hiX - (hiX - loX) * (i + 0.5) / per, y: hiY});
+  for (let i = 0; i < per; i++) pts.push({x: loX, y: hiY - (hiY - loY) * (i + 0.5) / per});
+  for (let i = 0; i < per; i++) pts.push({x: loX + (hiX - loX) * (i + 0.5) / per, y: loY});
+  for (let i = 0; i < per; i++) pts.push({x: hiX, y: loY + (hiY - loY) * (i + 0.5) / per});
   return pts;
 }
 const POS = buildPerimeter(N_CELLS, 1200, 800, 130, 110);
