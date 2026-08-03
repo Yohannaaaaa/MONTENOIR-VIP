@@ -2468,6 +2468,16 @@ animation:luxShine 5s infinite;
     70%{transform:scale(.95) rotate(-2deg);filter:brightness(.6);}
     100%{transform:scale(1);filter:brightness(1);}
 }
+.card.justRevealed{
+    animation:cardRevealPop 1.1s cubic-bezier(.34,1.56,.64,1) both;
+    z-index:50;
+}
+@keyframes cardRevealPop{
+    0%{transform:perspective(900px) translateY(0) translateZ(0) scale(1) rotateX(0deg);box-shadow:0 0 0 rgba(212,175,55,0);}
+    30%{transform:perspective(900px) translateY(-90px) translateZ(140px) scale(1.6) rotateX(10deg);box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 45px rgba(255,215,0,.9);}
+    65%{transform:perspective(900px) translateY(-90px) translateZ(140px) scale(1.6) rotateX(10deg);box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 45px rgba(255,215,0,.9);}
+    100%{transform:perspective(900px) translateY(0) translateZ(0) scale(1) rotateX(0deg);box-shadow:0 0 0 rgba(212,175,55,0);}
+}
 
 .card .wordText{
     display:flex;
@@ -3579,7 +3589,7 @@ function logoutAccount(){
     updateProfileChip();alert('Çıkış yapıldı.');
 }
 
-function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a});closeModals()}
+function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];prevCardOpen=[];lastRenderedClue=null;lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();soundGuessToggle();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){soundEndTurnSfx();socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a});closeModals()}
 function demoBuyChips(amount, provider){
     if(!currentAccount){alert('Önce giriş yap.');openAuth();return}
     if(!confirm(provider+' démo ile '+amount+' jeton eklensin mi?')) return;
@@ -3726,6 +3736,8 @@ function renderStats(st){scoreText.innerHTML='🏆 Mavi: '+st.blueWins+' | Kırm
 let sfxCtx=null;
 let sfxUnlocked=false;
 let lastOpenedMeta=[];
+let prevCardOpen=[];
+let lastRenderedClue=null;
 
 function unlockSfx(){
     try{
@@ -3807,6 +3819,23 @@ function soundLose(team){
 function soundDeal(i){
     setTimeout(()=>playTone(220+(i%5)*35,.08,'triangle',.035), i*45);
 }
+function soundClue(){
+    playTone(660,.10,'sine',.06,0);
+    playTone(880,.09,'triangle',.05,.09);
+}
+function soundGuessToggle(){
+    playTone(500,.05,'square',.04,0);
+}
+function soundEndTurnSfx(){
+    playTone(300,.09,'triangle',.05,0);
+    playTone(200,.10,'sine',.04,.08);
+}
+function soundError(){
+    playTone(140,.18,'sawtooth',.07,0);
+}
+function soundChatPing(){
+    playTone(1000,.04,'sine',.03,0);
+}
 function soundCorrect(){ soundOwnTeam(myTeam); }
 function soundWrong(){ soundOpponentTeam(myTeam==='blue'?'red':'blue'); }
 function cardRoleClass(role){
@@ -3823,7 +3852,7 @@ function formatClueLog(logs){
         return '<span class="clueNeon '+cls+'">💡 '+esc(x)+'</span>';
     }).join('');
 }
-function leaveTable(){ lastOpenedMeta=[]; lastWinner='';
+function leaveTable(){ lastOpenedMeta=[]; prevCardOpen=[]; lastRenderedClue=null; lastWinner='';
     if(!roomCode){return;}
     joined=false;
     myTeam='spectator';
@@ -3834,7 +3863,7 @@ function leaveTable(){ lastOpenedMeta=[]; lastWinner='';
     if(gameScreen) gameScreen.classList.add('hidden');
     if(lobby) lobby.classList.remove('hidden');
 }
-function closeCurrentTable(){ lastOpenedMeta=[]; lastWinner='';
+function closeCurrentTable(){ lastOpenedMeta=[]; prevCardOpen=[]; lastRenderedClue=null; lastWinner='';
     try{ stopMic(); }catch(e){}
     roomCode='';
     joined=false;
@@ -3898,7 +3927,7 @@ function detectCardSounds(g){
         lastWinner = g.winner;
     }
 }
-function renderGame(g){board.innerHTML='';roundText.innerHTML='🎮 Tur: '+(g.roundNo||1);blueCount.innerHTML=g.blueCount;redCount.innerHTML=g.redCount;phaseText.innerHTML=g.phase+((g.guessLimit&&g.guessLimit>0)?'<br>🎯 Tahmin hakkı: '+g.guessesMade+' / '+g.guessLimit:'');clueDisplay.innerHTML=esc(g.clue);turnDisplay.innerHTML=g.turn==='blue'?'🔵 Sıra Mavi Takımda':'🔴 Sıra Kırmızı Takımda';clueLog.innerHTML=formatClueLog(g.clueLog);if(g.moveLog&&g.moveLog.length)clueLog.innerHTML+='<hr>🃏 Kart kaydı:<br>'+g.moveLog.slice(-8).reverse().map(esc).join('<br>');g.cards.forEach((c,i)=>{let cls='card dealCard';if(c.guessed)cls+=' guessed';if(c.open||canSeeRole()||g.winner)cls+=' open '+c.role+'Card';let names=(c.guessedBy||[]).map(esc).join(', '),gb=names?`<div class='guessName'>🎯 ${names}</div>`:'';board.innerHTML+=`<div id="card_${i}" class="${cls}" style="animation-delay:${i*45}ms" onclick="toggleGuess(${i})"><button class="revealBtn" onclick="revealCard(${i}, event)">A♠</button><button class="guessBtn" onclick="showGuesses(${i}, event)">Tahmin</button><span class="wordText">${c.word}</span>${gb}</div>`;if(!dealSoundPlayed)soundDeal(i)});if(!dealSoundPlayed)dealSoundPlayed=true;setTimeout(()=>detectCardSounds(g),80);if(g.winner){if(g.winner!==lastWinner){lastWinner=g.winner;showWinner(g.winner);showEndGame(g)}}else{lastWinner=''}}function showWinner(t){winnerText.innerHTML=t;winnerOverlay.style.display='flex';setTimeout(()=>winnerOverlay.style.display='none',5000)}function showEndGame(g){endGameTitle.innerHTML=g.winner;endGameInfo.innerHTML='🎮 Tur: '+(g.roundNo||1)+'<br>🔵 Kalan: '+g.blueCount+' | 🔴 Kalan: '+g.redCount+'<br><br>Yeni manche başlatabilir veya lobbyye dönebilirsin.';endGameModal.style.display='flex'}function updateTimerDisplay(){let m=Math.floor(seconds/60),s=seconds%60;timer.innerHTML=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function startTimer(){if(timerRunning)return;timerRunning=true;timerInterval=setInterval(()=>{if(seconds>0){seconds--;updateTimerDisplay()}},1000)}function pauseTimer(){timerRunning=false;clearInterval(timerInterval)}function setTimer(v){pauseTimer();seconds=v;updateTimerDisplay()}
+function renderGame(g){board.innerHTML='';roundText.innerHTML='🎮 Tur: '+(g.roundNo||1);blueCount.innerHTML=g.blueCount;redCount.innerHTML=g.redCount;phaseText.innerHTML=g.phase+((g.guessLimit&&g.guessLimit>0)?'<br>🎯 Tahmin hakkı: '+g.guessesMade+' / '+g.guessLimit:'');clueDisplay.innerHTML=esc(g.clue);if(g.clue&&g.clue!==lastRenderedClue)soundClue();lastRenderedClue=g.clue;turnDisplay.innerHTML=g.turn==='blue'?'🔵 Sıra Mavi Takımda':'🔴 Sıra Kırmızı Takımda';clueLog.innerHTML=formatClueLog(g.clueLog);if(g.moveLog&&g.moveLog.length)clueLog.innerHTML+='<hr>🃏 Kart kaydı:<br>'+g.moveLog.slice(-8).reverse().map(esc).join('<br>');const justRevealedIdx=new Set();g.cards.forEach((c,i)=>{if(c.open&&!prevCardOpen[i])justRevealedIdx.add(i)});g.cards.forEach((c,i)=>{let cls='card dealCard';if(c.guessed)cls+=' guessed';if(c.open||canSeeRole()||g.winner)cls+=' open '+c.role+'Card';if(justRevealedIdx.has(i))cls+=' justRevealed';let names=(c.guessedBy||[]).map(esc).join(', '),gb=names?`<div class='guessName'>🎯 ${names}</div>`:'';board.innerHTML+=`<div id="card_${i}" class="${cls}" style="animation-delay:${i*45}ms" onclick="toggleGuess(${i})"><button class="revealBtn" onclick="revealCard(${i}, event)">A♠</button><button class="guessBtn" onclick="showGuesses(${i}, event)">Tahmin</button><span class="wordText">${c.word}</span>${gb}</div>`;if(!dealSoundPlayed)soundDeal(i)});prevCardOpen=g.cards.map(c=>!!c.open);if(!dealSoundPlayed)dealSoundPlayed=true;setTimeout(()=>detectCardSounds(g),80);if(g.winner){if(g.winner!==lastWinner){lastWinner=g.winner;showWinner(g.winner);showEndGame(g)}}else{lastWinner=''}}function showWinner(t){winnerText.innerHTML=t;winnerOverlay.style.display='flex';setTimeout(()=>winnerOverlay.style.display='none',5000)}function showEndGame(g){endGameTitle.innerHTML=g.winner;endGameInfo.innerHTML='🎮 Tur: '+(g.roundNo||1)+'<br>🔵 Kalan: '+g.blueCount+' | 🔴 Kalan: '+g.redCount+'<br><br>Yeni manche başlatabilir veya lobbyye dönebilirsin.';endGameModal.style.display='flex'}function updateTimerDisplay(){let m=Math.floor(seconds/60),s=seconds%60;timer.innerHTML=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function startTimer(){if(timerRunning)return;timerRunning=true;timerInterval=setInterval(()=>{if(seconds>0){seconds--;updateTimerDisplay()}},1000)}function pauseTimer(){timerRunning=false;clearInterval(timerInterval)}function setTimer(v){pauseTimer();seconds=v;updateTimerDisplay()}
 socket.on('register_result',d=>{
     if(!d.ok){alert(d.msg);return}
     applyLoggedProfile(d.profile);
@@ -3999,7 +4028,7 @@ socket.on('connect',()=>{
         pendingAutoSit=true;
         if(currentAccount){socket.emit('join_room_code',{room:savedRoom,password:savedPassword,account:currentAccount});}
     }
-});socket.on('room_created',d=>{roomCode=d.room;isAdmin=true;roomText.innerHTML='Oda: '+roomCode+' 👑 Admin sensin';saveLocalProfile()});socket.on('room_joined',d=>{roomCode=d.room;isAdmin=false;roomText.innerHTML='Oda: '+roomCode;saveLocalProfile();if(pendingAutoSit){pendingAutoSit=false;setTimeout(()=>sitAtTable(),250)}});socket.on('error_msg',d=>alert(d.msg));socket.on('players_update',d=>{if(d.micStates) currentMicStates=d.micStates;if(d.ready) currentReady=d.ready;renderReady(d.players,d.ready||{});renderPlayers(d.players,d.locks)});socket.on('game_update',d=>{
+});socket.on('room_created',d=>{roomCode=d.room;isAdmin=true;roomText.innerHTML='Oda: '+roomCode+' 👑 Admin sensin';saveLocalProfile()});socket.on('room_joined',d=>{roomCode=d.room;isAdmin=false;roomText.innerHTML='Oda: '+roomCode;saveLocalProfile();if(pendingAutoSit){pendingAutoSit=false;setTimeout(()=>sitAtTable(),250)}});socket.on('error_msg',d=>{soundError();alert(d.msg)});socket.on('players_update',d=>{if(d.micStates) currentMicStates=d.micStates;if(d.ready) currentReady=d.ready;renderReady(d.players,d.ready||{});renderPlayers(d.players,d.locks)});socket.on('game_update',d=>{
     currentMicStates=d.micStates||currentMicStates||{};
     currentReady=d.ready||currentReady||{};
     let me=d.players.find(p=>p.sid===mySid||p.name===myName);
@@ -4033,7 +4062,7 @@ socket.on('connect',()=>{
         gameScreen.classList.add('hidden');
         lobby.classList.remove('hidden');
     }
-});socket.on('chat_update',d=>{messages.innerHTML+='<b>🌍 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('team_chat_update',d=>{messages.innerHTML+='<b>🔒 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('dm_chat_update',d=>{messages.innerHTML+='<b>📩 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('kicked',()=>{alert('Odadan çıkarıldın.');localStorage.clear();location.reload()});socket.on('made_spectator',()=>{myRole='spectator';myTeam='spectator';saveLocalProfile();alert('Seyirci moduna alındın.')});socket.on('guess_names',d=>{alert('Bu kartı tahmin edenler: '+((d.names&&d.names.length)?d.names.join(', '):'Henüz tahmin yok.'))});
+});socket.on('chat_update',d=>{soundChatPing();messages.innerHTML+='<b>🌍 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('team_chat_update',d=>{soundChatPing();messages.innerHTML+='<b>🔒 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('dm_chat_update',d=>{soundChatPing();messages.innerHTML+='<b>📩 '+esc(d.name)+':</b> '+esc(d.msg)+'<br>'});socket.on('kicked',()=>{alert('Odadan çıkarıldın.');localStorage.clear();location.reload()});socket.on('made_spectator',()=>{myRole='spectator';myTeam='spectator';saveLocalProfile();alert('Seyirci moduna alındın.')});socket.on('guess_names',d=>{alert('Bu kartı tahmin edenler: '+((d.names&&d.names.length)?d.names.join(', '):'Henüz tahmin yok.'))});
 
 socket.on('voice_existing_users',d=>{
     if(!voiceStarted) return;
