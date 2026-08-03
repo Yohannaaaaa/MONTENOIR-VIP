@@ -291,7 +291,7 @@ function show(s) {
 
 // ==================== 3D lane scene (Three.js) ====================
 const LANE_HALF_WIDTH = 1.05;               // gutter-to-gutter half width (world units)
-const PIN_DECK_Z = 3.6;                     // headpin distance from the foul line
+const PIN_DECK_Z = 2.6;                     // headpin distance from the foul line
 const PIN_SPACING = 0.42;                   // center-to-center pin spacing — tight triangle
 const PIN_ROW_DEPTH = PIN_SPACING * Math.sqrt(3) / 2;
 const PIN_HEIGHT = 0.68;                    // target rendered pin height
@@ -312,8 +312,8 @@ scene.background = new THREE.Color(0x04060c);
 scene.fog = new THREE.Fog(0x04060c, 11, 22);
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
-camera.position.set(0, 3.1, -1.0);
-camera.lookAt(0, 0.15, PIN_DECK_Z * 0.55);
+camera.position.set(0, 3.3, -1.3);
+camera.lookAt(0, 0.45, PIN_DECK_Z * 0.65);
 
 function resizeLaneRenderer() {
   const rect = laneCanvas.parentElement.getBoundingClientRect();
@@ -366,7 +366,7 @@ function makeLaneTexture() {
   // tone, with a subtle grain and a dark seam between boards.
   for (let i = 0; i < boardCount; i++) {
     const x = i * boardW;
-    const tones = ['#b9863f', '#a8712f', '#c2924a', '#a06a2c', '#bb8a44'];
+    const tones = ['#41290f', '#33200a', '#4a2f14', '#2a1a08', '#3c2610'];
     ctx.fillStyle = tones[i % tones.length];
     ctx.fillRect(x, 0, boardW, c.height);
     // subtle vertical grain streaks within the board
@@ -398,7 +398,7 @@ function makeLaneTexture() {
 }
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(LANE_HALF_WIDTH * 2, LANE_LENGTH),
-  new THREE.MeshStandardMaterial({ map: makeLaneTexture(), color: 0xcabb9c, roughness: 0.32, metalness: 0.08 })
+  new THREE.MeshStandardMaterial({ map: makeLaneTexture(), color: 0x8a7a68, roughness: 0.38, metalness: 0.05 })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, LANE_LENGTH / 2);
