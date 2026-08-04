@@ -7,6 +7,13 @@
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
 <script src="/static/js/site_sfx.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js"
+  }
+}
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -40,30 +47,15 @@
   #gameScreen { padding: 14px; }
   .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 640px; margin: 0 auto 8px; font-size: 12px; color: #d4af37; }
   .top-bar button { background: none; border: 1px solid #d4af37; color: #d4af37; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
-  .board-wrap { width: min(600px, 94vw); aspect-ratio: 1; margin: 0 auto; position: relative; border: 6px solid #3a2f1a; border-radius: 10px; background: #efe6cf; box-shadow: 0 15px 40px rgba(0,0,0,.7); }
-  .board-grid, .tokens-layer { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(15,1fr); grid-template-rows: repeat(15,1fr); }
+  .board-wrap { width: min(600px, 94vw); aspect-ratio: 1; margin: 0 auto; position: relative; border: 6px solid #3a2f1a; border-radius: 10px; background: #efe6cf; box-shadow: 0 15px 40px rgba(0,0,0,.7); overflow: hidden; }
+  #ludoCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
+  .board-grid, .tokens-layer { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(15,1fr); grid-template-rows: repeat(15,1fr); z-index: 2; }
   .tokens-layer { pointer-events: none; }
+  .board-grid .cell, .board-grid .yard-slot { background: transparent !important; border: none !important; box-shadow: none !important; }
   .cell { border: 1px solid rgba(0,0,0,0.06); }
-  .cell.path { background: #fff; }
-  .cell.path.safe { background: #fff3c4; }
-  .cell.deco { background: #efe6cf; }
-  .cell.center { background: conic-gradient(from -45deg, #e0559b 0deg 90deg, #e0b400 90deg 180deg, #2a6fd6 180deg 270deg, #d33 270deg 360deg); }
-  .cell.corner-tl { background: linear-gradient(135deg, #e0559b 50%, #d33 50%); }
-  .cell.corner-tr { background: linear-gradient(225deg, #e0559b 50%, #e0b400 50%); }
-  .cell.corner-br { background: linear-gradient(315deg, #e0b400 50%, #2a6fd6 50%); }
-  .cell.corner-bl { background: linear-gradient(45deg, #d33 50%, #2a6fd6 50%); }
-  .cell.yard-red { background: #f6d3d3; }
-  .cell.yard-yellow { background: #f8ecc0; }
-  .cell.yard-pink { background: #f8d6e9; }
-  .cell.yard-blue { background: #d3e0f6; }
-  .cell.home-red { background: #e88; }
-  .cell.home-yellow { background: #e0c14a; }
-  .cell.home-pink { background: #e888c0; }
-  .cell.home-blue { background: #7fa3e8; }
   .yard-slot { position: relative; width: 60%; height: 60%; margin: auto; border-radius: 50%; background: rgba(255,255,255,0.55); border: 2px dashed rgba(0,0,0,0.15); }
-  .token { position: relative; width: 62%; height: 62%; margin: auto; border-radius: 50%; border: 2px solid rgba(0,0,0,0.4); box-shadow: 0 3px 6px rgba(0,0,0,.5); pointer-events: auto; transition: all .25s; }
-  .token.selectable { box-shadow: 0 0 0 3px #fff, 0 0 14px 4px rgba(212,175,55,0.9); cursor: pointer; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+  .token { position: relative; width: 62%; height: 62%; margin: auto; border-radius: 50%; opacity: 0; pointer-events: auto; }
+  .token.selectable { cursor: pointer; }
   .dice-box { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 14px auto 4px; }
   .die { width: 62px; height: 62px; background: linear-gradient(160deg,#fff,#e8e8e8); border-radius: 12px; border: 2px solid #333; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); padding: 8px; gap: 2px; box-shadow: 0 8px 16px rgba(0,0,0,.6); }
   .die.rolling { animation: shake .5s ease-in-out; }
@@ -135,6 +127,7 @@
     <button id="leaveTableBtn" data-i18n="btn_leave">🚪 Quitter</button>
   </div>
   <div class="board-wrap">
+    <canvas id="ludoCanvas"></canvas>
     <div class="board-grid" id="boardGrid"></div>
     <div class="tokens-layer" id="tokensLayer"></div>
   </div>
@@ -158,8 +151,10 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
 const socket = io();
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
 (function(){
   const su = savedProfileUser();
@@ -420,10 +415,7 @@ function setDiePips(n) {
   document.querySelectorAll('#die .pip').forEach(p => { p.style.visibility = on.has(p.dataset.p) ? 'visible' : 'hidden'; });
 }
 
-let boardBuilt = false;
-function buildBoardOnce() {
-  if (boardBuilt) return;
-  boardBuilt = true;
+function computeLudoRoles() {
   const roles = Array.from({length:15}, () => Array(15).fill('deco'));
   const yardBlocks = {red:[0,5,0,5], pink:[0,5,9,14], yellow:[9,14,9,14], blue:[9,14,0,5]};
   Object.entries(yardBlocks).forEach(([color,[r1,r2,c1,c2]]) => {
@@ -433,6 +425,14 @@ function buildBoardOnce() {
   Object.entries(HOME_STRETCH).forEach(([color,cells]) => { cells.forEach(rc => { roles[rc[0]][rc[1]] = 'home-'+color; }); });
   roles[7][7] = 'center';
   roles[6][6] = 'corner-tl'; roles[6][8] = 'corner-tr'; roles[8][6] = 'corner-bl'; roles[8][8] = 'corner-br';
+  return roles;
+}
+
+let boardBuilt = false;
+function buildBoardOnce() {
+  if (boardBuilt) return;
+  boardBuilt = true;
+  const roles = computeLudoRoles();
   let html = '';
   for (let r=0;r<15;r++) for (let c=0;c<15;c++) {
     html += `<div class="cell ${roles[r][c]}" style="grid-row:${r+1};grid-column:${c+1};"></div>`;
@@ -445,6 +445,171 @@ function buildBoardOnce() {
   document.getElementById('boardGrid').insertAdjacentHTML('beforeend', slotsHtml);
 }
 
+// ==================== 3D board ====================
+const LUDO_SIZE = 1.2;
+const LUDO_CELL = LUDO_SIZE / 15;
+function ludoCellToWorld(r, c) {
+  return { x: (c - 7) * LUDO_CELL, z: (r - 7) * LUDO_CELL };
+}
+
+const CELL_COLOR = {
+  path: '#fff', 'path safe': '#fff3c4', deco: '#efe6cf',
+  'yard-red': '#f6d3d3', 'yard-yellow': '#f8ecc0', 'yard-pink': '#f8d6e9', 'yard-blue': '#d3e0f6',
+  'home-red': '#e88', 'home-yellow': '#e0c14a', 'home-pink': '#e888c0', 'home-blue': '#7fa3e8'
+};
+
+function drawDiagCell(ctx, x, y, s, colorTri, colorBg, dir) {
+  ctx.fillStyle = colorBg;
+  ctx.fillRect(x, y, s, s);
+  ctx.fillStyle = colorTri;
+  ctx.beginPath();
+  if (dir === 'tl') { ctx.moveTo(x, y); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); }
+  else if (dir === 'tr') { ctx.moveTo(x, y); ctx.lineTo(x + s, y); ctx.lineTo(x + s, y + s); }
+  else if (dir === 'br') { ctx.moveTo(x + s, y); ctx.lineTo(x + s, y + s); ctx.lineTo(x, y + s); }
+  else { ctx.moveTo(x, y); ctx.lineTo(x, y + s); ctx.lineTo(x + s, y + s); }
+  ctx.closePath();
+  ctx.fill();
+}
+function drawConicCell(ctx, x, y, s) {
+  const cx = x + s / 2, cy = y + s / 2;
+  const corners = [[x, y], [x + s, y], [x + s, y + s], [x, y + s]];
+  const colors = ['#e0559b', '#e0b400', '#2a6fd6', '#d33'];
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(corners[i][0], corners[i][1]);
+    ctx.lineTo(corners[(i + 1) % 4][0], corners[(i + 1) % 4][1]);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+function buildLudoBoardTexture() {
+  const roles = computeLudoRoles();
+  const N = 900, cellPx = N / 15;
+  const c = document.createElement('canvas'); c.width = N; c.height = N;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#efe6cf'; ctx.fillRect(0, 0, N, N);
+  for (let r = 0; r < 15; r++) for (let col = 0; col < 15; col++) {
+    const role = roles[r][col];
+    const x = col * cellPx, y = r * cellPx;
+    if (role === 'center') drawConicCell(ctx, x, y, cellPx);
+    else if (role === 'corner-tl') drawDiagCell(ctx, x, y, cellPx, '#e0559b', '#d33', 'tl');
+    else if (role === 'corner-tr') drawDiagCell(ctx, x, y, cellPx, '#e0559b', '#e0b400', 'tr');
+    else if (role === 'corner-br') drawDiagCell(ctx, x, y, cellPx, '#e0b400', '#2a6fd6', 'br');
+    else if (role === 'corner-bl') drawDiagCell(ctx, x, y, cellPx, '#d33', '#2a6fd6', 'bl');
+    else { ctx.fillStyle = CELL_COLOR[role] || '#efe6cf'; ctx.fillRect(x, y, cellPx, cellPx); }
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, cellPx - 1, cellPx - 1);
+  }
+  Object.values(YARD_SLOTS).forEach(slots => {
+    slots.forEach(([r, col]) => {
+      const cx = col * cellPx + cellPx / 2, cy = r * cellPx + cellPx / 2, rad = cellPx * 0.32;
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.setLineDash([4, 3]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    });
+  });
+  ctx.strokeStyle = '#3a2f1a'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, N - 10, N - 10);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+const ludoCanvas = document.getElementById('ludoCanvas');
+const lRenderer = new THREE.WebGLRenderer({ canvas: ludoCanvas, antialias: true });
+lRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+lRenderer.outputColorSpace = THREE.SRGBColorSpace;
+lRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+lRenderer.toneMappingExposure = 0.9;
+lRenderer.shadowMap.enabled = true;
+lRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const lScene = new THREE.Scene();
+lScene.background = null;
+
+const lHalf = LUDO_SIZE * 0.58;
+const lCamera = new THREE.OrthographicCamera(-lHalf, lHalf, lHalf, -lHalf, 0.1, 10);
+lCamera.position.set(0, 2, 0.0001);
+lCamera.up.set(0, 0, -1);
+lCamera.lookAt(0, 0, 0);
+
+function resizeLudoRenderer() {
+  const rect = ludoCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  lRenderer.setSize(rect.width, rect.height, false);
+}
+new ResizeObserver(resizeLudoRenderer).observe(ludoCanvas.parentElement);
+
+lScene.add(new THREE.AmbientLight(0xffffff, 1.0));
+const lKey = new THREE.DirectionalLight(0xfff4d6, 1.6);
+lKey.position.set(0.6, 1.6, 0.4);
+lKey.castShadow = true;
+lKey.shadow.mapSize.set(1024, 1024);
+lKey.shadow.camera.left = -lHalf; lKey.shadow.camera.right = lHalf;
+lKey.shadow.camera.top = lHalf; lKey.shadow.camera.bottom = -lHalf;
+lScene.add(lKey);
+
+const lBoardMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(LUDO_SIZE, LUDO_SIZE),
+  new THREE.MeshStandardMaterial({ map: buildLudoBoardTexture(), roughness: 0.9 })
+);
+lBoardMesh.rotation.x = -Math.PI / 2;
+lBoardMesh.receiveShadow = true;
+lScene.add(lBoardMesh);
+
+function makeLudoTokenMesh(color) {
+  const hex = new THREE.Color(COLOR_HEX[color]);
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: hex, roughness: 0.45, metalness: 0.05 });
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 0.012, 20), mat);
+  base.position.y = 0.006;
+  const body = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.042, 20), mat);
+  body.position.y = 0.012 + 0.021;
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.013, 16, 16), mat);
+  knob.position.y = 0.012 + 0.042 + 0.01;
+  group.add(base, body, knob);
+  group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  return group;
+}
+
+let ludoTokenMeshes = [];
+function clearLudoTokenMeshes() {
+  ludoTokenMeshes.forEach(t => lScene.remove(t.group));
+  ludoTokenMeshes = [];
+}
+function renderLudo3D(groups, canSelect) {
+  clearLudoTokenMeshes();
+  Object.values(groups).forEach(list => {
+    list.forEach((tok, i) => {
+      const group = makeLudoTokenMesh(tok.color);
+      const { x, z } = ludoCellToWorld(tok.row, tok.col);
+      const offset = list.length > 1 ? (i - (list.length - 1) / 2) * LUDO_CELL * 0.34 : 0;
+      group.position.set(x + offset, 0, z);
+      lScene.add(group);
+      ludoTokenMeshes.push({ group, selectable: canSelect(tok.owner, tok.index), baseY: 0 });
+    });
+  });
+}
+
+function animateLudo() {
+  requestAnimationFrame(animateLudo);
+  const t = performance.now() / 1000;
+  ludoTokenMeshes.forEach(tm => {
+    if (tm.selectable) {
+      tm.group.position.y = tm.baseY + 0.012 + Math.abs(Math.sin(t * 4)) * 0.02;
+      tm.group.scale.setScalar(1 + Math.sin(t * 4) * 0.08);
+    } else {
+      tm.group.position.y = tm.baseY;
+      tm.group.scale.setScalar(1);
+    }
+  });
+  lRenderer.render(lScene, lCamera);
+}
+resizeLudoRenderer();
+requestAnimationFrame(animateLudo);
+// ==================== end 3D board ====================
+
 function render(state) {
   lastState = state;
   room = state.code;
@@ -456,7 +621,7 @@ function render(state) {
     document.getElementById('roomCodeDisplay').textContent = state.code;
     document.getElementById('lobbyInfo').textContent = t('waiting_players');
     document.getElementById('lobbyPlayersList').innerHTML = state.players.map(p =>
-      `<div class="player-item"><span><span class="swatch" style="background:${COLOR_HEX[p.color]}"></span>${p.token || ''} ${p.name}</span></div>`
+      `<div class="player-item"><span><span class="swatch" style="background:${COLOR_HEX[p.color]}"></span>${p.token || ''} ${esc(p.name)}</span></div>`
     ).join('');
     document.getElementById('startBtn').style.display = isOwner ? 'block' : 'none';
     document.getElementById('addBotBtn').style.display = (isOwner && state.players.length < 4) ? 'block' : 'none';
@@ -469,7 +634,7 @@ function render(state) {
 
   document.getElementById('playersRow').innerHTML = state.players.map(p => {
     const cls = 'player-chip' + (state.turn === p.name ? ' turn' : '');
-    return `<div class="${cls}"><span class="swatch" style="background:${COLOR_HEX[p.color]}"></span>${p.name === user ? t('you_label') : p.name} (${p.finished}/4)</div>`;
+    return `<div class="${cls}"><span class="swatch" style="background:${COLOR_HEX[p.color]}"></span>${p.name === user ? t('you_label') : esc(p.name)} (${p.finished}/4)</div>`;
   }).join('');
 
   const layer = document.getElementById('tokensLayer');
@@ -503,6 +668,7 @@ function render(state) {
     });
   });
   layer.innerHTML = html;
+  renderLudo3D(groups, canSelect);
   if (pending.length) {
     layer.querySelectorAll('.token.selectable').forEach(el => {
       el.addEventListener('click', () => {
