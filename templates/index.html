@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Montenoir VIP</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js"
+  }
+}
+</script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{
@@ -105,6 +112,9 @@
     .bottom-nav{position:static;margin:20px 0 0;order:4;}
     .bottom-nav a{font-size:13px;padding:12px 22px;}
   }
+  #montenoir3DBadge{position:fixed;left:25px;bottom:25px;width:110px;height:110px;z-index:9997;background:rgba(0,0,0,.86);border:1px solid rgba(212,175,55,.75);border-radius:50%;box-shadow:0 0 18px rgba(212,175,55,.35);overflow:hidden;}
+  #montenoir3DBadgeCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  @media(max-width:600px){ #montenoir3DBadge{width:78px;height:78px;left:14px;bottom:14px} }
   #montenoirOnlineBox{position:fixed;right:25px;bottom:25px;width:148px;height:92px;z-index:9997;background:rgba(0,0,0,.86);border:1px solid rgba(212,175,55,.75);border-radius:8px;box-shadow:0 0 14px rgba(0,255,90,.22),0 0 18px rgba(212,175,55,.22);overflow:hidden;font-family:Consolas,"Courier New",monospace;color:#00ff66;font-size:10.5px;line-height:17px}
   #montenoirOnlineHeader{height:20px;display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:10px;font-weight:bold;letter-spacing:1px;background:rgba(212,175,55,.08);border-bottom:1px solid rgba(212,175,55,.25);text-shadow:0 0 5px rgba(212,175,55,.8)}
   #montenoirOnlineViewport{height:70px;overflow:hidden;position:relative}
@@ -135,9 +145,14 @@
       <a href="/tarot" class="text-tarot">🔮 <span>TAROT & RITUAL</span></a>
     </div>
     <div id="montenoirOnlineBox"><div id="montenoirOnlineHeader">ONLINE</div><div id="montenoirOnlineViewport"><div id="montenoirOnlineTrack"></div></div></div>
+    <div id="montenoir3DBadge"><canvas id="montenoir3DBadgeCanvas"></canvas></div>
     <div id="montenoirLoginToastWrap"></div>
   </div>
 
+  <script type="module">
+  import { initLobbyScene } from '/static/js/lobby3d.js';
+  initLobbyScene('montenoir3DBadgeCanvas', { count: 3, spread: 0.55, cameraZ: 1.6, scale: 0.5 });
+  </script>
   <script src="/static/js/site_lang.js"></script>
   <script>
     const translations = {

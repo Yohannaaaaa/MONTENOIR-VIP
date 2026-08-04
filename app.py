@@ -9001,10 +9001,18 @@ def jeux():
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jeux Montenoir VIP</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js"
+  }
+}
+</script>
 <style>
 html,body{margin:0;min-height:100%;background:#050505;color:#d4af37;font-family:Georgia,serif;}
 body{background:radial-gradient(circle at top,#2b1a05,#050505 55%,#000);}
-.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;}
+#lobbyBgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+.wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;}
 h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:35px;text-align:center;}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:22px;width:min(900px,92vw);}
 .card{text-decoration:none;color:#120800;font-weight:900;text-align:center;padding:24px 18px;border-radius:24px;background:linear-gradient(145deg,#fff4b0,#d4af37 48%,#704000);border:2px solid #fff0a8;box-shadow:0 0 22px rgba(212,175,55,.65),inset 0 0 14px rgba(255,255,255,.45);transition:.25s;}
@@ -9017,6 +9025,7 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 </style>
 </head>
 <body>
+<canvas id="lobbyBgCanvas"></canvas>
 <div class="wrap">
 <div class="lang-selector" id="langSelector"></div>
 <h1 data-common-i18n="games_title">🎮 JEUX MONTENOIR</h1>
@@ -9037,6 +9046,10 @@ h1{font-size:48px;letter-spacing:5px;text-shadow:0 0 20px #d4af37;margin-bottom:
 <script>
 buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
 applyCommonI18n();
+</script>
+<script type="module">
+import { initLobbyScene } from '/static/js/lobby3d.js';
+initLobbyScene('lobbyBgCanvas', { count: 16, spread: 3.4, cameraZ: 4.8, scale: 0.6 });
 </script>
 </body>
 </html>""")
