@@ -37,6 +37,17 @@ SESSION_TOKENS = {}
 def issue_session_token(key):
     token = hashlib.sha256(f"{key}:{time.time()}:{random.random()}".encode()).hexdigest()
     SESSION_TOKENS[token] = key
+    # SESSION_TOKENS is in-memory only and gets wiped on every server restart (which
+    # happens on every deploy) -- also persist the token on the user's own record so
+    # resume_session can still recognize it after a restart, instead of forcing
+    # everyone to type their password again after the next deploy.
+    try:
+        users = load_users()
+        if key in users:
+            users[key]['sessionToken'] = token
+            save_users(users)
+    except Exception as e:
+        print("issue_session_token persist error", e, flush=True)
     return token
 
 OWNER_USERNAME = "yohanna"
@@ -3593,7 +3604,7 @@ function loginAccount(){
     socket.emit('login_account',{username:u,password:p});
 }
 function logoutAccount(){
-    socket.emit('logout_account');
+    socket.emit('logout_account', {token: localStorage.getItem('codenamesSessionToken') || ''});
     currentAccount=null; currentProfile=null;
     localStorage.removeItem('codenamesAccount');
     localStorage.removeItem('loggedUser');
@@ -3601,6 +3612,7 @@ function logoutAccount(){
     localStorage.removeItem('codenamesProfile');
     localStorage.removeItem('codenamesRoom');
     localStorage.removeItem('codenamesName');
+    localStorage.removeItem('codenamesSessionToken');
     authStatus.innerHTML='Çıkış yapıldı.';
     updateProfileChip();alert('Çıkış yapıldı.');
 }
@@ -4308,8 +4320,16 @@ def resume_session(data):
     account = (data.get('account') or '').strip()
     key = SESSION_TOKENS.get(token)
     if not key or not account or key.lower() != account.lower():
-        emit('session_resumed', {'ok': False})
-        return
+        # Not in the in-memory cache -- a server restart (every deploy) wipes it, so
+        # fall back to the token persisted on the user's own record before giving up.
+        users = load_users()
+        found = find_user_key(users, account)
+        if found and token and users[found].get('sessionToken') == token:
+            key = found
+            SESSION_TOKENS[token] = key
+        else:
+            emit('session_resumed', {'ok': False})
+            return
     authenticated_sids[request.sid] = key
     emit('session_resumed', {'ok': True})
 
@@ -4327,7 +4347,12 @@ def logout_account(data=None):
     authenticated_sids.pop(request.sid, None)
     token = (data or {}).get('token') if data else None
     if token:
-        SESSION_TOKENS.pop(token, None)
+        key = SESSION_TOKENS.pop(token, None)
+        if key:
+            users = load_users()
+            if key in users and users[key].get('sessionToken') == token:
+                users[key]['sessionToken'] = ''
+                save_users(users)
 
 @socketio.on('disconnect')
 def auth_disconnect_cleanup():
