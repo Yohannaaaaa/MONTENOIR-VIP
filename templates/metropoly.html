@@ -580,11 +580,44 @@ function applyStaticI18n() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
 }
 
-buildLangSelector(document.getElementById('langSwitch'), (code) => { lang = code; applyStaticI18n(); }, METROPOLY_LANGS);
+buildLangSelector(document.getElementById('langSwitch'), (code) => { lang = code; applyStaticI18n(); if (typeof refreshBoardTexture === 'function') refreshBoardTexture(); }, METROPOLY_LANGS);
 applyStaticI18n();
 
 const CELLS = {{ cells|tojson }}; // [nom, type, prix, loyer, groupe] par case, indexé comme côté serveur
 const GROUP_COLORS = { green:'#33cc33', brown:'#cc7733', orange:'#ff9933', purple:'#9933ff', yellow:'#e0c040', blue:'#3366ff', red:'#ff3333' };
+// The board's cell names come from the server in French; translate them for display
+// only (server logic/keys are untouched) so the board reads in the player's language.
+const CELL_I18N = {
+  'ALLEZ': {fr:'ALLEZ',en:'GO',es:'SALIDA',de:'LOS',it:'VIA',nl:'START',ru:'СТАРТ',ar:'انطلق',pt:'PARTIDA',pl:'START',tr:'BAŞLA',ja:'スタート',zh:'起点',ko:'출발'},
+  'Banque': {fr:'Banque',en:'Bank',es:'Banco',de:'Bank',it:'Banca',nl:'Bank',ru:'Банк',ar:'البنك',pt:'Banco',pl:'Bank',tr:'Banka',ja:'銀行',zh:'银行',ko:'은행'},
+  'New York': {fr:'New York',en:'New York',es:'Nueva York',de:'New York',it:'New York',nl:'New York',ru:'Нью-Йорк',ar:'نيويورك',pt:'Nova Iorque',pl:'Nowy Jork',tr:'New York',ja:'ニューヨーク',zh:'纽约',ko:'뉴욕'},
+  'Monaco': {fr:'Monaco',en:'Monaco',es:'Mónaco',de:'Monaco',it:'Monaco',nl:'Monaco',ru:'Монако',ar:'موناكو',pt:'Mônaco',pl:'Monako',tr:'Monako',ja:'モナコ',zh:'摩纳哥',ko:'모나코'},
+  'Aéroport International': {fr:'Aéroport International',en:'International Airport',es:'Aeropuerto Internacional',de:'Internationaler Flughafen',it:'Aeroporto Internazionale',nl:'Internationale Luchthaven',ru:'Международный аэропорт',ar:'مطار دولي',pt:'Aeroporto Internacional',pl:'Lotnisko Międzynarodowe',tr:'Uluslararası Havalimanı',ja:'国際空港',zh:'国际机场',ko:'국제공항'},
+  'Londres': {fr:'Londres',en:'London',es:'Londres',de:'London',it:'Londra',nl:'Londen',ru:'Лондон',ar:'لندن',pt:'Londres',pl:'Londyn',tr:'Londra',ja:'ロンドン',zh:'伦敦',ko:'런던'},
+  'Varsovie': {fr:'Varsovie',en:'Warsaw',es:'Varsovia',de:'Warschau',it:'Varsavia',nl:'Warschau',ru:'Варшава',ar:'وارسو',pt:'Varsóvia',pl:'Warszawa',tr:'Varşova',ja:'ワルシャワ',zh:'华沙',ko:'바르샤바'},
+  'Zurich': {fr:'Zurich',en:'Zurich',es:'Zúrich',de:'Zürich',it:'Zurigo',nl:'Zürich',ru:'Цюрих',ar:'زيورخ',pt:'Zurique',pl:'Zurych',tr:'Zürih',ja:'チューリッヒ',zh:'苏黎世',ko:'취리히'},
+  'Prison': {fr:'Prison',en:'Jail',es:'Cárcel',de:'Gefängnis',it:'Prigione',nl:'Gevangenis',ru:'Тюрьма',ar:'السجن',pt:'Prisão',pl:'Więzienie',tr:'Hapishane',ja:'刑務所',zh:'监狱',ko:'감옥'},
+  'Paris': {fr:'Paris',en:'Paris',es:'París',de:'Paris',it:'Parigi',nl:'Parijs',ru:'Париж',ar:'باريس',pt:'Paris',pl:'Paryż',tr:'Paris',ja:'パリ',zh:'巴黎',ko:'파리'},
+  'Milan': {fr:'Milan',en:'Milan',es:'Milán',de:'Mailand',it:'Milano',nl:'Milaan',ru:'Милан',ar:'ميلانو',pt:'Milão',pl:'Mediolan',tr:'Milano',ja:'ミラノ',zh:'米兰',ko:'밀라노'},
+  'Amsterdam': {fr:'Amsterdam',en:'Amsterdam',es:'Ámsterdam',de:'Amsterdam',it:'Amsterdam',nl:'Amsterdam',ru:'Амстердам',ar:'أمستردام',pt:'Amsterdã',pl:'Amsterdam',tr:'Amsterdam',ja:'アムステルダム',zh:'阿姆斯特丹',ko:'암스테르담'},
+  'Compagnies des Eaux': {fr:'Compagnies des Eaux',en:'Water Company',es:'Compañía de Aguas',de:'Wasserwerk',it:"Compagnia dell'Acqua",nl:'Waterbedrijf',ru:'Водоканал',ar:'شركة المياه',pt:'Companhia de Água',pl:'Wodociągi',tr:'Su Şirketi',ja:'水道会社',zh:'自来水公司',ko:'수도 회사'},
+  'Moscou': {fr:'Moscou',en:'Moscow',es:'Moscú',de:'Moskau',it:'Mosca',nl:'Moskou',ru:'Москва',ar:'موسكو',pt:'Moscovo',pl:'Moskwa',tr:'Moskova',ja:'モスクワ',zh:'莫斯科',ko:'모스크바'},
+  'Rome': {fr:'Rome',en:'Rome',es:'Roma',de:'Rom',it:'Roma',nl:'Rome',ru:'Рим',ar:'روما',pt:'Roma',pl:'Rzym',tr:'Roma',ja:'ローマ',zh:'罗马',ko:'로마'},
+  'Madrid': {fr:'Madrid',en:'Madrid',es:'Madrid',de:'Madrid',it:'Madrid',nl:'Madrid',ru:'Мадрид',ar:'مدريد',pt:'Madrid',pl:'Madryt',tr:'Madrid',ja:'マドリード',zh:'马德里',ko:'마드리드'},
+  'Impôts': {fr:'Impôts',en:'Tax',es:'Impuestos',de:'Steuern',it:'Tasse',nl:'Belasting',ru:'Налог',ar:'الضرائب',pt:'Impostos',pl:'Podatek',tr:'Vergi',ja:'税金',zh:'税',ko:'세금'},
+  'Sofia': {fr:'Sofia',en:'Sofia',es:'Sofía',de:'Sofia',it:'Sofia',nl:'Sofia',ru:'София',ar:'صوفيا',pt:'Sófia',pl:'Sofia',tr:'Sofya',ja:'ソフィア',zh:'索非亚',ko:'소피아'},
+  'Belgrad': {fr:'Belgrade',en:'Belgrade',es:'Belgrado',de:'Belgrad',it:'Belgrado',nl:'Belgrado',ru:'Белград',ar:'بلغراد',pt:'Belgrado',pl:'Belgrad',tr:'Belgrad',ja:'ベオグラード',zh:'贝尔格莱德',ko:'베오그라드'},
+  'Gare Grande Vitesse': {fr:'Gare Grande Vitesse',en:'High-Speed Station',es:'Estación de Alta Velocidad',de:'Hochgeschw.-Bahnhof',it:'Stazione Alta Velocità',nl:'Hogesnelheidsstation',ru:'Скоростной вокзал',ar:'محطة قطار سريع',pt:'Estação de Alta Vel.',pl:'Stacja Szybkiej Kolei',tr:'Hızlı Tren İstasyonu',ja:'高速鉄道駅',zh:'高铁站',ko:'고속철도역'},
+  'Istanbul': {fr:'Istanbul',en:'Istanbul',es:'Estambul',de:'Istanbul',it:'Istanbul',nl:'Istanbul',ru:'Стамбул',ar:'إسطنبول',pt:'Istambul',pl:'Stambuł',tr:'İstanbul',ja:'イスタンブール',zh:'伊斯坦布尔',ko:'이스탄불'},
+  'Prague': {fr:'Prague',en:'Prague',es:'Praga',de:'Prag',it:'Praga',nl:'Praag',ru:'Прага',ar:'براغ',pt:'Praga',pl:'Praga',tr:'Prag',ja:'プラハ',zh:'布拉格',ko:'프라하'},
+  'Lisbonne': {fr:'Lisbonne',en:'Lisbon',es:'Lisboa',de:'Lissabon',it:'Lisbona',nl:'Lissabon',ru:'Лиссабон',ar:'لشبونة',pt:'Lisboa',pl:'Lizbona',tr:'Lizbon',ja:'リスボン',zh:'里斯本',ko:'리스본'},
+  'Enchères': {fr:'Enchères',en:'Auction',es:'Subasta',de:'Auktion',it:'Asta',nl:'Veiling',ru:'Аукцион',ar:'مزاد',pt:'Leilão',pl:'Aukcja',tr:'Açık Artırma',ja:'オークション',zh:'拍卖',ko:'경매'},
+  'Dubaï': {fr:'Dubaï',en:'Dubai',es:'Dubái',de:'Dubai',it:'Dubai',nl:'Dubai',ru:'Дубай',ar:'دبي',pt:'Dubai',pl:'Dubaj',tr:'Dubai',ja:'ドバイ',zh:'迪拜',ko:'두바이'},
+  'Pékin': {fr:'Pékin',en:'Beijing',es:'Pekín',de:'Peking',it:'Pechino',nl:'Peking',ru:'Пекин',ar:'بكين',pt:'Pequim',pl:'Pekin',tr:'Pekin',ja:'北京',zh:'北京',ko:'베이징'},
+  'Compagnie Électrique': {fr:'Compagnie Électrique',en:'Electric Company',es:'Compañía Eléctrica',de:'Elektrizitätswerk',it:'Compagnia Elettrica',nl:'Elektriciteitsbedrijf',ru:'Электростанция',ar:'شركة الكهرباء',pt:'Companhia Elétrica',pl:'Elektrownia',tr:'Elektrik Şirketi',ja:'電力会社',zh:'电力公司',ko:'전력 회사'},
+  'Tokyo': {fr:'Tokyo',en:'Tokyo',es:'Tokio',de:'Tokio',it:'Tokyo',nl:'Tokio',ru:'Токио',ar:'طوكيو',pt:'Tóquio',pl:'Tokio',tr:'Tokyo',ja:'東京',zh:'东京',ko:'도쿄'}
+};
+function cellLabel(name) { const d = CELL_I18N[name]; return (d && d[lang]) || name; }
 const HOUSE_ICONS = { green:'/static/house_green.png', brown:'/static/house_brown.png', orange:'/static/house_orange.png', purple:'/static/house_purple.png', yellow:'/static/house_yellow.png', red:'/static/house_red.png' };
 function houseIcon(grp) { return HOUSE_ICONS[grp] || HOUSE_ICONS.green; }
 function houseFilterStyle(grp) { return grp === 'blue' ? 'filter:hue-rotate(150deg) saturate(1.4) drop-shadow(0 2px 3px rgba(0,0,0,0.6));' : ''; }
@@ -702,15 +735,113 @@ mFill.position.set(-1.2, 1.6, -0.8);
 mScene.add(mFill);
 
 const mTexLoader = new THREE.TextureLoader();
-const boardTex = mTexLoader.load('/static/metroploy_plateau_lux.png.png');
-boardTex.colorSpace = THREE.SRGBColorSpace;
+
+// The board cells are drawn on a canvas (instead of a baked photo) so the names can be
+// redrawn in whichever language the player picks -- reuses the same 7-cells-per-side
+// grid and -1 index offset as cellWorldPos() so text lines up with where tokens land.
+function cellPixelRect(idx) {
+  const per = 7, w = 1200, h = 800, marginX = 130, marginY = 110;
+  const loX = marginX, hiX = w - marginX, loY = marginY, hiY = h - marginY;
+  const pos = (idx - 1 + N_CELLS) % N_CELLS;
+  const side = Math.floor(pos / per), i = pos % per;
+  if (side === 0) { // bottom row, i=0 rightmost .. 6 leftmost
+    const x0 = hiX - (hiX - loX) * (i + 1) / per, x1 = hiX - (hiX - loX) * i / per;
+    return { x: x0, y: hiY, w: x1 - x0, h: h - hiY };
+  }
+  if (side === 1) { // left column, i=0 bottom .. 6 top
+    const y0 = hiY - (hiY - loY) * (i + 1) / per, y1 = hiY - (hiY - loY) * i / per;
+    return { x: 0, y: y0, w: loX, h: y1 - y0 };
+  }
+  if (side === 2) { // top row, i=0 left .. 6 right
+    const x0 = loX + (hiX - loX) * i / per, x1 = loX + (hiX - loX) * (i + 1) / per;
+    return { x: x0, y: 0, w: x1 - x0, h: loY };
+  }
+  const y0 = loY + (hiY - loY) * i / per, y1 = loY + (hiY - loY) * (i + 1) / per; // side 3: right column
+  return { x: hiX, y: y0, w: w - hiX, h: y1 - y0 };
+}
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  words.forEach(word => {
+    const test = cur ? cur + ' ' + word : word;
+    if (cur && ctx.measureText(test).width > maxWidth) { lines.push(cur); cur = word; }
+    else cur = test;
+  });
+  if (cur) lines.push(cur);
+  const startY = y - (lines.length - 1) * lineHeight / 2;
+  lines.forEach((line, i) => ctx.fillText(line, x, startY + i * lineHeight));
+}
+function buildBoardTexture() {
+  const W = 1200, H = 800;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#141210'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#0d0d0d'; ctx.fillRect(130, 110, W - 260, H - 220);
+
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#d4af37';
+  ctx.font = 'bold 56px Arial';
+  ctx.shadowColor = 'rgba(212,175,55,0.55)'; ctx.shadowBlur = 22;
+  ctx.fillText('METROPOLY', W / 2, H / 2);
+  ctx.restore();
+
+  for (let idx = 0; idx < N_CELLS; idx++) {
+    const cell = CELLS[idx];
+    if (!cell) continue;
+    const [rawName, typ, price, rent, grp] = cell;
+    const rect = cellPixelRect(idx);
+    const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+
+    ctx.fillStyle = '#12100e';
+    ctx.fillRect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2);
+    ctx.strokeStyle = 'rgba(212,175,55,0.55)'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2);
+
+    if (GROUP_COLORS[grp]) {
+      ctx.fillStyle = GROUP_COLORS[grp];
+      const bandFrac = 0.24;
+      if (rect.w >= rect.h) {
+        const bh = rect.h * bandFrac;
+        const by = rect.y < H / 2 ? rect.y + 1 : rect.y + rect.h - bh - 1;
+        ctx.fillRect(rect.x + 1, by, rect.w - 2, bh);
+      } else {
+        const bw = rect.w * bandFrac;
+        const bx = rect.x < W / 2 ? rect.x + 1 : rect.x + rect.w - bw - 1;
+        ctx.fillRect(bx, rect.y + 1, bw, rect.h - 2);
+      }
+    }
+
+    const label = cellLabel(rawName);
+    const fontSize = Math.max(9, Math.min(13, rect.w / 7.5));
+    ctx.fillStyle = '#f0dca0';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `bold ${fontSize}px Arial`;
+    wrapCanvasText(ctx, label, cx, cy - (price ? 7 : 0), rect.w - 10, fontSize + 3);
+    if (price) {
+      ctx.fillStyle = '#d4af37';
+      ctx.font = `${Math.max(8, fontSize - 2)}px Arial`;
+      ctx.fillText(price + '€', cx, rect.y + rect.h - 11);
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 const boardPlane = new THREE.Mesh(
   new THREE.PlaneGeometry(BOARD_W, BOARD_H),
-  new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.6, metalness: 0.05 })
+  new THREE.MeshStandardMaterial({ map: buildBoardTexture(), roughness: 0.6, metalness: 0.05 })
 );
 boardPlane.rotation.x = -Math.PI / 2;
 boardPlane.receiveShadow = true;
 mScene.add(boardPlane);
+function refreshBoardTexture() {
+  boardPlane.material.map.dispose();
+  boardPlane.material.map = buildBoardTexture();
+  boardPlane.material.needsUpdate = true;
+}
 
 // ---- dice ----
 function makePipTexture(n) {
