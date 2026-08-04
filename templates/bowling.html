@@ -308,8 +308,8 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x140a24);
-scene.fog = new THREE.Fog(0x140a24, 13, 24);
+scene.background = new THREE.Color(0x2a2420);
+scene.fog = new THREE.Fog(0x2a2420, 13, 24);
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
 camera.position.set(0, 3.3, -1.3);
@@ -421,15 +421,18 @@ const ROOM_H = 3.6;                   // wall/ceiling height
 const ROOM_BACK_Z = LANE_LENGTH + 1.6;
 const ROOM_FRONT_Z = -3.2;
 
+// Classic bowling-alley carpet: dark charcoal with the small retro confetti pattern
+// (diamonds/rings) real alley carpets are known for, in muted burgundy/teal/mustard --
+// not neon, just enough color to not read as bare concrete.
 function makeCarpetTexture() {
   const c = document.createElement('canvas'); c.width = 256; c.height = 256;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#1c1626'; ctx.fillRect(0, 0, c.width, c.height);
-  const accents = ['#8a3d63', '#2f7d78', '#8a6a2a', '#5a4a8a'];
+  ctx.fillStyle = '#241f1a'; ctx.fillRect(0, 0, c.width, c.height);
+  const accents = ['#7a2f3d', '#2f6b63', '#8a6a2a'];
   for (let i = 0; i < 14; i++) {
     const x = Math.random() * c.width, y = Math.random() * c.height, r = 9 + Math.random() * 16;
     ctx.strokeStyle = accents[i % accents.length];
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = 0.35;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     if (i % 2 === 0) { ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); }
@@ -451,23 +454,30 @@ carpet.position.set(0, -0.08, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
 carpet.receiveShadow = true;
 scene.add(carpet);
 
+// Plain acoustic-tile ceiling, warm off-white like real alley lighting rigs.
 const ceiling = new THREE.Mesh(
   new THREE.PlaneGeometry(ROOM_W * 2, ROOM_BACK_Z - ROOM_FRONT_Z),
-  new THREE.MeshStandardMaterial({ color: 0x1a1030, roughness: 0.9 })
+  new THREE.MeshStandardMaterial({ color: 0x8a8175, roughness: 0.95 })
 );
 ceiling.rotation.x = Math.PI / 2;
 ceiling.position.set(0, ROOM_H, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
 scene.add(ceiling);
 
-function makeNeonWallTexture(hexA, hexB) {
+// Real-alley wall: wood wainscoting on the lower half, a painted band above it with
+// a thin trim line at the seam -- no glow, just a normal indoor wall.
+function makeAlleyWallTexture() {
   const c = document.createElement('canvas'); c.width = 64; c.height = 512;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#150c26'; ctx.fillRect(0, 0, c.width, c.height);
-  const grad = ctx.createLinearGradient(0, 0, c.width, 0);
-  grad.addColorStop(0, hexA); grad.addColorStop(0.5, hexB); grad.addColorStop(1, hexA);
-  ctx.fillStyle = grad;
-  ctx.globalAlpha = 0.8;
-  for (let y = 20; y < c.height; y += 90) ctx.fillRect(6, y, c.width - 12, 8);
+  const seam = c.height * 0.42;
+  ctx.fillStyle = '#2f4a4a'; ctx.fillRect(0, 0, c.width, seam);
+  const plankTones = ['#5a3c22', '#4e331d', '#63431f'];
+  const plankH = 26;
+  for (let y = seam; y < c.height; y += plankH) {
+    ctx.fillStyle = plankTones[Math.floor(y / plankH) % plankTones.length];
+    ctx.fillRect(0, y, c.width, plankH - 2);
+  }
+  ctx.fillStyle = '#c9a24a';
+  ctx.fillRect(0, seam - 4, c.width, 4);
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(1, Math.max(1, Math.round((ROOM_BACK_Z - ROOM_FRONT_Z) / 3)));
@@ -476,7 +486,7 @@ function makeNeonWallTexture(hexA, hexB) {
 [-1, 1].forEach(side => {
   const wall = new THREE.Mesh(
     new THREE.PlaneGeometry(ROOM_BACK_Z - ROOM_FRONT_Z, ROOM_H),
-    new THREE.MeshStandardMaterial({ map: makeNeonWallTexture('#ff2e88', '#00c9e0'), emissive: 0x1c1030, emissiveIntensity: 0.3, roughness: 0.7 })
+    new THREE.MeshStandardMaterial({ map: makeAlleyWallTexture(), roughness: 0.8 })
   );
   wall.rotation.y = -side * Math.PI / 2;
   wall.position.set(side * ROOM_W, ROOM_H / 2, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
@@ -484,26 +494,25 @@ function makeNeonWallTexture(hexA, hexB) {
 });
 const backWall = new THREE.Mesh(
   new THREE.PlaneGeometry(ROOM_W * 2, ROOM_H),
-  new THREE.MeshStandardMaterial({ color: 0x123457, emissive: 0x1c507d, emissiveIntensity: 0.45, roughness: 0.6 })
+  new THREE.MeshStandardMaterial({ color: 0x2f4a4a, roughness: 0.75 })
 );
 backWall.position.set(0, ROOM_H / 2, ROOM_BACK_Z);
 scene.add(backWall);
 const frontWall = new THREE.Mesh(
   new THREE.PlaneGeometry(ROOM_W * 2, ROOM_H),
-  new THREE.MeshStandardMaterial({ color: 0x1a1030, roughness: 0.85 })
+  new THREE.MeshStandardMaterial({ color: 0x2f4a4a, roughness: 0.8 })
 );
 frontWall.rotation.y = Math.PI;
 frontWall.position.set(0, ROOM_H / 2, ROOM_FRONT_Z);
 scene.add(frontWall);
 
-// A handful of colored point lights down each side for an arcade/glow-bowling feel,
-// kept low-intensity and short-range so they add color without washing out the pins.
-const ARCADE_COLORS = [0xff2e88, 0x00c9e0, 0xffb703];
+// Warm overhead fill lights down each side, like a real alley's ceiling fixtures --
+// plain warm white, not colored, just enough to keep the room from going flat/dark.
 for (let i = 0; i < 4; i++) {
   const z = 1 + i * (LANE_LENGTH / 3.2);
-  [-1, 1].forEach((side, si) => {
-    const glow = new THREE.PointLight(ARCADE_COLORS[(i + si) % ARCADE_COLORS.length], 3.5, 4);
-    glow.position.set(side * (LANE_HALF_WIDTH + 1.3), 2.2, z);
+  [-1, 1].forEach((side) => {
+    const glow = new THREE.PointLight(0xfff2d8, 3, 4.5);
+    glow.position.set(side * (LANE_HALF_WIDTH + 1.3), 2.6, z);
     scene.add(glow);
   });
 }
