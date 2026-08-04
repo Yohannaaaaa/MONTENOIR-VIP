@@ -629,7 +629,9 @@ function stepTweens(now) {
 function tiltBottle(idx) {
   const b = bottleGroups[idx];
   if (!b) return;
-  tweenObject(b.root.rotation, { z: -1.15 }, 400);
+  // A gentle "about to pour" tilt, matching the original 2D version's -16deg --
+  // NOT a full radians value, which swings the bottle almost flat/sideways.
+  tweenObject(b.root.rotation, { z: -0.28 }, 400);
   setTimeout(() => { tweenObject(b.root.rotation, { z: 0 }, 400); }, 1200);
 }
 
@@ -903,6 +905,10 @@ socket.on('magic_error', (d) => {
   document.getElementById('lobbyErrorMsg').textContent = msg;
   document.getElementById('lobbyJoinErrorMsg').textContent = msg;
   document.getElementById('gameErrorMsg').textContent = msg;
+  // A rejected pour already cleared selectedIdx client-side, but no new state comes
+  // from the server on failure -- re-render so the selection ring/lift don't stay
+  // stuck showing a bottle as "selected" that isn't anymore.
+  renderCurrentState();
 });
 
 socket.on('connect', () => {
