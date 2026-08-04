@@ -2469,13 +2469,13 @@ animation:luxShine 5s infinite;
     100%{transform:scale(1);filter:brightness(1);}
 }
 .card.justRevealed{
-    animation:cardRevealPop 1.1s cubic-bezier(.34,1.56,.64,1) both;
+    animation:cardRevealPop 2s cubic-bezier(.34,1.56,.64,1) both;
     z-index:50;
 }
 @keyframes cardRevealPop{
     0%{transform:perspective(900px) translateY(0) translateZ(0) scale(1) rotateX(0deg);box-shadow:0 0 0 rgba(212,175,55,0);}
-    30%{transform:perspective(900px) translateY(-90px) translateZ(140px) scale(1.6) rotateX(10deg);box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 45px rgba(255,215,0,.9);}
-    65%{transform:perspective(900px) translateY(-90px) translateZ(140px) scale(1.6) rotateX(10deg);box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 45px rgba(255,215,0,.9);}
+    30%{transform:perspective(900px) translateY(-130px) translateZ(220px) scale(2.4) rotateX(10deg);box-shadow:0 35px 80px rgba(0,0,0,.7),0 0 65px rgba(255,215,0,.95);}
+    65%{transform:perspective(900px) translateY(-130px) translateZ(220px) scale(2.4) rotateX(10deg);box-shadow:0 35px 80px rgba(0,0,0,.7),0 0 65px rgba(255,215,0,.95);}
     100%{transform:perspective(900px) translateY(0) translateZ(0) scale(1) rotateX(0deg);box-shadow:0 0 0 rgba(212,175,55,0);}
 }
 
