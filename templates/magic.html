@@ -7,6 +7,14 @@
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
 <script src="/static/js/site_sfx.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js",
+    "three/addons/": "/static/js/vendor/three/examples/jsm/"
+  }
+}
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -59,35 +67,11 @@
   .duel-chip .name { color: #f5e6d3; font-weight: bold; }
   .duel-chip .info { color: #d4af37; margin-top: 3px; }
 
-  .rack-wrap { width: 100%; max-width: 720px; margin: 0 auto; }
-  .bottles-row { display: flex; flex-wrap: wrap; gap: 22px 18px; justify-content: center; padding: 20px 10px 6px; }
-  .bottle-wrap { display: flex; flex-direction: column; align-items: center; }
-  .bottle { position: relative; width: 58px; height: 216px; cursor: pointer; transition: transform .18s; }
-  .bottle-glass { position: absolute; inset: 0; border-radius: 8px 8px 28px 28px;
-    background: linear-gradient(120deg, rgba(255,255,255,.18), rgba(255,255,255,.02) 45%, rgba(255,255,255,.12) 65%, rgba(255,255,255,.02));
-    border: 2px solid rgba(212,175,55,.6); box-shadow: inset 0 0 18px rgba(255,255,255,.14), inset -10px 0 16px rgba(0,0,0,.4), 0 4px 0 rgba(255,255,255,.08), 0 12px 24px rgba(0,0,0,.7);
-    overflow: hidden; transition: box-shadow .18s; }
-  .bottle-glass::before { content:''; position:absolute; top:0; bottom:0; left:6px; width:8px; border-radius:6px; background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.05) 55%, rgba(255,255,255,.35)); pointer-events:none; z-index:5; }
-  .bottle-glass::after { content:''; position:absolute; top:0; bottom:0; right:9px; width:3px; border-radius:6px; background: linear-gradient(180deg, rgba(255,255,255,.3), transparent 60%, rgba(255,255,255,.15)); pointer-events:none; z-index:5; }
-  .bottle-slot.top-surface::after { content:''; position:absolute; top:-2px; left:4%; right:4%; height:6px; border-radius:50%; background: rgba(255,255,255,.45); filter: blur(.3px); }
-  .bottle-slot.settle { animation: liquidSettle .45s ease; }
-  @keyframes liquidSettle { 0%{transform:translateY(-3px);} 60%{transform:translateY(1px);} 100%{transform:translateY(0);} }
-  .bottle-neck { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 24px; height: 16px;
-    background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.04)); border: 2px solid rgba(212,175,55,.55); border-bottom: none; border-radius: 6px 6px 0 0; z-index: 4; }
-  .bottle-cork { display: none; position: absolute; top: -26px; left: 50%; transform: translateX(-50%); width: 32px; height: 16px;
-    background: linear-gradient(160deg,#c9a24a,#8a6a2a 55%,#5c4718); border: 2px solid #3d2c10; border-radius: 8px 8px 4px 4px;
-    box-shadow: 0 4px 8px rgba(0,0,0,.6), inset 0 1px 2px rgba(255,255,255,.35); z-index: 6; }
-  .bottle.capped .bottle-neck { opacity: 0; }
-  .bottle.capped .bottle-cork { display: block; }
-  .bottle.selected .bottle-glass { box-shadow: 0 0 0 3px rgba(212,175,55,.9), 0 0 22px rgba(212,175,55,.85), inset 0 0 14px rgba(255,255,255,.2); }
-  .bottle.selected { transform: translateY(-10px); }
-  .bottle.pouring { animation: bottleTilt 1.6s ease; }
-  @keyframes bottleTilt { 0%{transform:rotate(0)} 25%{transform:rotate(-16deg)} 75%{transform:rotate(-16deg)} 100%{transform:rotate(0)} }
-  .bottle-slot { position: absolute; left: 2px; right: 2px; background: transparent;
-    transition: background-color .7s ease; }
-  .bottle-slot.mystery { display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 15px; text-shadow: 0 0 6px #000;
-    background: repeating-linear-gradient(135deg,#2a2a2a,#2a2a2a 6px,#161616 6px,#161616 12px) !important; }
-  .bottle-count { margin-top: 8px; font-size: 11px; color: #8a7550; }
+  .rack-wrap { width: 100%; margin-bottom: 4px; }
+  .bottles-3d-scene { position: relative; width: min(720px, 96vw); height: min(380px, 52vw); margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c;
+    box-shadow: 0 25px 55px rgba(0,0,0,.85), 0 0 0 1px rgba(255,236,180,.35), inset 0 0 0 3px rgba(212,175,55,.5), inset 0 0 0 5px rgba(0,0,0,.4); }
+  #magicCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #magicCanvas.pickable { cursor: pointer; }
 
   .power-bar { display: flex; gap: 12px; justify-content: center; margin: 18px auto 4px; flex-wrap: wrap; max-width: 500px; }
   .power-btn { position: relative; background: linear-gradient(145deg,#3a2f1a,#221a0d); border: 2px solid #d4af37; border-radius: 14px; padding: 12px 18px; color: #f5e6d3; font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; min-width: 84px; }
@@ -105,12 +89,7 @@
     h1 { font-size: 32px; letter-spacing: 3px; margin-bottom: 16px; }
     .card-box { padding: 20px 16px; }
     .room-code { font-size: 28px; }
-    .bottle { width: 46px; height: 176px; }
-    .bottles-row { gap: 16px 12px; }
     .power-btn { padding: 10px 12px; font-size: 11px; min-width: 70px; }
-  }
-  @media (max-width: 380px) {
-    .bottle { width: 40px; height: 152px; }
   }
 </style>
 </head>
@@ -186,7 +165,9 @@
   <div class="level-banner" id="levelBanner"></div>
   <div class="duel-status" id="duelStatus" style="display:none;"></div>
   <div class="rack-wrap">
-    <div class="bottles-row" id="bottlesRow"></div>
+    <div class="bottles-3d-scene">
+      <canvas id="magicCanvas"></canvas>
+    </div>
   </div>
   <div class="power-bar" id="powerBar">
     <button class="power-btn" id="undoBtn">↩️ <span data-i18n="btn_undo">Annuler</span><span class="badge" id="undoBadge">3</span></button>
@@ -205,7 +186,9 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+
 const socket = io();
 function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
 (function(){
@@ -456,6 +439,229 @@ function show(id) {
   document.getElementById(id).classList.add('active');
 }
 
+// ==================== 3D water-sort bottles (Three.js) ====================
+const BOTTLE_GAP = 0.4;
+const LIQUID_TOTAL_H = 0.62;
+const BOTTLE_RADIUS = 0.1;
+const NECK_H = 0.09, NECK_R = 0.045;
+const CORK_H = 0.07;
+
+const magicCanvas = document.getElementById('magicCanvas');
+const mRenderer = new THREE.WebGLRenderer({ canvas: magicCanvas, antialias: true });
+mRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+mRenderer.outputColorSpace = THREE.SRGBColorSpace;
+mRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+mRenderer.toneMappingExposure = 1.05;
+mRenderer.shadowMap.enabled = true;
+mRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const mScene = new THREE.Scene();
+mScene.background = new THREE.Color(0x0c0806);
+
+const mCamera = new THREE.PerspectiveCamera(32, 1, 0.05, 20);
+mCamera.position.set(0, 0.3, 2);
+mCamera.lookAt(0, 0.25, 0);
+
+let lastRowWidth = 1, lastContentHeight = LIQUID_TOTAL_H + NECK_H + CORK_H;
+function fitCameraToRow(rowWidth, contentHeight) {
+  lastRowWidth = rowWidth; lastContentHeight = contentHeight;
+  const halfFov = THREE.MathUtils.degToRad(mCamera.fov / 2);
+  const aspect = mCamera.aspect || 1;
+  const distForWidth = (rowWidth / 2 + 0.22) / (Math.tan(halfFov) * aspect);
+  const distForHeight = (contentHeight / 2 + 0.14) / Math.tan(halfFov);
+  const dist = Math.max(distForWidth, distForHeight, 1.0);
+  mCamera.position.set(0, contentHeight * 0.42, dist);
+  mCamera.lookAt(0, contentHeight * 0.3, 0);
+}
+
+function resizeMagicRenderer() {
+  const rect = magicCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  mRenderer.setSize(rect.width, rect.height, false);
+  mCamera.aspect = rect.width / rect.height;
+  mCamera.updateProjectionMatrix();
+  fitCameraToRow(lastRowWidth, lastContentHeight);
+}
+new ResizeObserver(resizeMagicRenderer).observe(magicCanvas.parentElement);
+
+mScene.add(new THREE.AmbientLight(0x9a8f80, 0.8));
+const mKey = new THREE.DirectionalLight(0xfff4d6, 2.2);
+mKey.position.set(0.5, 3, 1.4);
+mKey.castShadow = true;
+mKey.shadow.mapSize.set(1024, 1024);
+mScene.add(mKey);
+const mFill = new THREE.PointLight(0xffe6b0, 10, 8);
+mFill.position.set(-1.2, 1.4, -0.6);
+mScene.add(mFill);
+
+const mShelf = new THREE.Mesh(
+  new THREE.BoxGeometry(6, 0.05, 1),
+  new THREE.MeshStandardMaterial({ color: 0x3a2f1a, roughness: 0.55, metalness: 0.1 })
+);
+mShelf.position.y = -0.026;
+mShelf.receiveShadow = true;
+mScene.add(mShelf);
+
+function makeQuestionSprite() {
+  const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 46px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('?', 32, 36);
+  const tex = new THREE.CanvasTexture(c);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  spr.scale.set(0.07, 0.07, 1);
+  return spr;
+}
+
+let bottleGroups = [];
+let curBottleCount = -1, curCapacity = -1;
+
+function disposeBottleGroups() {
+  bottleGroups.forEach(b => { mScene.remove(b.root); });
+  bottleGroups = [];
+}
+
+function buildBottles3D(numBottles, cap) {
+  disposeBottleGroups();
+  const layerH = LIQUID_TOTAL_H / cap;
+  const totalRowWidth = Math.max(0, (numBottles - 1)) * BOTTLE_GAP;
+  for (let idx = 0; idx < numBottles; idx++) {
+    const root = new THREE.Object3D();
+    root.position.x = -totalRowWidth / 2 + idx * BOTTLE_GAP;
+    mScene.add(root);
+
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, roughness: 0.08, metalness: 0, side: THREE.DoubleSide });
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(BOTTLE_RADIUS, BOTTLE_RADIUS * 0.92, LIQUID_TOTAL_H, 20, 1, true), glassMat);
+    glass.position.y = LIQUID_TOTAL_H / 2;
+    root.add(glass);
+
+    const bottomCap = new THREE.Mesh(new THREE.CircleGeometry(BOTTLE_RADIUS * 0.92, 20), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, side: THREE.DoubleSide }));
+    bottomCap.rotation.x = -Math.PI / 2;
+    bottomCap.position.y = 0.002;
+    root.add(bottomCap);
+
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(NECK_R, BOTTLE_RADIUS * 0.9, NECK_H, 16), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, roughness: 0.08 }));
+    neck.position.y = LIQUID_TOTAL_H + NECK_H / 2;
+    root.add(neck);
+
+    const cork = new THREE.Mesh(new THREE.CylinderGeometry(NECK_R * 0.95, NECK_R * 1.05, CORK_H, 16), new THREE.MeshStandardMaterial({ color: 0xc9a24a, roughness: 0.6 }));
+    cork.position.y = LIQUID_TOTAL_H + NECK_H + CORK_H / 2;
+    cork.visible = false;
+    root.add(cork);
+
+    const ring = new THREE.Mesh(new THREE.RingGeometry(BOTTLE_RADIUS * 1.15, BOTTLE_RADIUS * 1.5, 24), new THREE.MeshBasicMaterial({ color: 0xd4af37, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.004;
+    ring.visible = false;
+    root.add(ring);
+
+    const layers = [];
+    for (let s = 0; s < cap; s++) {
+      const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(BOTTLE_RADIUS * 0.88, BOTTLE_RADIUS * 0.88, layerH, 20),
+        new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.05, transparent: true, opacity: 0.94 })
+      );
+      mesh.position.y = s * layerH + layerH / 2;
+      mesh.scale.y = 0.001;
+      mesh.userData.val = undefined;
+      root.add(mesh);
+      const qSprite = makeQuestionSprite();
+      qSprite.position.set(0, mesh.position.y, BOTTLE_RADIUS * 0.98);
+      qSprite.visible = false;
+      root.add(qSprite);
+      mesh.userData.qSprite = qSprite;
+      layers.push(mesh);
+    }
+
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(BOTTLE_RADIUS * 1.3, BOTTLE_RADIUS * 1.3, LIQUID_TOTAL_H + NECK_H + CORK_H, 12), new THREE.MeshBasicMaterial({ visible: false }));
+    hit.position.y = (LIQUID_TOTAL_H + NECK_H + CORK_H) / 2;
+    hit.userData.bottleIdx = idx;
+    root.add(hit);
+
+    bottleGroups.push({ root, glass, neck, cork, ring, layers, hit, idx });
+  }
+  curBottleCount = numBottles; curCapacity = cap;
+  fitCameraToRow(totalRowWidth, LIQUID_TOTAL_H + NECK_H + CORK_H);
+}
+
+function slotValKey(c) { return c === undefined ? 'empty' : (c === null ? 'mystery' : String(c)); }
+
+function applyLayerValue(bottleObj, s, val, animate) {
+  const mesh = bottleObj.layers[s];
+  const visible = val !== undefined;
+  const targetScale = visible ? 1 : 0.001;
+  if (val === null) {
+    mesh.material.color.set(0x555560);
+  } else if (val !== undefined) {
+    mesh.material.color.set(MAGIC_COLORS[val % MAGIC_COLORS.length]);
+  }
+  mesh.userData.qSprite.visible = val === null;
+  if (animate) {
+    tweenObject(mesh.scale, { y: targetScale }, 260);
+  } else {
+    mesh.scale.y = targetScale;
+  }
+  mesh.userData.val = val;
+}
+
+// ---- lightweight tween helper (3D object properties have no CSS transitions) ----
+const activeTweens = [];
+function tweenObject(obj, targets, duration, delay = 0) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) { if (activeTweens[i].obj === obj) activeTweens.splice(i, 1); }
+  const start = {};
+  for (const k in targets) start[k] = getPath(obj, k);
+  activeTweens.push({ obj, start, targets, t0: performance.now() + delay, duration });
+}
+function getPath(obj, path) { const parts = path.split('.'); let v = obj; for (const p of parts) v = v[p]; return v; }
+function setPath(obj, path, val) { const parts = path.split('.'); let v = obj; for (let i = 0; i < parts.length - 1; i++) v = v[parts[i]]; v[parts[parts.length - 1]] = val; }
+function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+function stepTweens(now) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    const tw = activeTweens[i];
+    if (now < tw.t0) continue;
+    const p = Math.min(1, (now - tw.t0) / tw.duration);
+    const e = easeOutCubic(p);
+    for (const k in tw.targets) setPath(tw.obj, k, tw.start[k] + (tw.targets[k] - tw.start[k]) * e);
+    if (p >= 1) activeTweens.splice(i, 1);
+  }
+}
+
+function tiltBottle(idx) {
+  const b = bottleGroups[idx];
+  if (!b) return;
+  tweenObject(b.root.rotation, { z: -1.15 }, 400);
+  setTimeout(() => { tweenObject(b.root.rotation, { z: 0 }, 400); }, 1200);
+}
+
+const mRaycaster = new THREE.Raycaster();
+const mPointerNDC = new THREE.Vector2();
+function pickBottleAt(clientX, clientY) {
+  const rect = magicCanvas.getBoundingClientRect();
+  mPointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  mPointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  mRaycaster.setFromCamera(mPointerNDC, mCamera);
+  const hits = mRaycaster.intersectObjects(bottleGroups.map(b => b.hit));
+  if (!hits.length) return null;
+  return hits[0].object.userData.bottleIdx;
+}
+magicCanvas.addEventListener('click', (e) => {
+  const idx = pickBottleAt(e.clientX, e.clientY);
+  if (idx === null || idx === undefined) return;
+  onBottleClick(idx);
+});
+magicCanvas.addEventListener('pointermove', (e) => {
+  magicCanvas.classList.toggle('pickable', pickBottleAt(e.clientX, e.clientY) !== null);
+});
+
+function animateMagic(now) {
+  requestAnimationFrame(animateMagic);
+  stepTweens(now || performance.now());
+  mRenderer.render(mScene, mCamera);
+}
+resizeMagicRenderer();
+requestAnimationFrame(animateMagic);
+// ==================== end 3D water-sort bottles ====================
+
 document.querySelectorAll('.avatar-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
@@ -520,123 +726,45 @@ document.getElementById('leaveGameBtn').addEventListener('click', () => {
   refreshHub();
 });
 
-let renderedBottleCount = -1, renderedCapacity = -1;
-
-function buildBottleDOM(numBottles, cap) {
-  const row = document.getElementById('bottlesRow');
-  row.innerHTML = '';
-  const layerH = (216 - 4) / cap;
-  for (let idx = 0; idx < numBottles; idx++) {
-    const wrap = document.createElement('div');
-    wrap.className = 'bottle-wrap';
-    const bottle = document.createElement('div');
-    bottle.className = 'bottle';
-    bottle.dataset.idx = idx;
-    const neck = document.createElement('div');
-    neck.className = 'bottle-neck';
-    bottle.appendChild(neck);
-    const cork = document.createElement('div');
-    cork.className = 'bottle-cork';
-    bottle.appendChild(cork);
-    const glass = document.createElement('div');
-    glass.className = 'bottle-glass';
-    for (let s = 0; s < cap; s++) {
-      const slot = document.createElement('div');
-      slot.className = 'bottle-slot';
-      slot.dataset.slot = s;
-      slot.dataset.val = 'empty';
-      slot.style.bottom = (2 + s * layerH) + 'px';
-      slot.style.height = layerH + 'px';
-      glass.appendChild(slot);
-    }
-    bottle.appendChild(glass);
-    bottle.addEventListener('click', () => onBottleClick(idx));
-    wrap.appendChild(bottle);
-    row.appendChild(wrap);
-  }
-  renderedBottleCount = numBottles;
-  renderedCapacity = cap;
-}
-
-function slotValKey(c) { return c === undefined ? 'empty' : (c === null ? 'mystery' : String(c)); }
-
-function applySlotValue(slot, c) {
-  if (c === undefined) {
-    slot.classList.remove('mystery');
-    slot.style.background = 'transparent';
-    slot.textContent = '';
-  } else if (c === null) {
-    slot.classList.add('mystery');
-    slot.style.background = '';
-    slot.textContent = '?';
-  } else {
-    slot.classList.remove('mystery');
-    slot.style.background = MAGIC_COLORS[c % MAGIC_COLORS.length];
-    slot.textContent = '';
-  }
-  slot.dataset.val = slotValKey(c);
-}
-
-function updateTopSurface(bottle, cap) {
-  const slots = bottle.querySelectorAll('.bottle-slot');
-  let topFilled = -1;
-  for (let s = 0; s < cap; s++) {
-    if (slots[s].dataset.val !== 'empty') topFilled = s;
-  }
-  slots.forEach((slot, s) => slot.classList.toggle('top-surface', s === topFilled));
-}
-
 let forceInstantRender = true;
 
 function renderBottles(bottles, cap) {
   capacity = cap;
-  let rebuilt = false;
-  if (renderedBottleCount !== bottles.length || renderedCapacity !== cap) {
-    buildBottleDOM(bottles.length, cap);
-    rebuilt = true;
-  }
-  const instant = forceInstantRender || rebuilt;
+  const needsRebuild = curBottleCount !== bottles.length || curCapacity !== cap;
+  if (needsRebuild) buildBottles3D(bottles.length, cap);
+  const instant = forceInstantRender || needsRebuild;
   forceInstantRender = false;
-  const bottleEls = document.querySelectorAll('.bottle');
+
   bottles.forEach((layers, idx) => {
-    const bottle = bottleEls[idx];
-    if (!bottle) return;
-    bottle.classList.toggle('selected', selectedIdx === idx);
+    const b = bottleGroups[idx];
+    if (!b) return;
+    b.ring.visible = selectedIdx === idx;
     const isCapped = layers.length === cap && layers.every(c => c !== null && c === layers[0]);
-    const slots = bottle.querySelectorAll('.bottle-slot');
     const targets = [];
     for (let s = 0; s < cap; s++) targets.push(s < layers.length ? layers[s] : undefined);
 
     if (instant) {
-      slots.forEach(sl => { sl.style.transition = 'none'; });
-      for (let s = 0; s < cap; s++) applySlotValue(slots[s], targets[s]);
-      updateTopSurface(bottle, cap);
-      bottle.classList.toggle('capped', isCapped);
-      void bottle.offsetWidth;
-      slots.forEach(sl => { sl.style.transition = ''; });
+      for (let s = 0; s < cap; s++) applyLayerValue(b, s, targets[s], false);
+      b.cork.visible = isCapped;
       return;
     }
 
     const changed = [];
     for (let s = 0; s < cap; s++) {
-      if (slots[s].dataset.val !== slotValKey(targets[s])) changed.push(s);
+      if (slotValKey(b.layers[s].userData.val) !== slotValKey(targets[s])) changed.push(s);
     }
     if (changed.length === 0) {
-      bottle.classList.toggle('capped', isCapped);
+      b.cork.visible = isCapped;
       return;
     }
-    const wasFilled = Array.from(slots).filter(sl => sl.dataset.val !== 'empty').length;
+    const wasFilled = b.layers.filter(m => m.userData.val !== undefined).length;
     const willBeFilled = targets.filter(t => t !== undefined).length;
     const filling = willBeFilled >= wasFilled;
-    const ordered = changed.slice().sort((a, b) => filling ? a - b : b - a);
+    const ordered = changed.slice().sort((a, c) => filling ? a - c : c - a);
     ordered.forEach((s, i) => {
       setTimeout(() => {
-        applySlotValue(slots[s], targets[s]);
-        updateTopSurface(bottle, cap);
-        slots[s].classList.remove('settle');
-        void slots[s].offsetWidth;
-        slots[s].classList.add('settle');
-        if (i === ordered.length - 1) bottle.classList.toggle('capped', isCapped);
+        applyLayerValue(b, s, targets[s], true);
+        if (i === ordered.length - 1) b.cork.visible = isCapped;
       }, i * 260);
     });
   });
@@ -660,13 +788,7 @@ function onBottleClick(idx) {
   const dst = idx;
   selectedIdx = null;
   if (window.SFX) SFX.move();
-  const srcEl = document.querySelectorAll('.bottle')[src];
-  if (srcEl) {
-    srcEl.classList.remove('pouring');
-    void srcEl.offsetWidth;
-    srcEl.classList.add('pouring');
-    setTimeout(() => srcEl.classList.remove('pouring'), 1700);
-  }
+  tiltBottle(src);
   if (mode === 'solo') {
     socket.emit('magic_solo_pour', {src, dst});
   } else {
