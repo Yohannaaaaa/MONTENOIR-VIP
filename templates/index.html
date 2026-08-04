@@ -91,6 +91,10 @@
   .connected-pill .name{color:#d4af37;}
   .connected-pill .logout-link{color:#f5e6d3;opacity:.75;text-decoration:underline;font-weight:400;cursor:pointer;font-size:12px;}
   .connected-pill .logout-link:hover{opacity:1;}
+  .nav-avatar{width:20px;height:20px;border-radius:50%;object-fit:cover;border:1px solid #1a1200;vertical-align:middle;display:none;}
+  .nav-avatar.show{display:inline-block;}
+  .connected-pill .pill-avatar{width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid #d4af37;display:none;flex-shrink:0;}
+  .connected-pill .pill-avatar.show{display:inline-block;}
   .bottom-nav{
     position:absolute;
     bottom:40px;
@@ -147,10 +151,11 @@
       <a href="/login" class="text-login" id="navLoginLink">👤 <span>Login</span></a>
       <div class="connected-pill" id="connectedPill">
         <span class="dot"></span>
+        <img class="pill-avatar" id="pillAvatar" alt="">
         <a href="/profil" class="name" id="connectedName" style="text-decoration:none;">—</a>
         <span class="logout-link" id="connectedLogout">Logout</span>
       </div>
-      <a href="/profil" class="text-profile">🖼️ <span>Profile</span></a>
+      <a href="/profil" class="text-profile"><img class="nav-avatar" id="navProfileAvatar" alt="">🖼️ <span>Profile</span></a>
       <a href="/kasa" class="text-chips">🪙 <span>Buy Chips</span></a>
       <a href="/premium" class="text-premium">💎 <span>Premium</span></a>
     </div>
@@ -328,6 +333,12 @@
     function montenoirSavedUser() {
       return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || "";
     }
+    function setNavAvatar(url) {
+      [document.getElementById('navProfileAvatar'), document.getElementById('pillAvatar')].forEach(img => {
+        if (url) { img.src = url; img.classList.add('show'); }
+        else { img.classList.remove('show'); img.removeAttribute('src'); }
+      });
+    }
     function refreshConnectedState() {
       const user = montenoirSavedUser();
       const pill = document.getElementById('connectedPill');
@@ -336,8 +347,12 @@
       if (user) {
         document.getElementById('connectedName').textContent = user;
         pill.classList.add('show');
+        fetch('/api/auth/profile?username=' + encodeURIComponent(user)).then(r => r.json()).then(d => {
+          if (d.ok && d.profile) setNavAvatar(d.profile.avatarData || '');
+        }).catch(() => {});
       } else {
         pill.classList.remove('show');
+        setNavAvatar('');
       }
     }
     document.getElementById('connectedLogout').addEventListener('click', () => {

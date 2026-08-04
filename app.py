@@ -387,16 +387,19 @@ def send_reset_email(to_email, reset_link):
     return True
 
 def save_player_to_user(player):
+    # Only chips/VIP status legitimately change through gameplay. Avatar/avatarData/
+    # nameColor/avatarFrame are cosmetic profile fields owned by the dedicated profile
+    # endpoints (e.g. /api/profile/avatar) -- the room's copy of them is just a display
+    # cache seeded from the DB at sit-time, so writing it back here would silently
+    # revert a newer avatar the player uploaded mid-session (a room can hold a stale
+    # in-memory snapshot for a long time, and any later gameplay event -- a bet
+    # settling, a chip refund -- used to re-save that stale snapshot over the DB).
     username = player.get("account")
     if not username:
         return
     users = load_users()
     if username in users:
         users[username]["chips"] = int(player.get("chips", users[username].get("chips", 1000)))
-        users[username]["avatar"] = player.get("avatar", users[username].get("avatar", "woman.png"))
-        users[username]["avatarData"] = player.get("avatarData", users[username].get("avatarData", ""))
-        users[username]["nameColor"] = player.get("nameColor", users[username].get("nameColor", "default"))
-        users[username]["avatarFrame"] = player.get("avatarFrame", users[username].get("avatarFrame", "none"))
         users[username]["vip"] = player.get("vip", users[username].get("vip", False))
         users[username]["vipLevel"] = player.get("vipLevel", users[username].get("vipLevel", ""))
         users[username]["vipUntil"] = player.get("vipUntil", users[username].get("vipUntil", 0))
