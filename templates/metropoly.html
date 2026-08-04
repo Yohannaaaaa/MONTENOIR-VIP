@@ -637,7 +637,7 @@ const mScene = new THREE.Scene();
 mScene.background = new THREE.Color(0x0a0a0a);
 
 const mCamera = new THREE.PerspectiveCamera(40, 1, 0.05, 20);
-mCamera.position.set(0, 2.3, 1.55);
+mCamera.position.set(0, 3.7, 0.05);
 mCamera.lookAt(0, 0, 0);
 
 function resizeMetRenderer() {
@@ -723,7 +723,7 @@ function getTokenSprite(u) {
     const tex = mTexLoader.load(tokenIcon(playerTokens[u]));
     tex.colorSpace = THREE.SRGBColorSpace;
     s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-    s.scale.set(0.13, 0.13, 1);
+    s.scale.set(0.22, 0.22, 1); // was 0.13 -- practically invisible against the board texture at that size
     mScene.add(s);
     tokenSprites[u] = s;
   }
@@ -735,7 +735,7 @@ function placeToken(u, p, jump, offsetIndex, offsetCount) {
   const off = (offsetCount && offsetCount > 1) ? TOKEN_OFFSETS[offsetIndex % TOKEN_OFFSETS.length] : { dx: 0, dz: 0 };
   s.position.set(x + off.dx, 0.075, z + off.dz);
   if (jump) {
-    activeTweens.push({ mesh: s, from: s.position.clone(), to: s.position.clone(), start: performance.now(), duration: 260, bounce: true, onDone: () => {} });
+    activeTweens.push({ mesh: s, from: s.position.clone(), to: s.position.clone(), start: performance.now(), duration: 320, bounce: true, onDone: () => {} });
   }
 }
 function relayoutTokens(players) {
@@ -755,12 +755,17 @@ function moveToken(u, f, t, players) {
   const anim = () => {
     const pos = (f + s) % N_CELLS;
     if (s === steps && players) {
+      // Final hop: position everyone correctly (respecting any shared-cell offset for
+      // this destination), then bounce the token that actually just arrived so landing
+      // reads as a real "thump" instead of silently snapping into place.
       relayoutTokens(players);
+      const landed = getTokenSprite(u);
+      activeTweens.push({ mesh: landed, from: landed.position.clone(), to: landed.position.clone(), start: performance.now(), duration: 320, bounce: true, onDone: () => {} });
     } else {
       placeToken(u, pos, true);
     }
     s++;
-    if (s <= steps) setTimeout(anim, 220);
+    if (s <= steps) setTimeout(anim, 330);
   };
   anim();
 }
@@ -780,15 +785,17 @@ function renderBuildings(state) {
     const { x, z } = WPOS[idx];
     const g = new THREE.Group();
     if (hotels[cellStr]) {
-      const hotel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.4, roughness: 0.3 }));
-      hotel.position.set(0, 0.025, 0);
+      // was 0.05 -- practically invisible against the board texture at that size
+      const hotel = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.4, roughness: 0.3 }));
+      hotel.position.set(0, 0.06, 0);
       hotel.castShadow = true;
       g.add(hotel);
     } else {
       const count = houses[cellStr] || 0;
       for (let i = 0; i < count; i++) {
-        const house = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.026, 0.026), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
-        house.position.set((i - (count - 1) / 2) * 0.032, 0.013, 0);
+        // was 0.026 -- practically invisible against the board texture at that size
+        const house = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
+        house.position.set((i - (count - 1) / 2) * 0.074, 0.03, 0);
         house.castShadow = true;
         g.add(house);
       }

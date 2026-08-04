@@ -537,6 +537,19 @@ const deckStackMeshes = Array.from({ length: PILE_DECK_STACK }, (_, i) => {
 const discardMesh = createTileMesh();
 discardMesh.position.set(0.24, TILE_THICK / 2 + FELT_TOP_Y, 0);
 
+// Invisible, generously-sized tap targets over the deck/discard piles -- the tiles
+// themselves are tiny (TILE_W x TILE_H) and easy to miss on a phone, so raycast against
+// these instead of the visible meshes directly.
+function makePileHitTarget(x) {
+  const hit = new THREE.Mesh(new THREE.PlaneGeometry(TILE_W * 2.6, TILE_H * 2.2), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.rotation.x = -Math.PI / 2;
+  hit.position.set(x, FELT_TOP_Y + 0.01, 0);
+  oScene.add(hit);
+  return hit;
+}
+const deckHitTarget = makePileHitTarget(0);
+const discardHitTarget = makePileHitTarget(0.24);
+
 function updateCenterPile3D(state) {
   if (state.indicator) { setTileFace(indicatorMesh, state.indicator, false); indicatorMesh.visible = true; }
   else indicatorMesh.visible = false;
@@ -579,9 +592,9 @@ function okeyPick(clientX, clientY) {
   oPointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
   oPointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
   oRaycaster.setFromCamera(oPointerNDC, oCamera);
-  const hits = oRaycaster.intersectObjects([...deckStackMeshes, discardMesh]);
+  const hits = oRaycaster.intersectObjects([deckHitTarget, discardHitTarget]);
   if (!hits.length) return null;
-  return hits[0].object === discardMesh ? 'discard' : 'deck';
+  return hits[0].object === discardHitTarget ? 'discard' : 'deck';
 }
 okeyCanvas.addEventListener('click', (e) => {
   const which = okeyPick(e.clientX, e.clientY);
