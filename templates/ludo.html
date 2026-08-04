@@ -56,6 +56,26 @@
   .yard-slot { position: relative; width: 60%; height: 60%; margin: auto; border-radius: 50%; background: rgba(255,255,255,0.55); border: 2px dashed rgba(0,0,0,0.15); }
   .token { position: relative; width: 62%; height: 62%; margin: auto; border-radius: 50%; opacity: 0; pointer-events: auto; }
   .token.selectable { cursor: pointer; }
+  .board-wrap.no-3d .cell.path { background: #fff !important; }
+  .board-wrap.no-3d .cell.path.safe { background: #fff3c4 !important; }
+  .board-wrap.no-3d .cell.deco { background: #efe6cf !important; }
+  .board-wrap.no-3d .cell.center { background: conic-gradient(from -45deg, #e0559b 0deg 90deg, #e0b400 90deg 180deg, #2a6fd6 180deg 270deg, #d33 270deg 360deg) !important; }
+  .board-wrap.no-3d .cell.corner-tl { background: linear-gradient(135deg, #e0559b 50%, #d33 50%) !important; }
+  .board-wrap.no-3d .cell.corner-tr { background: linear-gradient(225deg, #e0559b 50%, #e0b400 50%) !important; }
+  .board-wrap.no-3d .cell.corner-br { background: linear-gradient(315deg, #e0b400 50%, #2a6fd6 50%) !important; }
+  .board-wrap.no-3d .cell.corner-bl { background: linear-gradient(45deg, #d33 50%, #2a6fd6 50%) !important; }
+  .board-wrap.no-3d .cell.yard-red { background: #f6d3d3 !important; }
+  .board-wrap.no-3d .cell.yard-yellow { background: #f8ecc0 !important; }
+  .board-wrap.no-3d .cell.yard-pink { background: #f8d6e9 !important; }
+  .board-wrap.no-3d .cell.yard-blue { background: #d3e0f6 !important; }
+  .board-wrap.no-3d .cell.home-red { background: #e88 !important; }
+  .board-wrap.no-3d .cell.home-yellow { background: #e0c14a !important; }
+  .board-wrap.no-3d .cell.home-pink { background: #e888c0 !important; }
+  .board-wrap.no-3d .cell.home-blue { background: #7fa3e8 !important; }
+  .board-wrap.no-3d .yard-slot { border: 2px dashed rgba(0,0,0,0.15) !important; }
+  .board-wrap.no-3d .token { opacity: 1; border: 2px solid rgba(0,0,0,0.4); box-shadow: 0 3px 6px rgba(0,0,0,.5); }
+  .board-wrap.no-3d .token.selectable { box-shadow: 0 0 0 3px #fff, 0 0 14px 4px rgba(212,175,55,0.9); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
   .dice-box { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 14px auto 4px; }
   .die { width: 62px; height: 62px; background: linear-gradient(160deg,#fff,#e8e8e8); border-radius: 12px; border: 2px solid #333; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); padding: 8px; gap: 2px; box-shadow: 0 8px 16px rgba(0,0,0,.6); }
   .die.rolling { animation: shake .5s ease-in-out; }
@@ -516,47 +536,13 @@ function buildLudoBoardTexture() {
   return tex;
 }
 
-const ludoCanvas = document.getElementById('ludoCanvas');
-const lRenderer = new THREE.WebGLRenderer({ canvas: ludoCanvas, antialias: true });
-lRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-lRenderer.outputColorSpace = THREE.SRGBColorSpace;
-lRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-lRenderer.toneMappingExposure = 0.9;
-lRenderer.shadowMap.enabled = true;
-lRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-const lScene = new THREE.Scene();
-lScene.background = null;
-
-const lHalf = LUDO_SIZE * 0.58;
-const lCamera = new THREE.OrthographicCamera(-lHalf, lHalf, lHalf, -lHalf, 0.1, 10);
-lCamera.position.set(0, 2, 0.0001);
-lCamera.up.set(0, 0, -1);
-lCamera.lookAt(0, 0, 0);
-
+let lRenderer, lScene, lCamera, ludoCanvas;
 function resizeLudoRenderer() {
+  if (!lRenderer) return;
   const rect = ludoCanvas.parentElement.getBoundingClientRect();
   if (rect.width < 1 || rect.height < 1) return;
   lRenderer.setSize(rect.width, rect.height, false);
 }
-new ResizeObserver(resizeLudoRenderer).observe(ludoCanvas.parentElement);
-
-lScene.add(new THREE.AmbientLight(0xffffff, 1.0));
-const lKey = new THREE.DirectionalLight(0xfff4d6, 1.6);
-lKey.position.set(0.6, 1.6, 0.4);
-lKey.castShadow = true;
-lKey.shadow.mapSize.set(1024, 1024);
-lKey.shadow.camera.left = -lHalf; lKey.shadow.camera.right = lHalf;
-lKey.shadow.camera.top = lHalf; lKey.shadow.camera.bottom = -lHalf;
-lScene.add(lKey);
-
-const lBoardMesh = new THREE.Mesh(
-  new THREE.PlaneGeometry(LUDO_SIZE, LUDO_SIZE),
-  new THREE.MeshStandardMaterial({ map: buildLudoBoardTexture(), roughness: 0.9 })
-);
-lBoardMesh.rotation.x = -Math.PI / 2;
-lBoardMesh.receiveShadow = true;
-lScene.add(lBoardMesh);
 
 function makeLudoTokenMesh(color) {
   const hex = new THREE.Color(COLOR_HEX[color]);
@@ -573,41 +559,117 @@ function makeLudoTokenMesh(color) {
   return group;
 }
 
-let ludoTokenMeshes = [];
-function clearLudoTokenMeshes() {
-  ludoTokenMeshes.forEach(t => lScene.remove(t.group));
-  ludoTokenMeshes = [];
-}
-function renderLudo3D(groups, canSelect) {
-  clearLudoTokenMeshes();
-  Object.values(groups).forEach(list => {
-    list.forEach((tok, i) => {
+let ludo3DReady = false;
+const LUDO_MOVE_DURATION = 0.4;
+const ludoTokenMap = new Map();
+function renderLudo3D(tokens, canSelect) {
+  if (!ludo3DReady) return;
+  const now = performance.now() / 1000;
+  const seen = new Set();
+  tokens.forEach(tok => {
+    const key = tok.owner + '_' + tok.index;
+    seen.add(key);
+    let entry = ludoTokenMap.get(key);
+    if (!entry) {
       const group = makeLudoTokenMesh(tok.color);
-      const { x, z } = ludoCellToWorld(tok.row, tok.col);
-      const offset = list.length > 1 ? (i - (list.length - 1) / 2) * LUDO_CELL * 0.34 : 0;
-      group.position.set(x + offset, 0, z);
+      group.position.set(tok.x, 0, tok.z);
       lScene.add(group);
-      ludoTokenMeshes.push({ group, selectable: canSelect(tok.owner, tok.index), baseY: 0 });
-    });
+      entry = { group, curX: tok.x, curZ: tok.z, animating: false, selectable: false };
+      ludoTokenMap.set(key, entry);
+    }
+    entry.selectable = canSelect(tok.owner, tok.index);
+    if (Math.abs(entry.curX - tok.x) > 1e-6 || Math.abs(entry.curZ - tok.z) > 1e-6) {
+      entry.animStartX = entry.curX;
+      entry.animStartZ = entry.curZ;
+      entry.animEndX = tok.x;
+      entry.animEndZ = tok.z;
+      entry.animT0 = now;
+      entry.animating = true;
+    }
+  });
+  ludoTokenMap.forEach((entry, key) => {
+    if (!seen.has(key)) { lScene.remove(entry.group); ludoTokenMap.delete(key); }
   });
 }
 
 function animateLudo() {
   requestAnimationFrame(animateLudo);
   const t = performance.now() / 1000;
-  ludoTokenMeshes.forEach(tm => {
-    if (tm.selectable) {
-      tm.group.position.y = tm.baseY + 0.012 + Math.abs(Math.sin(t * 4)) * 0.02;
-      tm.group.scale.setScalar(1 + Math.sin(t * 4) * 0.08);
+  ludoTokenMap.forEach(entry => {
+    let x = entry.curX, z = entry.curZ, hop = 0;
+    if (entry.animating) {
+      const el = (t - entry.animT0) / LUDO_MOVE_DURATION;
+      if (el >= 1) {
+        entry.curX = entry.animEndX;
+        entry.curZ = entry.animEndZ;
+        entry.animating = false;
+        x = entry.curX; z = entry.curZ;
+      } else {
+        const te = el < 0.5 ? 2 * el * el : 1 - Math.pow(-2 * el + 2, 2) / 2;
+        x = entry.animStartX + (entry.animEndX - entry.animStartX) * te;
+        z = entry.animStartZ + (entry.animEndZ - entry.animStartZ) * te;
+        hop = Math.sin(Math.min(Math.max(el, 0), 1) * Math.PI) * 0.055;
+        entry.curX = x; entry.curZ = z;
+      }
+    }
+    entry.group.position.x = x;
+    entry.group.position.z = z;
+    if (entry.selectable) {
+      entry.group.position.y = hop + 0.012 + Math.abs(Math.sin(t * 4)) * 0.02;
+      entry.group.scale.setScalar(1 + Math.sin(t * 4) * 0.08);
     } else {
-      tm.group.position.y = tm.baseY;
-      tm.group.scale.setScalar(1);
+      entry.group.position.y = hop;
+      entry.group.scale.setScalar(1);
     }
   });
   lRenderer.render(lScene, lCamera);
 }
-resizeLudoRenderer();
-requestAnimationFrame(animateLudo);
+
+try {
+  ludoCanvas = document.getElementById('ludoCanvas');
+  lRenderer = new THREE.WebGLRenderer({ canvas: ludoCanvas, antialias: true });
+  lRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  lRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  lRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  lRenderer.toneMappingExposure = 0.9;
+  lRenderer.shadowMap.enabled = true;
+  lRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  lScene = new THREE.Scene();
+  lScene.background = null;
+
+  const lHalf = LUDO_SIZE * 0.58;
+  lCamera = new THREE.OrthographicCamera(-lHalf, lHalf, lHalf, -lHalf, 0.1, 10);
+  lCamera.position.set(0, 2, 0.0001);
+  lCamera.up.set(0, 0, -1);
+  lCamera.lookAt(0, 0, 0);
+
+  new ResizeObserver(resizeLudoRenderer).observe(ludoCanvas.parentElement);
+
+  lScene.add(new THREE.AmbientLight(0xffffff, 1.0));
+  const lKey = new THREE.DirectionalLight(0xfff4d6, 1.6);
+  lKey.position.set(0.6, 1.6, 0.4);
+  lKey.castShadow = true;
+  lKey.shadow.mapSize.set(1024, 1024);
+  lKey.shadow.camera.left = -lHalf; lKey.shadow.camera.right = lHalf;
+  lKey.shadow.camera.top = lHalf; lKey.shadow.camera.bottom = -lHalf;
+  lScene.add(lKey);
+
+  const lBoardMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(LUDO_SIZE, LUDO_SIZE),
+    new THREE.MeshStandardMaterial({ map: buildLudoBoardTexture(), roughness: 0.9 })
+  );
+  lBoardMesh.rotation.x = -Math.PI / 2;
+  lBoardMesh.receiveShadow = true;
+  lScene.add(lBoardMesh);
+
+  resizeLudoRenderer();
+  ludo3DReady = true;
+  requestAnimationFrame(animateLudo);
+} catch (e) {
+  console.error('Ludo 3D init failed, falling back to 2D board only', e);
+  document.querySelector('.board-wrap').classList.add('no-3d');
+}
 // ==================== end 3D board ====================
 
 function render(state) {
@@ -659,16 +721,20 @@ function render(state) {
   const canSelect = (owner, idx) => myTurn && pending.some(m => m.owner === owner && m.index === idx);
 
   let html = '';
+  const tokensFlat = [];
   Object.values(groups).forEach(list => {
     list.forEach((tok, i) => {
       const sel = canSelect(tok.owner, tok.index);
       const offset = list.length > 1 ? (i - (list.length - 1) / 2) * 8 : 0;
       html += `<div class="token${sel ? ' selectable' : ''}" data-owner="${tok.owner}" data-index="${tok.index}"
         style="grid-row:${tok.row + 1};grid-column:${tok.col + 1};background:${COLOR_HEX[tok.color]};transform:translateX(${offset}px);"></div>`;
+      const { x, z } = ludoCellToWorld(tok.row, tok.col);
+      const offset3d = list.length > 1 ? (i - (list.length - 1) / 2) * LUDO_CELL * 0.34 : 0;
+      tokensFlat.push({ owner: tok.owner, index: tok.index, color: tok.color, x: x + offset3d, z });
     });
   });
   layer.innerHTML = html;
-  renderLudo3D(groups, canSelect);
+  renderLudo3D(tokensFlat, canSelect);
   if (pending.length) {
     layer.querySelectorAll('.token.selectable').forEach(el => {
       el.addEventListener('click', () => {
