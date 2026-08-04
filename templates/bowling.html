@@ -308,8 +308,8 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2a2420);
-scene.fog = new THREE.Fog(0x2a2420, 13, 24);
+scene.background = new THREE.Color(0x0c0838);
+scene.fog = new THREE.Fog(0x0c0838, 13, 24);
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
 camera.position.set(0, 3.3, -1.3);
@@ -324,8 +324,8 @@ function resizeLaneRenderer() {
 }
 new ResizeObserver(resizeLaneRenderer).observe(laneCanvas.parentElement);
 
-scene.add(new THREE.AmbientLight(0x70758a, 0.55));
-const overheadLight = new THREE.SpotLight(0xfff4d6, 180, 30, Math.PI / 5, 0.5, 1.4);
+scene.add(new THREE.AmbientLight(0x4a4ac0, 0.5));
+const overheadLight = new THREE.SpotLight(0xfff4d6, 150, 30, Math.PI / 5, 0.5, 1.4);
 overheadLight.position.set(0, 7, PIN_DECK_Z - 1);
 overheadLight.target.position.set(0, 0, PIN_DECK_Z);
 overheadLight.castShadow = true;
@@ -335,9 +335,14 @@ overheadLight.shadow.camera.far = 15;
 overheadLight.shadow.bias = -0.0015;
 overheadLight.shadow.normalBias = 0.03;
 scene.add(overheadLight, overheadLight.target);
-const rimBlue = new THREE.PointLight(0x4aa8ff, 55, 16);
+// Cosmic/blacklight-bowling wash: strong blue point lights bathing the lane, like a
+// real "glow bowling" night -- one near the pins, one near the player.
+const rimBlue = new THREE.PointLight(0x4a8cff, 70, 18);
 rimBlue.position.set(0, 3, LANE_LENGTH + 1);
 scene.add(rimBlue);
+const nearBlue = new THREE.PointLight(0x5a5aff, 20, 8);
+nearBlue.position.set(0, 2.4, -1.5);
+scene.add(nearBlue);
 // A directional (parallel-ray) light from near the camera, shining down the lane.
 // Distance-independent on purpose: the pins are ~9 units out and the ball ~1 unit
 // away, and a point light bright enough to reach the pins would blow out the ball.
@@ -362,17 +367,17 @@ function makeLaneTexture() {
   const ctx = c.getContext('2d');
   const boardCount = 16;
   const boardW = c.width / boardCount;
-  // Long boards running the length of the lane, each a slightly different oak
-  // tone, with a subtle grain and a dark seam between boards.
+  // Long boards running the length of the lane -- under cosmic/blacklight bowling
+  // lighting the wood reads as deep glossy blue-black, not warm oak.
   for (let i = 0; i < boardCount; i++) {
     const x = i * boardW;
-    const tones = ['#41290f', '#33200a', '#4a2f14', '#2a1a08', '#3c2610'];
+    const tones = ['#141c33', '#101828', '#182038', '#0e1424', '#161e30'];
     ctx.fillStyle = tones[i % tones.length];
     ctx.fillRect(x, 0, boardW, c.height);
     // subtle vertical grain streaks within the board
     for (let g = 0; g < 22; g++) {
       const gx = x + Math.random() * boardW;
-      ctx.strokeStyle = Math.random() < 0.5 ? 'rgba(60,35,10,0.15)' : 'rgba(255,235,190,0.12)';
+      ctx.strokeStyle = Math.random() < 0.5 ? 'rgba(10,14,30,0.2)' : 'rgba(150,180,255,0.10)';
       ctx.lineWidth = 0.6 + Math.random() * 0.8;
       ctx.beginPath();
       ctx.moveTo(gx, 0);
@@ -384,11 +389,11 @@ function makeLaneTexture() {
       ctx.stroke();
     }
     // seam between boards
-    ctx.fillStyle = 'rgba(35,20,8,0.55)';
+    ctx.fillStyle = 'rgba(5,8,18,0.6)';
     ctx.fillRect(x, 0, Math.max(1, boardW * 0.05), c.height);
   }
-  // faint horizontal lane-lacquer sheen bands
-  ctx.fillStyle = 'rgba(255,250,235,0.06)';
+  // faint horizontal lane-lacquer sheen bands (glossy reflection under UV light)
+  ctx.fillStyle = 'rgba(160,190,255,0.07)';
   for (let y = 0; y < c.height; y += 6) ctx.fillRect(0, y, c.width, 2);
 
   const tex = new THREE.CanvasTexture(c);
@@ -398,41 +403,46 @@ function makeLaneTexture() {
 }
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(LANE_HALF_WIDTH * 2, LANE_LENGTH),
-  new THREE.MeshStandardMaterial({ map: makeLaneTexture(), color: 0x8a7a68, roughness: 0.38, metalness: 0.05 })
+  new THREE.MeshStandardMaterial({ map: makeLaneTexture(), color: 0x6a76a0, roughness: 0.22, metalness: 0.1 })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, LANE_LENGTH / 2);
 floor.receiveShadow = true;
 scene.add(floor);
 
-const gutterMat = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.6 });
+const gutterMat = new THREE.MeshStandardMaterial({ color: 0x0a0a14, roughness: 0.6 });
+const gutterCapMat = new THREE.MeshStandardMaterial({ color: 0xf4f8ff, emissive: 0xcfe0ff, emissiveIntensity: 1.6 });
 [-1, 1].forEach(side => {
   const g = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, LANE_LENGTH), gutterMat);
   g.position.set(side * (LANE_HALF_WIDTH + 0.25), -0.06, LANE_LENGTH / 2);
   g.receiveShadow = true;
   scene.add(g);
+  // Glowing white cap strip along the lane-side edge of the gutter -- the bright
+  // "glow bowling" edge lighting real cosmic-bowling lanes are known for.
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.005, LANE_LENGTH), gutterCapMat);
+  cap.position.set(side * (LANE_HALF_WIDTH + 0.02), 0.003, LANE_LENGTH / 2);
+  scene.add(cap);
 });
 
-// ---- Fun bowling-alley room: retro carpet, back/side walls, ceiling, arcade glow lights ----
-// Without these the lane just floated in a black void -- this closes it into a real room
-// so nothing but colored walls/ceiling shows behind or around the lane.
+// ---- Cosmic/blacklight bowling room: glow carpet, neon mural, dark glossy panels ----
+// Without these the lane just floated in a black void -- this closes it into a real
+// "glow bowling" room, matching a real cosmic-bowling center under UV lighting.
 const ROOM_W = LANE_HALF_WIDTH * 7;   // room half-width well beyond the gutters
 const ROOM_H = 3.6;                   // wall/ceiling height
 const ROOM_BACK_Z = LANE_LENGTH + 1.6;
 const ROOM_FRONT_Z = -3.2;
 
-// Classic bowling-alley carpet: dark charcoal with the small retro confetti pattern
-// (diamonds/rings) real alley carpets are known for, in muted burgundy/teal/mustard --
-// not neon, just enough color to not read as bare concrete.
+// Deep blue-black carpet with the same retro confetti pattern real alleys use, but in
+// UV-reactive-looking bright accents (hot pink/cyan/amber) instead of muted tones.
 function makeCarpetTexture() {
   const c = document.createElement('canvas'); c.width = 256; c.height = 256;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#241f1a'; ctx.fillRect(0, 0, c.width, c.height);
-  const accents = ['#7a2f3d', '#2f6b63', '#8a6a2a'];
+  ctx.fillStyle = '#0a0a20'; ctx.fillRect(0, 0, c.width, c.height);
+  const accents = ['#ff3d9a', '#33e0e0', '#ffcc33'];
   for (let i = 0; i < 14; i++) {
     const x = Math.random() * c.width, y = Math.random() * c.height, r = 9 + Math.random() * 16;
     ctx.strokeStyle = accents[i % accents.length];
-    ctx.globalAlpha = 0.35;
+    ctx.globalAlpha = 0.4;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     if (i % 2 === 0) { ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); }
@@ -454,64 +464,94 @@ carpet.position.set(0, -0.08, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
 carpet.receiveShadow = true;
 scene.add(carpet);
 
-// Plain acoustic-tile ceiling, warm off-white like real alley lighting rigs.
+// Dark ceiling -- a real blacklight bowling room's ceiling stays near-black so only
+// the neon/UV surfaces read.
 const ceiling = new THREE.Mesh(
   new THREE.PlaneGeometry(ROOM_W * 2, ROOM_BACK_Z - ROOM_FRONT_Z),
-  new THREE.MeshStandardMaterial({ color: 0x8a8175, roughness: 0.95 })
+  new THREE.MeshStandardMaterial({ color: 0x0a0820, roughness: 0.9 })
 );
 ceiling.rotation.x = Math.PI / 2;
 ceiling.position.set(0, ROOM_H, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
 scene.add(ceiling);
 
-// Real-alley wall: wood wainscoting on the lower half, a painted band above it with
-// a thin trim line at the seam -- no glow, just a normal indoor wall.
-function makeAlleyWallTexture() {
-  const c = document.createElement('canvas'); c.width = 64; c.height = 512;
-  const ctx = c.getContext('2d');
-  const seam = c.height * 0.42;
-  ctx.fillStyle = '#2f4a4a'; ctx.fillRect(0, 0, c.width, seam);
-  const plankTones = ['#5a3c22', '#4e331d', '#63431f'];
-  const plankH = 26;
-  for (let y = seam; y < c.height; y += plankH) {
-    ctx.fillStyle = plankTones[Math.floor(y / plankH) % plankTones.length];
-    ctx.fillRect(0, y, c.width, plankH - 2);
-  }
-  ctx.fillStyle = '#c9a24a';
-  ctx.fillRect(0, seam - 4, c.width, 4);
-  const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(1, Math.max(1, Math.round((ROOM_BACK_Z - ROOM_FRONT_Z) / 3)));
-  return tex;
-}
+// Dark glossy side panels, like the reflective wall paneling under a cosmic-bowling
+// mural -- picks up and reflects the colored lighting instead of showing its own pattern.
 [-1, 1].forEach(side => {
   const wall = new THREE.Mesh(
     new THREE.PlaneGeometry(ROOM_BACK_Z - ROOM_FRONT_Z, ROOM_H),
-    new THREE.MeshStandardMaterial({ map: makeAlleyWallTexture(), roughness: 0.8 })
+    new THREE.MeshStandardMaterial({ color: 0x0e0c2a, roughness: 0.35, metalness: 0.2 })
   );
   wall.rotation.y = -side * Math.PI / 2;
   wall.position.set(side * ROOM_W, ROOM_H / 2, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
   scene.add(wall);
 });
+
+// Back wall: a glowing neon mural behind the pins, like a real cosmic-bowling
+// center's blacklight artwork -- bright swirls/streaks/dots on a deep blue base.
+function makeMuralTexture() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 384;
+  const ctx = c.getContext('2d');
+  const bg = ctx.createLinearGradient(0, 0, 0, c.height);
+  bg.addColorStop(0, '#1a0f52'); bg.addColorStop(1, '#0c0838');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, c.width, c.height);
+  const neon = ['#ff3d9a', '#33e6c9', '#7dffb0', '#ffcc33', '#7a5cff'];
+  for (let i = 0; i < 10; i++) {
+    ctx.strokeStyle = neon[i % neon.length];
+    ctx.globalAlpha = 0.7;
+    ctx.lineWidth = 5 + Math.random() * 4;
+    ctx.beginPath();
+    let x = Math.random() * c.width, y = Math.random() * c.height * 0.8;
+    ctx.moveTo(x, y);
+    for (let s = 0; s < 5; s++) {
+      x += (Math.random() - 0.5) * 220;
+      y += (Math.random() - 0.5) * 120;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  for (let i = 0; i < 40; i++) {
+    ctx.fillStyle = neon[i % neon.length];
+    ctx.globalAlpha = 0.5 + Math.random() * 0.4;
+    const r = 2 + Math.random() * 5;
+    ctx.beginPath(); ctx.arc(Math.random() * c.width, Math.random() * c.height * 0.85, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = 'bold 92px Arial';
+  ctx.fillStyle = '#33e6c9';
+  ctx.shadowColor = '#33e6c9'; ctx.shadowBlur = 24;
+  ctx.fillText('BOWLING', c.width / 2, c.height * 0.62);
+  ctx.font = 'bold 46px Arial';
+  ctx.fillStyle = '#ff3d9a';
+  ctx.shadowColor = '#ff3d9a'; ctx.shadowBlur = 18;
+  ctx.fillText('V I P', c.width / 2, c.height * 0.62 + 66);
+  ctx.shadowBlur = 0;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const muralTex = makeMuralTexture();
 const backWall = new THREE.Mesh(
   new THREE.PlaneGeometry(ROOM_W * 2, ROOM_H),
-  new THREE.MeshStandardMaterial({ color: 0x2f4a4a, roughness: 0.75 })
+  new THREE.MeshStandardMaterial({ map: muralTex, emissive: 0x2a1a55, emissiveMap: muralTex, emissiveIntensity: 0.9, roughness: 0.7 })
 );
 backWall.position.set(0, ROOM_H / 2, ROOM_BACK_Z);
 scene.add(backWall);
 const frontWall = new THREE.Mesh(
   new THREE.PlaneGeometry(ROOM_W * 2, ROOM_H),
-  new THREE.MeshStandardMaterial({ color: 0x2f4a4a, roughness: 0.8 })
+  new THREE.MeshStandardMaterial({ color: 0x0e0c2a, roughness: 0.7 })
 );
 frontWall.rotation.y = Math.PI;
 frontWall.position.set(0, ROOM_H / 2, ROOM_FRONT_Z);
 scene.add(frontWall);
 
-// Warm overhead fill lights down each side, like a real alley's ceiling fixtures --
-// plain warm white, not colored, just enough to keep the room from going flat/dark.
+// Alternating pink/cyan UV wall-wash lights down each side, like the black-light
+// fixtures a real cosmic-bowling center runs down the lane.
+const GLOW_COLORS = [0xff3d9a, 0x33e6c9];
 for (let i = 0; i < 4; i++) {
   const z = 1 + i * (LANE_LENGTH / 3.2);
-  [-1, 1].forEach((side) => {
-    const glow = new THREE.PointLight(0xfff2d8, 3, 4.5);
+  [-1, 1].forEach((side, si) => {
+    const glow = new THREE.PointLight(GLOW_COLORS[(i + si) % GLOW_COLORS.length], 4, 4.5);
     glow.position.set(side * (LANE_HALF_WIDTH + 1.3), 2.6, z);
     scene.add(glow);
   });
