@@ -4407,20 +4407,30 @@ def start_game(data):
     if code not in rooms:
         return
     active_players = [p for p in rooms[code]['players'] if p.get('team') != 'spectator']
-    if active_players and not all(rooms[code].get('ready', {}).get(p['sid']) for p in active_players):
+    if not active_players:
+        emit('error_msg', {'msg':'Oyunu başlatmak için önce bir takıma katıl.'})
+        return
+    if not all(rooms[code].get('ready', {}).get(p['sid']) for p in active_players):
         emit('error_msg', {'msg':'Herkes hazır değil.'})
         return
-    for team, spy_role in (('blue', 'blueSpy'), ('red', 'redSpy')):
-        team_players = [p for p in active_players if p.get('team') == team]
-        if not team_players:
-            emit('error_msg', {'msg':'Her iki takımda da en az bir oyuncu olmalı.'})
-            return
-        if not any(p.get('role') == spy_role for p in team_players):
-            emit('error_msg', {'msg':'Her takımın bir Spymaster\'ı olmalı.'})
-            return
-        if not any(p.get('role') == 'player' for p in team_players):
-            emit('error_msg', {'msg':'Her takımın en az bir saha ajanı olmalı.'})
-            return
+    # Solo play: a single participant is allowed to run the whole board alone, switching
+    # team and role (spymaster <-> field agent) with the existing "Join Team" buttons
+    # whenever it's their turn to act — join_team already works mid-game, no started-game
+    # gate on it. Only require each team to have its own dedicated spymaster and field
+    # agent once there are actually enough distinct players in the room to staff both
+    # sides; otherwise that requirement would make solo play impossible.
+    if len(active_players) >= 2:
+        for team, spy_role in (('blue', 'blueSpy'), ('red', 'redSpy')):
+            team_players = [p for p in active_players if p.get('team') == team]
+            if not team_players:
+                emit('error_msg', {'msg':'Her iki takımda da en az bir oyuncu olmalı.'})
+                return
+            if not any(p.get('role') == spy_role for p in team_players):
+                emit('error_msg', {'msg':'Her takımın bir Spymaster\'ı olmalı.'})
+                return
+            if not any(p.get('role') == 'player' for p in team_players):
+                emit('error_msg', {'msg':'Her takımın en az bir saha ajanı olmalı.'})
+                return
     rooms[code]['game']['started'] = True
     emit('game_update', pdata(code), to=code)
 
