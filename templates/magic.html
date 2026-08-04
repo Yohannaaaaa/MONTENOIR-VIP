@@ -738,7 +738,9 @@ function renderBottles(bottles, cap) {
   bottles.forEach((layers, idx) => {
     const b = bottleGroups[idx];
     if (!b) return;
-    b.ring.visible = selectedIdx === idx;
+    const isSelected = selectedIdx === idx;
+    b.ring.visible = isSelected;
+    tweenObject(b.root.position, { y: isSelected ? 0.055 : 0 }, 180);
     const isCapped = layers.length === cap && layers.every(c => c !== null && c === layers[0]);
     const targets = [];
     for (let s = 0; s < cap; s++) targets.push(s < layers.length ? layers[s] : undefined);
