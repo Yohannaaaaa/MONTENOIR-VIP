@@ -772,6 +772,31 @@ function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
   const startY = y - (lines.length - 1) * lineHeight / 2;
   lines.forEach((line, i) => ctx.fillText(line, x, startY + i * lineHeight));
 }
+
+// ---- ownership markers: a small dot in the owner's color, pushed toward the board
+// center so it never sits on top of the cell's group-color stripe (which always hugs
+// the outer edge) ----
+let lastGameState = null;
+const PLAYER_COLORS = ['#00e5ff', '#ff5252', '#7c4dff', '#69f0ae', '#ffab40', '#f06292', '#fff176', '#90caf9'];
+function playerColor(username, state) {
+  const order = (state.turnOrder && state.turnOrder.length) ? state.turnOrder : Object.keys(state.players);
+  const i = order.indexOf(username);
+  return PLAYER_COLORS[(i < 0 ? 0 : i) % PLAYER_COLORS.length];
+}
+function drawOwnerMarker(ctx, rect, color) {
+  const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+  const toCx = 600 - cx, toCy = 400 - cy;
+  const len = Math.hypot(toCx, toCy) || 1;
+  const pushDist = Math.min(rect.w, rect.h) * 0.34;
+  const mx = cx + (toCx / len) * pushDist, my = cy + (toCy / len) * pushDist;
+  ctx.beginPath();
+  ctx.arc(mx, my, 5, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
 function buildBoardTexture() {
   const W = 1200, H = 800;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
@@ -824,6 +849,8 @@ function buildBoardTexture() {
       ctx.font = `${Math.max(8, fontSize - 2)}px Arial`;
       ctx.fillText(price + '€', cx, rect.y + rect.h - 11);
     }
+    const owner = lastGameState && lastGameState.owners && lastGameState.owners[idx];
+    if (owner) drawOwnerMarker(ctx, rect, playerColor(owner, lastGameState));
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -1058,7 +1085,7 @@ function renderBuildToolbar(state) {
   if (!me) { toolbar.style.display = 'none'; return; }
   const idx = me.position;
   const cell = CELLS[idx];
-  const typ = cell[1], grp = cell[4], name = cell[0];
+  const typ = cell[1], grp = cell[4], name = cellLabel(cell[0]);
   const owners = state.owners || {};
   if (typ !== 'property' || owners[idx] !== user) { toolbar.style.display = 'none'; return; }
   const houses = (state.houses && state.houses[idx]) || 0;
@@ -1114,8 +1141,10 @@ socket.on('monopoly_room_state', (state) => {
     document.getElementById('lobbyPlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-item"><img src="${tokenIcon(state.players[u].token)}" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px;">${esc(u)}</div>`).join('');
   } else {
     show('gameScreen');
+    lastGameState = state;
     relayoutTokens(state.players);
     renderBuildings(state);
+    refreshBoardTexture();
     document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${esc(u)}${state.players[u].bankrupt ? ' 💀' : ''}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
     document.getElementById('buyBox').style.display = 'none';
     document.getElementById('diceTotalBadge').style.display = 'none';
@@ -1127,6 +1156,7 @@ socket.on('monopoly_room_state', (state) => {
 
 socket.on('monopoly_animate_move', (data) => {
   const {username, from, to, dice1, dice2, state, cellName, cellPrice, cellType, pendingBuy} = data;
+  lastGameState = state;
   rollDiceAnimation(dice1, dice2);
   const badge = document.getElementById('diceTotalBadge');
   setTimeout(() => { badge.textContent = dice1 + dice2; badge.style.display = 'flex'; }, 650);
@@ -1135,12 +1165,13 @@ socket.on('monopoly_animate_move', (data) => {
   isRolling = false;
   document.getElementById('gamePlayersList').innerHTML = Object.keys(state.players).map(u => `<div class="player-row"><span><img src="${tokenIcon(state.players[u].token)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px;">${esc(u)}${state.players[u].bankrupt ? ' 💀' : ''}</span><span>💰 ${state.players[u].money}€</span></div>`).join('');
   if (username === user && pendingBuy) {
-    document.getElementById('buyInfo').textContent = t('buy_info', {name: cellName, price: cellPrice, type: t('cell_type_' + cellType)});
+    document.getElementById('buyInfo').textContent = t('buy_info', {name: cellLabel(cellName), price: cellPrice, type: t('cell_type_' + cellType)});
     document.getElementById('buyBox').style.display = 'block';
   } else {
     document.getElementById('buyBox').style.display = 'none';
   }
   renderBuildings(state);
+  refreshBoardTexture();
   renderBuildToolbar(state);
   updateTurnUI(state);
   checkWinner(state);
