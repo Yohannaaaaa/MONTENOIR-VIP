@@ -8305,36 +8305,38 @@ def bowling_code():
 def bowling_new_room(code,owner):
     return {"code":code,"owner":owner,"started":False,"players":{},"seatOrder":[],"order":[],"turnIdx":0,
             "stage":"waiting","log":"Salon hazır.","botCount":0,"botTaskRunning":False,
-            "winner":None,"gameNo":0}
+            "winner":None,"gameNo":0,"lastRoll":None}
 
 def bowling_new_player(name,token,sid,is_bot):
     return {"name":name,"token":token,"sid":sid,"isBot":is_bot,
             "curFrame":0,"frameRolls":[],"pinsUp":10,"frames":[]}
 
-def bowling_apply_roll(p,pins):
+def bowling_rack_is_fresh(p):
+    # True when the rack must be re-racked to 10 standing pins before the next
+    # throw: start of a new frame, or a fresh rack after a strike/spare bonus
+    # ball (all pins already down mid-frame).
+    fr=p["frameRolls"]
+    return (not fr) or p["pinsUp"]<=0
+
+def bowling_apply_roll(p,pins,fresh):
+    if fresh:
+        p["pinsUp"]=10
     fr=p["frameRolls"]
     fr.append(pins)
+    p["pinsUp"]-=pins
     cur=p["curFrame"]
     if cur<9:
         if len(fr)==1:
             if pins==10:
-                p["frames"].append(fr[:]); p["curFrame"]+=1; p["frameRolls"]=[]; p["pinsUp"]=10
-            else:
-                p["pinsUp"]-=pins
+                p["frames"].append(fr[:]); p["curFrame"]+=1; p["frameRolls"]=[]
         else:
-            p["frames"].append(fr[:]); p["curFrame"]+=1; p["frameRolls"]=[]; p["pinsUp"]=10
+            p["frames"].append(fr[:]); p["curFrame"]+=1; p["frameRolls"]=[]
     else:
-        if len(fr)==1:
-            p["pinsUp"]=10 if pins==10 else p["pinsUp"]-pins
-        elif len(fr)==2:
+        if len(fr)==2:
             r0,r1=fr
-            if r0==10:
-                p["pinsUp"]=10 if r1==10 else 10-r1
-            elif r0+r1==10:
-                p["pinsUp"]=10
-            else:
+            if r0!=10 and r0+r1<10:
                 p["frames"].append(fr[:]); p["curFrame"]=10; p["frameRolls"]=[]
-        else:
+        elif len(fr)==3:
             p["frames"].append(fr[:]); p["curFrame"]=10; p["frameRolls"]=[]
 
 def bowling_roll_pins(pins_up):
@@ -8394,7 +8396,7 @@ def bowling_deal(r):
     r["order"]=order
     r["gameNo"]=r.get("gameNo",0)+1
     r["turnIdx"]=(r["gameNo"]-1)%len(order)
-    r["stage"]="playing"; r["winner"]=None
+    r["stage"]="playing"; r["winner"]=None; r["lastRoll"]=None
     r["log"]=f"Oyun #{r['gameNo']} — {order[r['turnIdx']]} başlıyor."
 
 def bowling_public(r):
@@ -8409,7 +8411,8 @@ def bowling_public(r):
                          "curFrame":p.get("curFrame",0),"pinsUp":p.get("pinsUp",10)})
     turn=r["order"][r["turnIdx"]] if r.get("order") else None
     return {"code":r["code"],"started":r["started"],"stage":r["stage"],"turn":turn,
-            "players":players,"log":r["log"],"owner":r["owner"],"winner":r.get("winner"),"gameNo":r.get("gameNo",0)}
+            "players":players,"log":r["log"],"owner":r["owner"],"winner":r.get("winner"),"gameNo":r.get("gameNo",0),
+            "lastRoll":r.get("lastRoll")}
 
 def bowling_broadcast(r):
     socketio.emit("bowling_state",bowling_public(r),room=r["code"])
@@ -8498,9 +8501,11 @@ def bowling_roll(data):
     if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("bowling_error",{"code":"not_your_turn"}); return
     p=r["players"][u]
     if p["curFrame"]>=10: emit("bowling_error",{"code":"frame_done"}); return
-    pins=bowling_roll_pins(p["pinsUp"])
+    fresh=bowling_rack_is_fresh(p)
+    pins=bowling_roll_pins(10 if fresh else p["pinsUp"])
     frame_before=p["curFrame"]
-    bowling_apply_roll(p,pins)
+    bowling_apply_roll(p,pins,fresh)
+    r["lastRoll"]={"player":u,"pins":pins,"pinsUp":p["pinsUp"],"fresh":fresh}
     r["log"]=f"{u}: {pins} lobut devirdi."
     if p["curFrame"]!=frame_before:
         if bowling_check_finished(r):
@@ -8525,9 +8530,11 @@ def bowling_run_bot_turns(code):
             if not r or not bowling_next_is_bot(r): return
             u=r["order"][r["turnIdx"]]
             p=r["players"][u]
-            pins=bowling_roll_pins(p["pinsUp"])
+            fresh=bowling_rack_is_fresh(p)
+            pins=bowling_roll_pins(10 if fresh else p["pinsUp"])
             frame_before=p["curFrame"]
-            bowling_apply_roll(p,pins)
+            bowling_apply_roll(p,pins,fresh)
+            r["lastRoll"]={"player":u,"pins":pins,"pinsUp":p["pinsUp"],"fresh":fresh}
             r["log"]=f"{u}: {pins} lobut devirdi."
             if p["curFrame"]!=frame_before:
                 if bowling_check_finished(r):
