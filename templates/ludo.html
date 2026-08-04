@@ -7,6 +7,14 @@
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
 <script src="/static/js/site_sfx.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js",
+    "three/addons/": "/static/js/vendor/three/examples/jsm/"
+  }
+}
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -40,35 +48,27 @@
   #gameScreen { padding: 14px; }
   .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 640px; margin: 0 auto 8px; font-size: 12px; color: #d4af37; }
   .top-bar button { background: none; border: 1px solid #d4af37; color: #d4af37; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
-  .board-wrap { width: min(600px, 94vw); aspect-ratio: 1; margin: 0 auto; position: relative; border: 6px solid #3a2f1a; border-radius: 10px; background: #efe6cf; box-shadow: 0 15px 40px rgba(0,0,0,.7); }
-  .board-grid, .tokens-layer { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(15,1fr); grid-template-rows: repeat(15,1fr); }
-  .tokens-layer { pointer-events: none; }
-  .cell { border: 1px solid rgba(0,0,0,0.06); }
-  .cell.path { background: #fff; }
-  .cell.path.safe { background: #fff3c4; }
-  .cell.deco { background: #efe6cf; }
-  .cell.center { background: conic-gradient(from -45deg, #e0559b 0deg 90deg, #e0b400 90deg 180deg, #2a6fd6 180deg 270deg, #d33 270deg 360deg); }
-  .cell.corner-tl { background: linear-gradient(135deg, #e0559b 50%, #d33 50%); }
-  .cell.corner-tr { background: linear-gradient(225deg, #e0559b 50%, #e0b400 50%); }
-  .cell.corner-br { background: linear-gradient(315deg, #e0b400 50%, #2a6fd6 50%); }
-  .cell.corner-bl { background: linear-gradient(45deg, #d33 50%, #2a6fd6 50%); }
-  .cell.yard-red { background: #f6d3d3; }
-  .cell.yard-yellow { background: #f8ecc0; }
-  .cell.yard-pink { background: #f8d6e9; }
-  .cell.yard-blue { background: #d3e0f6; }
-  .cell.home-red { background: #e88; }
-  .cell.home-yellow { background: #e0c14a; }
-  .cell.home-pink { background: #e888c0; }
-  .cell.home-blue { background: #7fa3e8; }
-  .yard-slot { position: relative; width: 60%; height: 60%; margin: auto; border-radius: 50%; background: rgba(255,255,255,0.55); border: 2px dashed rgba(0,0,0,0.15); }
-  .token { position: relative; width: 62%; height: 62%; margin: auto; border-radius: 50%; border: 2px solid rgba(0,0,0,0.4); box-shadow: 0 3px 6px rgba(0,0,0,.5); pointer-events: auto; transition: all .25s; }
-  .token.selectable { box-shadow: 0 0 0 3px #fff, 0 0 14px 4px rgba(212,175,55,0.9); cursor: pointer; animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-  .dice-box { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 14px auto 4px; }
-  .die { width: 62px; height: 62px; background: linear-gradient(160deg,#fff,#e8e8e8); border-radius: 12px; border: 2px solid #333; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); padding: 8px; gap: 2px; box-shadow: 0 8px 16px rgba(0,0,0,.6); }
-  .die.rolling { animation: shake .5s ease-in-out; }
-  @keyframes shake { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-15deg)} 75%{transform:rotate(15deg)} }
-  .pip { border-radius: 50%; background: #222; align-self: center; justify-self: center; width: 60%; height: 60%; visibility: hidden; }
+  .board-wrap { width: 100%; margin-bottom: 4px; }
+  .board-3d-scene { position: relative; width: min(600px, 94vw); aspect-ratio: 1; margin: 0 auto; border-radius: 14px; overflow: hidden; background: #04060c;
+    box-shadow: 0 25px 55px rgba(0,0,0,.85), 0 0 0 1px rgba(255,236,180,.35), inset 0 0 0 3px rgba(212,175,55,.5), inset 0 0 0 5px rgba(0,0,0,.4); }
+  #ludoCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #ludoCanvas.pickable { cursor: pointer; }
+  .dice-row { display: flex; gap: 18px; justify-content: center; align-items: center; margin: 14px auto 4px; min-height: 64px; perspective: 500px; }
+  .dice-container { width: 58px; height: 58px; position: relative; transform-style: preserve-3d; }
+  .dice-3d { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.8s ease-out; }
+  .dice-3d.rolling { animation: ludoDiceSpin 0.65s cubic-bezier(0.25,0.46,0.45,0.94); }
+  @keyframes ludoDiceSpin {
+    0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+    100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
+  }
+  .die-face { position: absolute; width: 100%; height: 100%; background: linear-gradient(160deg,#fffdf5,#f0e6c8 60%,#ddc999); border: 2px solid #8a6c2a; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: inset -3px -3px 7px rgba(0,0,0,.25), inset 3px 3px 8px rgba(255,255,255,.9); pointer-events: none; }
+  .pip-dot { position: absolute; width: 8px; height: 8px; background: radial-gradient(circle at 35% 35%, #333, #000); border-radius: 50%; box-shadow: inset 0 1px 2px rgba(0,0,0,.9); }
+  .face-1 { transform: translateZ(29px); }
+  .face-2 { transform: rotateY(180deg) translateZ(29px); }
+  .face-3 { transform: rotateY(90deg) translateZ(29px); }
+  .face-4 { transform: rotateY(-90deg) translateZ(29px); }
+  .face-5 { transform: rotateX(90deg) translateZ(29px); }
+  .face-6 { transform: rotateX(-90deg) translateZ(29px); }
   .side-panel { max-width: 640px; margin: 10px auto 0; background: rgba(26,26,26,0.9); border: 2px solid #d4af37; border-radius: 16px; padding: 14px 18px; }
   .turn-indicator { text-align: center; color: #d4af37; font-weight: bold; margin-bottom: 8px; min-height: 20px; }
   .players-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
@@ -82,7 +82,7 @@
     h1 { font-size: 30px; letter-spacing: 3px; margin-bottom: 16px; }
     .card-box { padding: 20px 16px; }
     .room-code { font-size: 28px; }
-    .die { width: 50px; height: 50px; padding: 6px; }
+    .dice-container { width: 46px; height: 46px; }
     .player-chip { font-size: 11px; padding: 5px 10px; }
     .side-panel { padding: 10px 12px; }
   }
@@ -135,17 +135,23 @@
     <button id="leaveTableBtn" data-i18n="btn_leave">🚪 Quitter</button>
   </div>
   <div class="board-wrap">
-    <div class="board-grid" id="boardGrid"></div>
-    <div class="tokens-layer" id="tokensLayer"></div>
+    <div class="board-3d-scene">
+      <canvas id="ludoCanvas"></canvas>
+    </div>
   </div>
   <div class="side-panel">
     <div class="players-row" id="playersRow"></div>
     <div class="turn-indicator" id="turnIndicator"></div>
-    <div class="dice-box">
-      <div class="die" id="die">
-        <div class="pip" data-p="1"></div><div class="pip" data-p="2"></div><div class="pip" data-p="3"></div>
-        <div class="pip" data-p="4"></div><div class="pip" data-p="5"></div><div class="pip" data-p="6"></div>
-        <div class="pip" data-p="7"></div><div class="pip" data-p="8"></div><div class="pip" data-p="9"></div>
+    <div class="dice-row">
+      <div class="dice-container">
+        <div class="dice-3d" id="ludoDie">
+          <div class="die-face face-1"><div class="pip-dot" style="top:50%;left:50%;transform:translate(-50%,-50%);"></div></div>
+          <div class="die-face face-2"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+          <div class="die-face face-3"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:50%;left:50%;transform:translate(-50%,-50%);"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+          <div class="die-face face-4"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:22%;right:22%;"></div><div class="pip-dot" style="bottom:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+          <div class="die-face face-5"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:22%;right:22%;"></div><div class="pip-dot" style="top:50%;left:50%;transform:translate(-50%,-50%);"></div><div class="pip-dot" style="bottom:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+          <div class="die-face face-6"><div class="pip-dot" style="top:22%;left:22%;"></div><div class="pip-dot" style="top:22%;right:22%;"></div><div class="pip-dot" style="top:50%;left:22%;"></div><div class="pip-dot" style="top:50%;right:22%;"></div><div class="pip-dot" style="bottom:22%;left:22%;"></div><div class="pip-dot" style="bottom:22%;right:22%;"></div></div>
+        </div>
       </div>
       <button class="btn green" id="rollBtn" style="width:auto;padding:10px 26px;margin-top:0;" data-i18n="btn_roll">🎲 Lancer</button>
     </div>
@@ -158,7 +164,9 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+
 const socket = io();
 function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
 (function(){
@@ -362,6 +370,273 @@ function show(s) {
   document.getElementById(s).classList.add('active');
 }
 
+// ==================== 3D ludo board (Three.js) ====================
+const BOARD_WORLD = 1.5;         // total board width/depth in world units
+const CELL = BOARD_WORLD / 15;   // one grid cell in world units
+const COLOR_THREE = { red: 0xdd3333, yellow: 0xe0b400, pink: 0xe0559b, blue: 0x2a6fd6 };
+const COLOR_ORDER = ['red', 'yellow', 'pink', 'blue'];
+
+function cellXZ(r, c) { return { x: (c - 7) * CELL, z: (r - 7) * CELL }; }
+
+const ludoCanvas = document.getElementById('ludoCanvas');
+const lRenderer = new THREE.WebGLRenderer({ canvas: ludoCanvas, antialias: true });
+lRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+lRenderer.outputColorSpace = THREE.SRGBColorSpace;
+lRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+lRenderer.toneMappingExposure = 1.05;
+lRenderer.shadowMap.enabled = true;
+lRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const lScene = new THREE.Scene();
+lScene.background = new THREE.Color(0x0c0806);
+
+const lCamera = new THREE.PerspectiveCamera(42, 1, 0.05, 20);
+lCamera.position.set(0, 2.05, 0.55);
+lCamera.lookAt(0, 0, 0);
+
+function resizeLudoRenderer() {
+  const rect = ludoCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  lRenderer.setSize(rect.width, rect.height, false);
+  lCamera.aspect = rect.width / rect.height;
+  lCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeLudoRenderer).observe(ludoCanvas.parentElement);
+
+lScene.add(new THREE.AmbientLight(0x9a8f80, 0.75));
+const lKey = new THREE.DirectionalLight(0xfff4d6, 2.2);
+lKey.position.set(0.5, 3, 1);
+lKey.castShadow = true;
+lKey.shadow.mapSize.set(1024, 1024);
+lKey.shadow.camera.near = 1; lKey.shadow.camera.far = 8;
+lKey.shadow.camera.left = -1; lKey.shadow.camera.right = 1;
+lKey.shadow.camera.top = 1; lKey.shadow.camera.bottom = -1;
+lKey.shadow.bias = -0.0015;
+lScene.add(lKey);
+const lFill = new THREE.PointLight(0xffe6b0, 10, 6);
+lFill.position.set(-1, 1.6, -0.7);
+lScene.add(lFill);
+
+// Board surface: same cell layout the old DOM grid used, painted onto a canvas
+// texture instead of built from 225 grid cell elements — cheap to draw, sharp at any zoom.
+function makeLudoBoardTexture() {
+  const N = 15, PX = 1024, cellPx = PX / N;
+  const c = document.createElement('canvas'); c.width = PX; c.height = PX;
+  const ctx = c.getContext('2d');
+  const roles = Array.from({ length: N }, () => Array(N).fill('deco'));
+  const yardBlocks = { red: [0, 5, 0, 5], pink: [0, 5, 9, 14], yellow: [9, 14, 9, 14], blue: [9, 14, 0, 5] };
+  Object.entries(yardBlocks).forEach(([color, [r1, r2, c1, c2]]) => {
+    for (let r = r1; r <= r2; r++) for (let cc = c1; cc <= c2; cc++) roles[r][cc] = 'yard-' + color;
+  });
+  PATH_CELLS.forEach((rc, i) => { roles[rc[0]][rc[1]] = 'path' + (SAFE_RING_IDX.has(i) ? '-safe' : ''); });
+  Object.entries(HOME_STRETCH).forEach(([color, cells]) => { cells.forEach(rc => { roles[rc[0]][rc[1]] = 'home-' + color; }); });
+
+  const FILL = {
+    deco: '#efe6cf', path: '#ffffff', 'path-safe': '#fff3c4',
+    'yard-red': '#f6d3d3', 'yard-yellow': '#f8ecc0', 'yard-pink': '#f8d6e9', 'yard-blue': '#d3e0f6',
+    'home-red': '#e88888', 'home-yellow': '#e0c14a', 'home-pink': '#e888c0', 'home-blue': '#7fa3e8',
+  };
+  for (let r = 0; r < N; r++) for (let cc = 0; cc < N; cc++) {
+    if (r === 7 && cc === 7) continue; // center pinwheel drawn separately below
+    ctx.fillStyle = FILL[roles[r][cc]] || '#efe6cf';
+    ctx.fillRect(cc * cellPx, r * cellPx, cellPx, cellPx);
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1;
+    ctx.strokeRect(cc * cellPx, r * cellPx, cellPx, cellPx);
+  }
+  // corner diagonal accents, matching the original 2D board's corner gradients
+  function corner(r, cc, colA, colB, diag) {
+    const x = cc * cellPx, y = r * cellPx;
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, cellPx, cellPx); ctx.clip();
+    ctx.fillStyle = colA; ctx.fillRect(x, y, cellPx, cellPx);
+    ctx.fillStyle = colB;
+    ctx.beginPath();
+    if (diag === 'tl-br') { ctx.moveTo(x, y); ctx.lineTo(x + cellPx, y); ctx.lineTo(x, y + cellPx); }
+    else { ctx.moveTo(x + cellPx, y); ctx.lineTo(x + cellPx, y + cellPx); ctx.lineTo(x, y + cellPx); }
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  corner(6, 6, '#e0559b', '#dd3333', 'tl-br');
+  corner(6, 8, '#e0559b', '#e0b400', 'tr-bl');
+  corner(8, 6, '#dd3333', '#2a6fd6', 'tr-bl');
+  corner(8, 8, '#e0b400', '#2a6fd6', 'tl-br');
+  // center pinwheel: 4 triangles pointing toward each color's home-stretch entrance
+  const ccx = 7 * cellPx, ccy = 7 * cellPx, mid = { x: ccx + cellPx / 2, y: ccy + cellPx / 2 };
+  const corners = { tl: [ccx, ccy], tr: [ccx + cellPx, ccy], br: [ccx + cellPx, ccy + cellPx], bl: [ccx, ccy + cellPx] };
+  function tri(colorHex, a, b) {
+    ctx.fillStyle = colorHex;
+    ctx.beginPath(); ctx.moveTo(mid.x, mid.y); ctx.lineTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.closePath(); ctx.fill();
+  }
+  tri('#dd3333', corners.tl, corners.bl); // left   -> red's home stretch enters from the left
+  tri('#e0559b', corners.tl, corners.tr); // top    -> pink's home stretch enters from the top
+  tri('#e0b400', corners.tr, corners.br); // right  -> yellow's home stretch enters from the right
+  tri('#2a6fd6', corners.br, corners.bl); // bottom -> blue's home stretch enters from the bottom
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(ccx, ccy, cellPx, cellPx);
+  // yard slot circles
+  Object.values(YARD_SLOTS).forEach(slots => {
+    slots.forEach(([r, cc]) => {
+      const x = cc * cellPx + cellPx / 2, y = r * cellPx + cellPx / 2, rad = cellPx * 0.32;
+      ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill();
+      ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
+    });
+  });
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+const boardFrame = new THREE.Mesh(
+  new THREE.BoxGeometry(BOARD_WORLD + 0.14, 0.05, BOARD_WORLD + 0.14),
+  new THREE.MeshStandardMaterial({ color: 0x3a2f1a, roughness: 0.55, metalness: 0.1 })
+);
+boardFrame.position.y = -0.028;
+boardFrame.receiveShadow = true;
+lScene.add(boardFrame);
+
+const boardPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(BOARD_WORLD, BOARD_WORLD),
+  new THREE.MeshStandardMaterial({ map: makeLudoBoardTexture(), roughness: 0.55, metalness: 0.03 })
+);
+boardPlane.rotation.x = -Math.PI / 2;
+boardPlane.receiveShadow = true;
+lScene.add(boardPlane);
+
+// ---- pawns: one procedural cone-and-head piece per color/slot, built once and
+// repositioned every render (like real pawns being picked up and moved, not
+// re-created) ----
+function createPawnMesh(colorHex) {
+  const group = new THREE.Object3D();
+  const material = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35, metalness: 0.2 });
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.032, 0.018, 16), material);
+  base.position.y = 0.009;
+  const body = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.05, 16), material);
+  body.position.y = 0.018 + 0.025;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.02, 16, 12), material);
+  head.position.y = 0.018 + 0.05 + 0.014;
+  [base, body, head].forEach(m => { m.castShadow = true; m.receiveShadow = true; group.add(m); });
+  return group;
+}
+
+const highlightRingGeo = new THREE.RingGeometry(0.034, 0.046, 24);
+const pawns = {}; // "color_index" -> wrapper Object3D
+COLOR_ORDER.forEach(color => {
+  for (let idx = 0; idx < 4; idx++) {
+    const wrapper = new THREE.Object3D();
+    wrapper.add(createPawnMesh(COLOR_THREE[color]));
+    const ring = new THREE.Mesh(highlightRingGeo, new THREE.MeshBasicMaterial({ color: 0xd4af37, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.003;
+    ring.visible = false;
+    wrapper.add(ring);
+    const [yr, yc] = YARD_SLOTS[color][idx];
+    const { x, z } = cellXZ(yr, yc);
+    wrapper.position.set(x, 0, z);
+    wrapper.visible = false;
+    wrapper.userData = { color, index: idx, ring, selectable: false, ownerName: null };
+    lScene.add(wrapper);
+    pawns[color + '_' + idx] = wrapper;
+  }
+});
+
+// ---- lightweight tween helper (3D object properties have no CSS transitions) ----
+const activeTweens = [];
+function tweenObject(obj, targets, duration, delay = 0) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) { if (activeTweens[i].obj === obj) activeTweens.splice(i, 1); }
+  const start = {};
+  for (const k in targets) start[k] = getPath(obj, k);
+  activeTweens.push({ obj, start, targets, t0: performance.now() + delay, duration });
+}
+function getPath(obj, path) { const parts = path.split('.'); let v = obj; for (const p of parts) v = v[p]; return v; }
+function setPath(obj, path, val) { const parts = path.split('.'); let v = obj; for (let i = 0; i < parts.length - 1; i++) v = v[parts[i]]; v[parts[parts.length - 1]] = val; }
+function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+function stepTweens(now) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    const tw = activeTweens[i];
+    if (now < tw.t0) continue;
+    const p = Math.min(1, (now - tw.t0) / tw.duration);
+    const e = easeOutCubic(p);
+    for (const k in tw.targets) setPath(tw.obj, k, tw.start[k] + (tw.targets[k] - tw.start[k]) * e);
+    if (p >= 1) activeTweens.splice(i, 1);
+  }
+}
+
+const lRaycaster = new THREE.Raycaster();
+const lPointerNDC = new THREE.Vector2();
+function pickPawnAt(clientX, clientY) {
+  const rect = ludoCanvas.getBoundingClientRect();
+  lPointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  lPointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  lRaycaster.setFromCamera(lPointerNDC, lCamera);
+  const targets = Object.values(pawns).filter(w => w.visible && w.userData.selectable);
+  const hits = lRaycaster.intersectObjects(targets, true);
+  if (!hits.length) return null;
+  let obj = hits[0].object;
+  while (obj && !obj.userData.selectable) obj = obj.parent;
+  return obj;
+}
+ludoCanvas.addEventListener('click', (e) => {
+  const wrapper = pickPawnAt(e.clientX, e.clientY);
+  if (!wrapper) return;
+  if (window.SFX) SFX.move();
+  socket.emit('ludo_move_token', { code: room, username: user, owner: wrapper.userData.ownerName, index: wrapper.userData.index });
+});
+ludoCanvas.addEventListener('pointermove', (e) => {
+  ludoCanvas.classList.toggle('pickable', !!pickPawnAt(e.clientX, e.clientY));
+});
+
+function update3DBoard(state, myTurn, pending) {
+  Object.values(pawns).forEach(w => { w.visible = false; w.userData.selectable = false; w.userData.ring.visible = false; });
+  const groups = {};
+  state.players.forEach(p => {
+    p.positions.forEach((d, idx) => {
+      const [r, c] = cellForToken(p.color, d, idx);
+      const key = r + '_' + c;
+      groups[key] = groups[key] || [];
+      groups[key].push({ owner: p.name, color: p.color, index: idx });
+    });
+  });
+  Object.entries(groups).forEach(([key, list]) => {
+    const [r, c] = key.split('_').map(Number);
+    const { x, z } = cellXZ(r, c);
+    list.forEach((tok, i) => {
+      const wrapper = pawns[tok.color + '_' + tok.index];
+      if (!wrapper) return;
+      const offset = list.length > 1 ? (i - (list.length - 1) / 2) * 0.028 : 0;
+      wrapper.visible = true;
+      wrapper.userData.ownerName = tok.owner;
+      const selectable = myTurn && pending.some(m => m.owner === tok.owner && m.index === tok.index);
+      wrapper.userData.selectable = selectable;
+      wrapper.userData.ring.visible = selectable;
+      const targetX = x + offset, targetZ = z;
+      if (Math.abs(wrapper.position.x - targetX) > 0.0005 || Math.abs(wrapper.position.z - targetZ) > 0.0005) {
+        tweenObject(wrapper, { 'position.x': targetX, 'position.z': targetZ }, 420);
+      }
+    });
+  });
+}
+
+function animateLudo(now) {
+  requestAnimationFrame(animateLudo);
+  now = now || performance.now();
+  stepTweens(now);
+  Object.values(pawns).forEach(w => {
+    if (w.userData.selectable) {
+      const pulse = 1 + Math.sin(now / 220) * 0.12;
+      w.scale.setScalar(pulse);
+      w.userData.ring.material.opacity = 0.55 + Math.sin(now / 220) * 0.35;
+    } else if (w.scale.x !== 1) {
+      w.scale.setScalar(1);
+    }
+  });
+  lRenderer.render(lScene, lCamera);
+}
+resizeLudoRenderer();
+requestAnimationFrame(animateLudo);
+// ==================== end 3D ludo board ====================
+
 document.querySelectorAll('.avatar-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
@@ -405,44 +680,16 @@ document.getElementById('rollBtn').addEventListener('click', () => {
   if (isRolling) return;
   isRolling = true;
   if (window.SFX) SFX.diceRoll();
-  document.getElementById('die').classList.add('rolling');
+  document.getElementById('ludoDie').classList.add('rolling');
   document.getElementById('rollBtn').disabled = true;
   setTimeout(() => {
     socket.emit('ludo_roll_dice', {code: room, username: user});
-  }, 400);
+  }, 550);
 });
 
-function setDiePips(n) {
-  const layout = {
-    1: [5], 2: [1,9], 3: [1,5,9], 4: [1,3,7,9], 5: [1,3,5,7,9], 6: [1,3,4,6,7,9]
-  };
-  const on = new Set((layout[n] || []).map(String));
-  document.querySelectorAll('#die .pip').forEach(p => { p.style.visibility = on.has(p.dataset.p) ? 'visible' : 'hidden'; });
-}
-
-let boardBuilt = false;
-function buildBoardOnce() {
-  if (boardBuilt) return;
-  boardBuilt = true;
-  const roles = Array.from({length:15}, () => Array(15).fill('deco'));
-  const yardBlocks = {red:[0,5,0,5], pink:[0,5,9,14], yellow:[9,14,9,14], blue:[9,14,0,5]};
-  Object.entries(yardBlocks).forEach(([color,[r1,r2,c1,c2]]) => {
-    for (let r=r1;r<=r2;r++) for (let c=c1;c<=c2;c++) roles[r][c] = 'yard-'+color;
-  });
-  PATH_CELLS.forEach((rc,i) => { roles[rc[0]][rc[1]] = 'path' + (SAFE_RING_IDX.has(i) ? ' safe' : ''); });
-  Object.entries(HOME_STRETCH).forEach(([color,cells]) => { cells.forEach(rc => { roles[rc[0]][rc[1]] = 'home-'+color; }); });
-  roles[7][7] = 'center';
-  roles[6][6] = 'corner-tl'; roles[6][8] = 'corner-tr'; roles[8][6] = 'corner-bl'; roles[8][8] = 'corner-br';
-  let html = '';
-  for (let r=0;r<15;r++) for (let c=0;c<15;c++) {
-    html += `<div class="cell ${roles[r][c]}" style="grid-row:${r+1};grid-column:${c+1};"></div>`;
-  }
-  document.getElementById('boardGrid').innerHTML = html;
-  let slotsHtml = '';
-  Object.values(YARD_SLOTS).forEach(slots => {
-    slots.forEach(([r,c]) => { slotsHtml += `<div class="yard-slot" style="grid-row:${r+1};grid-column:${c+1};"></div>`; });
-  });
-  document.getElementById('boardGrid').insertAdjacentHTML('beforeend', slotsHtml);
+function setDice(el, val) {
+  const rot = {1:'rotateX(0) rotateY(0)', 2:'rotateX(0) rotateY(180deg)', 3:'rotateX(0) rotateY(-90deg)', 4:'rotateX(0) rotateY(90deg)', 5:'rotateX(-90deg) rotateY(0)', 6:'rotateX(90deg) rotateY(0)'};
+  el.style.transform = rot[val] || 'rotateX(0) rotateY(0)';
 }
 
 function render(state) {
@@ -465,23 +712,11 @@ function render(state) {
     return;
   }
   show('gameScreen');
-  buildBoardOnce();
 
   document.getElementById('playersRow').innerHTML = state.players.map(p => {
     const cls = 'player-chip' + (state.turn === p.name ? ' turn' : '');
     return `<div class="${cls}"><span class="swatch" style="background:${COLOR_HEX[p.color]}"></span>${p.name === user ? t('you_label') : p.name} (${p.finished}/4)</div>`;
   }).join('');
-
-  const layer = document.getElementById('tokensLayer');
-  const groups = {};
-  state.players.forEach(p => {
-    p.positions.forEach((d, idx) => {
-      const [r,c] = cellForToken(p.color, d, idx);
-      const key = r + '_' + c;
-      groups[key] = groups[key] || [];
-      groups[key].push({owner: p.name, color: p.color, index: idx, row: r, col: c});
-    });
-  });
 
   const myTurn = state.turn === user && state.stage === 'playing';
   if (window.SFX) {
@@ -491,29 +726,11 @@ function render(state) {
   prevMyTurn = myTurn;
   prevStage = state.stage;
   const pending = state.pendingMoves || [];
-  const canSelect = (owner, idx) => myTurn && pending.some(m => m.owner === owner && m.index === idx);
 
-  let html = '';
-  Object.values(groups).forEach(list => {
-    list.forEach((tok, i) => {
-      const sel = canSelect(tok.owner, tok.index);
-      const offset = list.length > 1 ? (i - (list.length - 1) / 2) * 8 : 0;
-      html += `<div class="token${sel ? ' selectable' : ''}" data-owner="${tok.owner}" data-index="${tok.index}"
-        style="grid-row:${tok.row + 1};grid-column:${tok.col + 1};background:${COLOR_HEX[tok.color]};transform:translateX(${offset}px);"></div>`;
-    });
-  });
-  layer.innerHTML = html;
-  if (pending.length) {
-    layer.querySelectorAll('.token.selectable').forEach(el => {
-      el.addEventListener('click', () => {
-        if (window.SFX) SFX.move();
-        socket.emit('ludo_move_token', {code: room, username: user, owner: el.dataset.owner, index: parseInt(el.dataset.index, 10)});
-      });
-    });
-  }
+  update3DBoard(state, myTurn, pending);
 
-  if (state.lastRoll) setDiePips(state.lastRoll);
-  document.getElementById('die').classList.remove('rolling');
+  if (state.lastRoll) setDice(document.getElementById('ludoDie'), state.lastRoll);
+  document.getElementById('ludoDie').classList.remove('rolling');
   isRolling = false;
 
   const rollBtn = document.getElementById('rollBtn');
@@ -537,7 +754,7 @@ socket.on('ludo_error', (d) => {
   const msg = d.code ? t('err_' + d.code) : t('err_generic');
   document.getElementById('errorMsg').textContent = msg;
   isRolling = false;
-  document.getElementById('die').classList.remove('rolling');
+  document.getElementById('ludoDie').classList.remove('rolling');
   if (d.code === 'not_enough_chips') { if (confirm(t('alert_prefix') + msg)) window.location.href = '/kasa'; return; }
   alert(t('alert_prefix') + msg);
 });

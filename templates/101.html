@@ -7,6 +7,14 @@
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
 <script src="/static/js/site_sfx.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js",
+    "three/addons/": "/static/js/vendor/three/examples/jsm/"
+  }
+}
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -42,13 +50,15 @@
   .player-chip { display: flex; align-items: center; gap: 6px; background: rgba(10,10,10,.8); border: 2px solid #444; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
   .player-chip.turn { border-color: #d4af37; box-shadow: 0 0 12px rgba(212,175,55,.7); }
   .player-chip.opened { border-color: #3a9d6d; }
-  .piles-row { display: flex; gap: 26px; align-items: center; justify-content: center; margin-bottom: 10px; }
-  .center-pile { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .piles-row { margin-bottom: 10px; }
+  .piles-3d-scene { position: relative; width: 100%; max-width: 500px; height: 130px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #04060c;
+    box-shadow: 0 15px 35px rgba(0,0,0,.75), inset 0 0 0 2px rgba(212,175,55,.4); }
+  #pilesCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #pilesCanvas.pickable { cursor: pointer; }
+  .piles-captions { display: flex; gap: 26px; align-items: center; justify-content: center; margin-top: 6px; }
+  .pile-caption { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .pile-label { font-size: 11px; color: #ffe08a; letter-spacing: 1px; text-transform: uppercase; }
   .pile-count { font-size: 12px; color: #d4af37; }
-  .stack-btn { border: none; background: none; cursor: pointer; padding: 0; }
-  .stack-btn:disabled { cursor: not-allowed; opacity: .5; }
-  .indicator-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
   .okey-tile { width: 40px; height: 56px; border-radius: 6px; background: linear-gradient(160deg,#fdf6e3,#f0e6c8); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 19px; box-shadow: 0 4px 10px rgba(0,0,0,0.6); border: 1px solid #b8a97a; }
   .okey-tile.back { background: repeating-linear-gradient(45deg,#7a1c1c,#7a1c1c 6px,#5a1414 6px,#5a1414 12px); border: 2px solid #d4af37; }
@@ -61,10 +71,10 @@
   .okey-tile.dragging { opacity: .65; transform: scale(1.1); z-index: 50; }
   .okey-tile.drop-target { box-shadow: 0 0 0 3px #3a9d6d; }
 
-  .table-area { background: rgba(10,10,10,.75); border: 2px solid #3d2612; border-radius: 14px; padding: 10px 14px; margin-bottom: 10px; min-height: 70px; max-height: 220px; overflow-y: auto; }
-  .table-meld { display: inline-flex; gap: 4px; align-items: center; background: rgba(255,255,255,.04); border: 1px solid rgba(212,175,55,.3); border-radius: 8px; padding: 5px 6px; margin: 4px 6px 4px 0; }
-  .table-meld.addable { cursor: pointer; border-color: #3a9d6d; box-shadow: 0 0 10px rgba(58,157,109,.7); }
-  .meld-owner { font-size: 9px; color: #8a7550; margin-right: 4px; }
+  .table-3d-scene { position: relative; width: 100%; height: min(260px, 34vh); margin-bottom: 10px; border-radius: 14px; overflow: hidden; background: #04060c;
+    box-shadow: 0 15px 35px rgba(0,0,0,.75), inset 0 0 0 2px rgba(212,175,55,.4); }
+  #tableCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #tableCanvas.pickable { cursor: pointer; }
 
   .rack { background: linear-gradient(180deg,#9a6a35,#6b4322 60%,#4a2d16); border: 3px solid #3d2612; border-radius: 12px; padding: 12px 16px 8px; margin-bottom: 10px; box-shadow: 0 10px 25px rgba(0,0,0,.6), inset 0 2px 4px rgba(255,255,255,.2), inset 0 -6px 10px rgba(0,0,0,.4); }
   .rack-row { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; min-height: 60px; padding: 4px 0; }
@@ -88,7 +98,8 @@
     .room-code { font-size: 30px; }
     .okey-tile { width: 30px; height: 42px; font-size: 14px; }
     .okey-tile.small { width: 21px; height: 30px; font-size: 9px; }
-    .piles-row { gap: 14px; }
+    .piles-3d-scene { height: 100px; }
+    .table-3d-scene { height: min(200px, 30vh); }
     .player-chip { font-size: 11px; padding: 5px 10px; }
     .rack { padding: 8px 8px 6px; }
     .rack-row { min-height: 46px; gap: 3px; }
@@ -143,21 +154,20 @@
   </div>
   <div class="players-row" id="playersRow"></div>
   <div class="piles-row">
-    <div class="indicator-box">
-      <div class="pile-label" data-i18n="indicator_label">GÖSTERGE</div>
-      <div id="indicatorTile"></div>
+    <div class="piles-3d-scene">
+      <canvas id="pilesCanvas"></canvas>
     </div>
-    <div class="center-pile">
-      <div class="pile-label" data-i18n="deck_label">PIOCHE</div>
-      <button class="stack-btn" id="deckPileBtn"><div class="okey-tile back"></div></button>
-      <div class="pile-count" id="deckCount"></div>
+    <div class="piles-captions">
+      <div class="pile-caption"><div class="pile-label" data-i18n="indicator_label">GÖSTERGE</div></div>
+      <div class="pile-caption"><div class="pile-label" data-i18n="deck_label">PIOCHE</div><div class="pile-count" id="deckCount"></div></div>
+      <div class="pile-caption"><div class="pile-label" data-i18n="discard_label">DÉFAUSSE</div></div>
     </div>
-    <div class="center-pile">
-      <div class="pile-label" data-i18n="discard_label">DÉFAUSSE</div>
-      <button class="stack-btn" id="discardPileBtn"><div id="discardTileWrap"><div class="okey-tile back"></div></div></button>
-    </div>
+    <button id="deckPileBtn" style="display:none;"></button>
+    <button id="discardPileBtn" style="display:none;"></button>
   </div>
-  <div class="table-area" id="tableArea"></div>
+  <div class="table-3d-scene">
+    <canvas id="tableCanvas"></canvas>
+  </div>
   <div class="side-panel">
     <div class="turn-indicator" id="turnIndicator"></div>
     <div class="rack">
@@ -181,7 +191,9 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+
 const socket = io();
 function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
 (function(){
@@ -417,6 +429,314 @@ function show(s) {
   document.getElementById(s).classList.add('active');
 }
 
+// ==================== 3D okey tiles: piles + table melds (Three.js) ====================
+const TILE_W = 0.09, TILE_H = 0.12, TILE_THICK = 0.016;
+const TILE_COLOR_HEX = { red: '#c0272d', yellow: '#c99a10', black: '#111', blue: '#1f5fbf' };
+
+function roundRectPath101(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+const tileTextureCache = {};
+function tileTextureKey(tile) { return tile.color === 'joker' ? 'joker' : (tile.color + '_' + tile.number); }
+function getTileFaceTexture(tile) {
+  const key = tileTextureKey(tile);
+  if (tileTextureCache[key]) return tileTextureCache[key];
+  const W = 140, H = 180;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#fdf6e3'); grad.addColorStop(1, '#f0e6c8');
+  ctx.fillStyle = grad; roundRectPath101(ctx, 2, 2, W - 4, H - 4, 14); ctx.fill();
+  ctx.strokeStyle = '#b8a97a'; ctx.lineWidth = 2; roundRectPath101(ctx, 2, 2, W - 4, H - 4, 14); ctx.stroke();
+  if (tile.color === 'joker') {
+    ctx.fillStyle = '#a0860d';
+    ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('OKEY', W / 2, H / 2);
+  } else {
+    ctx.fillStyle = TILE_COLOR_HEX[tile.color] || '#111';
+    ctx.font = 'bold 64px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(tile.number), W / 2, H / 2 + 6);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tileTextureCache[key] = tex;
+  return tex;
+}
+
+let tileBackTexture = null;
+function getTileBackTexture() {
+  if (tileBackTexture) return tileBackTexture;
+  const W = 140, H = 180;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#5a1414'; roundRectPath101(ctx, 2, 2, W - 4, H - 4, 14); ctx.fill();
+  ctx.save(); roundRectPath101(ctx, 2, 2, W - 4, H - 4, 14); ctx.clip();
+  for (let y = -H; y < H * 2; y += 12) { ctx.strokeStyle = '#7a1c1c'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y - W); ctx.stroke(); }
+  ctx.restore();
+  ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 4; roundRectPath101(ctx, 6, 6, W - 12, H - 12, 12); ctx.stroke();
+  tileBackTexture = new THREE.CanvasTexture(c);
+  tileBackTexture.colorSpace = THREE.SRGBColorSpace;
+  return tileBackTexture;
+}
+
+function makeTextSprite(text, opts) {
+  opts = opts || {};
+  const W = 200, H = 48;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = opts.color || '#ffe08a';
+  ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,.9)'; ctx.shadowBlur = 6;
+  ctx.fillText(text, W / 2, H / 2);
+  const tex = new THREE.CanvasTexture(c);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  spr.scale.set((opts.scale || 0.14) * (W / H), opts.scale || 0.14, 1);
+  return spr;
+}
+
+function createTileMesh(scene) {
+  const edgeMat = new THREE.MeshStandardMaterial({ color: 0xe8ddc0, roughness: 0.5 });
+  const materials = [edgeMat, edgeMat, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: 0xd8cba0, roughness: 0.6 }), edgeMat, edgeMat];
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(TILE_W, TILE_THICK, TILE_H), materials);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  mesh.visible = false;
+  scene.add(mesh);
+  return mesh;
+}
+function setTileFace(mesh, tile, faceDown) {
+  const topMat = mesh.material[2];
+  topMat.map = faceDown ? getTileBackTexture() : getTileFaceTexture(tile);
+  topMat.needsUpdate = true;
+}
+
+function makeFeltMat() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(128, 128, 20, 128, 128, 170);
+  g.addColorStop(0, '#1c7a45'); g.addColorStop(0.6, '#0f5c33'); g.addColorStop(1, '#08381f');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
+}
+
+// ---- shared render loop / tween helper for both mini-scenes ----
+const activeTweens101 = [];
+function tweenObj101(obj, targets, duration, delay = 0) {
+  for (let i = activeTweens101.length - 1; i >= 0; i--) { if (activeTweens101[i].obj === obj) activeTweens101.splice(i, 1); }
+  const start = {};
+  for (const k in targets) start[k] = obj[k];
+  activeTweens101.push({ obj, start, targets, t0: performance.now() + delay, duration });
+}
+function easeOutCubic101(x) { return 1 - Math.pow(1 - x, 3); }
+function stepTweens101(now) {
+  for (let i = activeTweens101.length - 1; i >= 0; i--) {
+    const tw = activeTweens101[i];
+    if (now < tw.t0) continue;
+    const p = Math.min(1, (now - tw.t0) / tw.duration);
+    const e = easeOutCubic101(p);
+    for (const k in tw.targets) tw.obj[k] = tw.start[k] + (tw.targets[k] - tw.start[k]) * e;
+    if (p >= 1) activeTweens101.splice(i, 1);
+  }
+}
+
+// ---- piles scene: indicator + deck stack + discard top ----
+const pilesCanvas = document.getElementById('pilesCanvas');
+const plRenderer = new THREE.WebGLRenderer({ canvas: pilesCanvas, antialias: true });
+plRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+plRenderer.outputColorSpace = THREE.SRGBColorSpace;
+plRenderer.shadowMap.enabled = true;
+const plScene = new THREE.Scene();
+plScene.background = new THREE.Color(0x0c0806);
+const plCamera = new THREE.PerspectiveCamera(34, 1, 0.05, 20);
+plCamera.position.set(0, 0.62, 0.34);
+plCamera.lookAt(0, 0, 0);
+function resizePilesRenderer() {
+  const rect = pilesCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  plRenderer.setSize(rect.width, rect.height, false);
+  plCamera.aspect = rect.width / rect.height;
+  plCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizePilesRenderer).observe(pilesCanvas.parentElement);
+plScene.add(new THREE.AmbientLight(0x9a8f80, 0.85));
+const plKey = new THREE.DirectionalLight(0xfff4d6, 2.0);
+plKey.position.set(0.3, 2, 1);
+plKey.castShadow = true;
+plScene.add(plKey);
+
+const PILES_DECK_STACK = 7;
+const indicatorMesh = createTileMesh(plScene);
+indicatorMesh.position.set(-0.62, TILE_THICK / 2, 0);
+const deckStackMeshes = Array.from({ length: PILES_DECK_STACK }, (_, i) => {
+  const m = createTileMesh(plScene);
+  m.position.set(0, TILE_THICK / 2 + i * (TILE_THICK + 0.001), 0);
+  return m;
+});
+const discardMesh = createTileMesh(plScene);
+discardMesh.position.set(0.62, TILE_THICK / 2, 0);
+
+const plRaycaster = new THREE.Raycaster();
+const plPointerNDC = new THREE.Vector2();
+function pilesPick(clientX, clientY) {
+  const rect = pilesCanvas.getBoundingClientRect();
+  plPointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  plPointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  plRaycaster.setFromCamera(plPointerNDC, plCamera);
+  const hits = plRaycaster.intersectObjects([...deckStackMeshes, discardMesh]);
+  if (!hits.length) return null;
+  return hits[0].object === discardMesh ? 'discard' : 'deck';
+}
+pilesCanvas.addEventListener('click', (e) => {
+  const which = pilesPick(e.clientX, e.clientY);
+  if (which === 'deck' && !document.getElementById('deckPileBtn').disabled) document.getElementById('deckPileBtn').click();
+  else if (which === 'discard' && !document.getElementById('discardPileBtn').disabled) document.getElementById('discardPileBtn').click();
+});
+pilesCanvas.addEventListener('pointermove', (e) => {
+  pilesCanvas.classList.toggle('pickable', pilesPick(e.clientX, e.clientY) !== null);
+});
+
+function updatePiles3D(state) {
+  if (state.indicator) { setTileFace(indicatorMesh, state.indicator, false); indicatorMesh.visible = true; }
+  else indicatorMesh.visible = false;
+  const stackShown = Math.min(PILES_DECK_STACK, Math.max(0, Math.ceil((state.deckCount || 0) / 8)));
+  deckStackMeshes.forEach((m, i) => { m.visible = i < stackShown; if (m.visible) setTileFace(m, null, true); });
+  if (state.discardTop) { setTileFace(discardMesh, state.discardTop, false); discardMesh.visible = true; }
+  else discardMesh.visible = false;
+}
+
+// ---- table scene: melds already placed on the table, grouped in a grid ----
+const tableCanvas = document.getElementById('tableCanvas');
+const tbRenderer = new THREE.WebGLRenderer({ canvas: tableCanvas, antialias: true });
+tbRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+tbRenderer.outputColorSpace = THREE.SRGBColorSpace;
+tbRenderer.shadowMap.enabled = true;
+const tbScene = new THREE.Scene();
+tbScene.background = new THREE.Color(0x0c0806);
+const tbCamera = new THREE.PerspectiveCamera(38, 1, 0.05, 20);
+const tbFelt = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), makeFeltMat());
+tbFelt.rotation.x = -Math.PI / 2;
+tbFelt.receiveShadow = true;
+tbScene.add(tbFelt);
+tbScene.add(new THREE.AmbientLight(0x9a8f80, 0.85));
+const tbKey = new THREE.DirectionalLight(0xfff4d6, 2.1);
+tbKey.position.set(0.3, 2.5, 1);
+tbKey.castShadow = true;
+tbScene.add(tbKey);
+
+function resizeTableRenderer() {
+  const rect = tableCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  tbRenderer.setSize(rect.width, rect.height, false);
+  tbCamera.aspect = rect.width / rect.height;
+  tbCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeTableRenderer).observe(tableCanvas.parentElement);
+
+const MELD_COLS = 4;
+const MELD_CELL_W = TILE_W * 6, MELD_CELL_D = TILE_H * 1.9;
+let meldTilePool = [], meldLabelPool = [], meldHitPool = [];
+function growMeldPool(nTiles, nMelds) {
+  while (meldTilePool.length < nTiles) meldTilePool.push(createTileMesh(tbScene));
+  while (meldLabelPool.length < nMelds) { const s = makeTextSprite('', { scale: 0.05 }); s.visible = false; tbScene.add(s); meldLabelPool.push(s); }
+  while (meldHitPool.length < nMelds) {
+    const hit = new THREE.Mesh(new THREE.PlaneGeometry(MELD_CELL_W * 0.95, MELD_CELL_D * 0.95), new THREE.MeshBasicMaterial({ visible: false }));
+    hit.rotation.x = -Math.PI / 2;
+    hit.userData.meldIdx = -1;
+    tbScene.add(hit);
+    meldHitPool.push(hit);
+  }
+}
+
+function updateTableMelds3D(melds, addableIdxOrNull) {
+  melds = melds || [];
+  const totalTiles = melds.reduce((s, m) => s + m.tiles.length, 0);
+  growMeldPool(totalTiles, melds.length);
+  meldTilePool.forEach(m => { m.visible = false; });
+  meldLabelPool.forEach(s => { s.visible = false; });
+  meldHitPool.forEach(h => { h.userData.meldIdx = -1; });
+
+  const rows = Math.ceil(melds.length / MELD_COLS) || 1;
+  let tileCursor = 0;
+  melds.forEach((meld, idx) => {
+    const col = idx % MELD_COLS, row = Math.floor(idx / MELD_COLS);
+    const colsInRow = Math.min(MELD_COLS, melds.length - row * MELD_COLS);
+    const cx = (col - (colsInRow - 1) / 2) * MELD_CELL_W;
+    const cz = (row - (rows - 1) / 2) * MELD_CELL_D;
+    const n = meld.tiles.length;
+    const startX = cx - ((n - 1) * TILE_W * 1.08) / 2;
+    meld.tiles.forEach((tile, ti) => {
+      const m = meldTilePool[tileCursor++];
+      setTileFace(m, tile, false);
+      m.position.set(startX + ti * TILE_W * 1.08, TILE_THICK / 2, cz + TILE_H * 0.32);
+      m.visible = true;
+    });
+    const label = meldLabelPool[idx];
+    label.position.set(cx, 0.09, cz - TILE_H * 0.55);
+    label.visible = true;
+    const c = label.material.map.image.getContext('2d');
+    c.clearRect(0, 0, 200, 48);
+    c.fillStyle = addableIdxOrNull !== null ? '#3a9d6d' : '#ffe08a';
+    c.font = 'bold 30px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.shadowColor = 'rgba(0,0,0,.9)'; c.shadowBlur = 6;
+    c.fillText(meld.owner, 100, 24);
+    label.material.map.needsUpdate = true;
+
+    const hit = meldHitPool[idx];
+    hit.position.set(cx, TILE_THICK / 2, cz + TILE_H * 0.32);
+    hit.userData.meldIdx = idx;
+  });
+
+  fitTableCamera(Math.min(MELD_COLS, melds.length || 1), rows);
+}
+
+function fitTableCamera(cols, rows) {
+  const contentW = Math.max(cols, 1) * MELD_CELL_W;
+  const contentD = Math.max(rows, 1) * MELD_CELL_D;
+  const halfFov = THREE.MathUtils.degToRad(tbCamera.fov / 2);
+  const aspect = tbCamera.aspect || 1;
+  const distForWidth = (contentW / 2 + 0.15) / (Math.tan(halfFov) * aspect);
+  const distForDepth = (contentD / 2 + 0.15) / Math.tan(halfFov);
+  const dist = Math.max(distForWidth, distForDepth, 0.5);
+  tbCamera.position.set(0, dist * 0.95, dist * 0.35);
+  tbCamera.lookAt(0, 0, 0);
+}
+
+const tbRaycaster = new THREE.Raycaster();
+const tbPointerNDC = new THREE.Vector2();
+function tablePickMeldIdx(clientX, clientY) {
+  const rect = tableCanvas.getBoundingClientRect();
+  tbPointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  tbPointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  tbRaycaster.setFromCamera(tbPointerNDC, tbCamera);
+  const targets = meldHitPool.filter(h => h.userData.meldIdx >= 0);
+  const hits = tbRaycaster.intersectObjects(targets);
+  return hits.length ? hits[0].object.userData.meldIdx : null;
+}
+tableCanvas.addEventListener('click', (e) => {
+  const idx = tablePickMeldIdx(e.clientX, e.clientY);
+  if (idx !== null) meldClickHandler(idx);
+});
+tableCanvas.addEventListener('pointermove', (e) => {
+  tableCanvas.classList.toggle('pickable', tablePickMeldIdx(e.clientX, e.clientY) !== null);
+});
+
+function animate101(now) {
+  requestAnimationFrame(animate101);
+  now = now || performance.now();
+  stepTweens101(now);
+  plRenderer.render(plScene, plCamera);
+  tbRenderer.render(tbScene, tbCamera);
+}
+resizePilesRenderer();
+resizeTableRenderer();
+fitTableCamera(1, 1);
+requestAnimationFrame(animate101);
+// ==================== end 3D okey tiles ====================
+
 document.querySelectorAll('.avatar-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
@@ -587,21 +907,11 @@ function render(state) {
     return `<div class="${cls.join(' ')}">${p.token || '💯'} ${p.name === user ? t('you_label') : p.name} — ${p.handCount}${p.opened ? ' ✅' : ''}</div>`;
   }).join('');
 
-  document.getElementById('indicatorTile').innerHTML = state.indicator ? tileHtml(state.indicator, {small: true}) : '';
+  updatePiles3D(state);
   document.getElementById('deckCount').textContent = state.deckCount;
-  document.getElementById('discardTileWrap').innerHTML = state.discardTop ? tileHtml(state.discardTop, {small: false}) : '<div class="okey-tile back"></div>';
 
   const canAddToMeld = myTurn && state.mustDiscard && opened && selectedTileIds.size === 1;
-  document.getElementById('tableArea').innerHTML = (state.table || []).map((meld, idx) => {
-    const cls = 'table-meld' + (canAddToMeld ? ' addable' : '');
-    const tilesHtml = meld.tiles.map(tile => tileHtml(tile, {small: true})).join('');
-    return `<div class="${cls}" data-meld-idx="${idx}"><span class="meld-owner">${meld.owner}</span>${tilesHtml}</div>`;
-  }).join('');
-  if (canAddToMeld) {
-    document.querySelectorAll('.table-meld.addable').forEach(el => {
-      el.addEventListener('click', () => meldClickHandler(parseInt(el.dataset.meldIdx, 10)));
-    });
-  }
+  updateTableMelds3D(state.table, canAddToMeld ? true : null);
 
   document.getElementById('turnIndicator').textContent = myTurn
     ? (state.mustDiscard ? t('must_discard_hint') : t('must_draw_hint'))

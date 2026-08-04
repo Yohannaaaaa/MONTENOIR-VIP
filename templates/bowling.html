@@ -517,17 +517,22 @@ function setPinStanding(i, standing, animate, delay = 0) {
   tweenObject(wrapper, { 'rotation.x': targetRotX, 'position.y': targetY }, 480, delay);
 }
 
-function updatePinRack(pinsUp) {
-  const freshRack = pinsUp === 10; // new frame/rack: reset instantly, don't animate pins "standing back up"
+function updatePinRack(pinsUp, forceFresh) {
+  // forceFresh: the server just re-racked (new frame, or a fresh rack after a
+  // strike/spare bonus ball) before this roll — snap every pin back up first,
+  // instantly, then animate down only the pins *this* roll actually knocked.
+  if (forceFresh) {
+    for (let i = 0; i < 10; i++) { setPinStanding(i, true, false); pinDownState[i] = false; }
+  }
   let staggerIdx = 0;
   for (let i = 0; i < 10; i++) {
     const num = i + 1;
     const isDown = num > pinsUp;
-    if (freshRack) {
-      setPinStanding(i, true, false);
-    } else if (isDown && !pinDownState[i]) {
+    if (isDown && !pinDownState[i]) {
       setPinStanding(i, false, true, staggerIdx * 70);
       staggerIdx++;
+    } else if (!isDown && pinDownState[i]) {
+      setPinStanding(i, true, false);
     }
     pinDownState[i] = isDown;
   }
@@ -735,11 +740,17 @@ function render(state) {
   renderScoreTable(state);
 
   const activePlayer = state.players.find(x => x.name === state.turn) || {pinsUp: 10};
-  const pinsUp = activePlayer.pinsUp;
+  // The 3D rack should reflect what the last throw actually did on the lane —
+  // not state.turn's pinsUp, which by broadcast time may already belong to the
+  // *next* player's fresh, untouched rack (turn advances as soon as a frame
+  // completes, i.e. on most rolls: strikes, spares, and every 2nd ball).
+  const lastRoll = state.lastRoll;
+  const pinsUp = lastRoll ? lastRoll.pinsUp : activePlayer.pinsUp;
+  const forceFresh = lastRoll ? lastRoll.fresh : pinsUp === 10;
   document.getElementById('pinsUpLabel').textContent = state.stage === 'finished' ? '' : `${pinsUp} 🎯`;
   setBallHighlight(myTurn);
   document.getElementById('swipeHint').style.display = myTurn ? 'block' : 'none';
-  updatePinRack(pinsUp);
+  updatePinRack(pinsUp, forceFresh);
 
   document.getElementById('turnIndicator').textContent = state.stage === 'finished' ? '' :
     (myTurn ? t('turn_mine') : (state.turn ? t('turn_other', {name: state.turn}) : ''));
