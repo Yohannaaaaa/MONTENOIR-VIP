@@ -645,6 +645,43 @@ const mCamera = new THREE.PerspectiveCamera(40, 1, 0.05, 20);
 mCamera.position.set(0, 2.3, 1.55);
 mCamera.lookAt(0, 0, 0);
 
+// ---- drag to orbit the board, wheel/pinch to zoom ----
+const orbit = { radius: 2.77, theta: 0, phi: Math.atan2(1.55, 2.3) };
+function updateCameraFromOrbit() {
+  mCamera.position.set(
+    orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
+    orbit.radius * Math.cos(orbit.phi),
+    orbit.radius * Math.sin(orbit.phi) * Math.cos(orbit.theta)
+  );
+  mCamera.lookAt(0, 0, 0);
+}
+updateCameraFromOrbit();
+(function setupOrbitControl(el) {
+  let dragging = false, lastX = 0, lastY = 0;
+  const PHI_MIN = 0.18, PHI_MAX = 1.45, RADIUS_MIN = 1.4, RADIUS_MAX = 4.2;
+  function start(x, y) { dragging = true; lastX = x; lastY = y; }
+  function move(x, y) {
+    if (!dragging) return;
+    orbit.theta -= (x - lastX) * 0.008;
+    orbit.phi = Math.min(PHI_MAX, Math.max(PHI_MIN, orbit.phi - (y - lastY) * 0.008));
+    lastX = x; lastY = y;
+    updateCameraFromOrbit();
+  }
+  function end() { dragging = false; }
+  el.style.cursor = 'grab';
+  el.addEventListener('mousedown', e => { start(e.clientX, e.clientY); el.style.cursor = 'grabbing'; });
+  window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+  window.addEventListener('mouseup', () => { end(); el.style.cursor = 'grab'; });
+  el.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); }, { passive: true });
+  el.addEventListener('touchmove', e => { const t = e.touches[0]; move(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+  el.addEventListener('touchend', end);
+  el.addEventListener('wheel', e => {
+    e.preventDefault();
+    orbit.radius = Math.min(RADIUS_MAX, Math.max(RADIUS_MIN, orbit.radius + e.deltaY * 0.0025));
+    updateCameraFromOrbit();
+  }, { passive: false });
+})(metCanvas);
+
 function resizeMetRenderer() {
   const rect = metCanvas.parentElement.getBoundingClientRect();
   if (rect.width < 1 || rect.height < 1) return;
