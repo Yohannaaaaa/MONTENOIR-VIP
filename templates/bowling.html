@@ -308,8 +308,8 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x04060c);
-scene.fog = new THREE.Fog(0x04060c, 11, 22);
+scene.background = new THREE.Color(0x140a24);
+scene.fog = new THREE.Fog(0x140a24, 13, 24);
 
 const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
 camera.position.set(0, 3.3, -1.3);
@@ -413,12 +413,100 @@ const gutterMat = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0
   scene.add(g);
 });
 
-const backWall = new THREE.Mesh(
-  new THREE.PlaneGeometry(LANE_HALF_WIDTH * 3, 3),
-  new THREE.MeshStandardMaterial({ color: 0x123457, emissive: 0x1c507d, emissiveIntensity: 0.5, roughness: 0.6 })
+// ---- Fun bowling-alley room: retro carpet, back/side walls, ceiling, arcade glow lights ----
+// Without these the lane just floated in a black void -- this closes it into a real room
+// so nothing but colored walls/ceiling shows behind or around the lane.
+const ROOM_W = LANE_HALF_WIDTH * 7;   // room half-width well beyond the gutters
+const ROOM_H = 3.6;                   // wall/ceiling height
+const ROOM_BACK_Z = LANE_LENGTH + 1.6;
+const ROOM_FRONT_Z = -3.2;
+
+function makeCarpetTexture() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1c1626'; ctx.fillRect(0, 0, c.width, c.height);
+  const accents = ['#8a3d63', '#2f7d78', '#8a6a2a', '#5a4a8a'];
+  for (let i = 0; i < 14; i++) {
+    const x = Math.random() * c.width, y = Math.random() * c.height, r = 9 + Math.random() * 16;
+    ctx.strokeStyle = accents[i % accents.length];
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    if (i % 2 === 0) { ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); }
+    else { ctx.arc(x, y, r * 0.6, 0, Math.PI * 2); }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(5, 8);
+  return tex;
+}
+const carpet = new THREE.Mesh(
+  new THREE.PlaneGeometry(ROOM_W * 2, ROOM_BACK_Z - ROOM_FRONT_Z),
+  new THREE.MeshStandardMaterial({ map: makeCarpetTexture(), roughness: 0.95 })
 );
-backWall.position.set(0, 1.4, LANE_LENGTH + 0.02);
+carpet.rotation.x = -Math.PI / 2;
+carpet.position.set(0, -0.08, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
+carpet.receiveShadow = true;
+scene.add(carpet);
+
+const ceiling = new THREE.Mesh(
+  new THREE.PlaneGeometry(ROOM_W * 2, ROOM_BACK_Z - ROOM_FRONT_Z),
+  new THREE.MeshStandardMaterial({ color: 0x1a1030, roughness: 0.9 })
+);
+ceiling.rotation.x = Math.PI / 2;
+ceiling.position.set(0, ROOM_H, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
+scene.add(ceiling);
+
+function makeNeonWallTexture(hexA, hexB) {
+  const c = document.createElement('canvas'); c.width = 64; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#150c26'; ctx.fillRect(0, 0, c.width, c.height);
+  const grad = ctx.createLinearGradient(0, 0, c.width, 0);
+  grad.addColorStop(0, hexA); grad.addColorStop(0.5, hexB); grad.addColorStop(1, hexA);
+  ctx.fillStyle = grad;
+  ctx.globalAlpha = 0.8;
+  for (let y = 20; y < c.height; y += 90) ctx.fillRect(6, y, c.width - 12, 8);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, Math.max(1, Math.round((ROOM_BACK_Z - ROOM_FRONT_Z) / 3)));
+  return tex;
+}
+[-1, 1].forEach(side => {
+  const wall = new THREE.Mesh(
+    new THREE.PlaneGeometry(ROOM_BACK_Z - ROOM_FRONT_Z, ROOM_H),
+    new THREE.MeshStandardMaterial({ map: makeNeonWallTexture('#ff2e88', '#00c9e0'), emissive: 0x1c1030, emissiveIntensity: 0.3, roughness: 0.7 })
+  );
+  wall.rotation.y = -side * Math.PI / 2;
+  wall.position.set(side * ROOM_W, ROOM_H / 2, (ROOM_BACK_Z + ROOM_FRONT_Z) / 2);
+  scene.add(wall);
+});
+const backWall = new THREE.Mesh(
+  new THREE.PlaneGeometry(ROOM_W * 2, ROOM_H),
+  new THREE.MeshStandardMaterial({ color: 0x123457, emissive: 0x1c507d, emissiveIntensity: 0.45, roughness: 0.6 })
+);
+backWall.position.set(0, ROOM_H / 2, ROOM_BACK_Z);
 scene.add(backWall);
+const frontWall = new THREE.Mesh(
+  new THREE.PlaneGeometry(ROOM_W * 2, ROOM_H),
+  new THREE.MeshStandardMaterial({ color: 0x1a1030, roughness: 0.85 })
+);
+frontWall.rotation.y = Math.PI;
+frontWall.position.set(0, ROOM_H / 2, ROOM_FRONT_Z);
+scene.add(frontWall);
+
+// A handful of colored point lights down each side for an arcade/glow-bowling feel,
+// kept low-intensity and short-range so they add color without washing out the pins.
+const ARCADE_COLORS = [0xff2e88, 0x00c9e0, 0xffb703];
+for (let i = 0; i < 4; i++) {
+  const z = 1 + i * (LANE_LENGTH / 3.2);
+  [-1, 1].forEach((side, si) => {
+    const glow = new THREE.PointLight(ARCADE_COLORS[(i + si) % ARCADE_COLORS.length], 3.5, 4);
+    glow.position.set(side * (LANE_HALF_WIDTH + 1.3), 2.2, z);
+    scene.add(glow);
+  });
+}
 
 const gltfLoader = new GLTFLoader();
 
