@@ -8664,8 +8664,8 @@ def magic_generate(level, seed=None):
         for _ in range(n):
             bottles[dst].append(bottles[src].pop())
     hidden = [0] * len(bottles)
-    if level >= 4:
-        mystery_count = min(2 + (level - 4) // 4, max(nc - 1, 0))
+    if level >= 20:
+        mystery_count = min(2 + (level - 20) // 4, max(nc - 1, 0))
         candidates_idx = [i for i in range(nc) if len(bottles[i]) > 1]
         rnd.shuffle(candidates_idx)
         for i in candidates_idx[:mystery_count]:
