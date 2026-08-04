@@ -72,6 +72,25 @@
     box-shadow:0 0 14px rgba(212,175,55,.6);
     white-space:nowrap;
   }
+  .connected-pill{
+    display:none;
+    align-items:center;
+    gap:8px;
+    padding:9px 16px;
+    border-radius:20px;
+    background:rgba(0,0,0,.72);
+    border:1px solid rgba(212,175,55,.75);
+    box-shadow:0 0 14px rgba(0,255,90,.2),0 0 10px rgba(212,175,55,.35);
+    color:#fff;
+    font-size:13px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .connected-pill.show{display:flex;}
+  .connected-pill .dot{width:8px;height:8px;border-radius:50%;background:#00ff66;box-shadow:0 0 8px #00ff66;flex-shrink:0;}
+  .connected-pill .name{color:#d4af37;}
+  .connected-pill .logout-link{color:#f5e6d3;opacity:.75;text-decoration:underline;font-weight:400;cursor:pointer;font-size:12px;}
+  .connected-pill .logout-link:hover{opacity:1;}
   .bottom-nav{
     position:absolute;
     bottom:40px;
@@ -124,8 +143,13 @@
     <div class="lang-selector" id="langSelector"></div>
 
     <div class="top-nav">
-      <a href="/register" class="text-register">📝 <span>Register</span></a>
-      <a href="/login" class="text-login">👤 <span>Login</span></a>
+      <a href="/register" class="text-register" id="navRegisterLink">📝 <span>Register</span></a>
+      <a href="/login" class="text-login" id="navLoginLink">👤 <span>Login</span></a>
+      <div class="connected-pill" id="connectedPill">
+        <span class="dot"></span>
+        <a href="/profil" class="name" id="connectedName" style="text-decoration:none;">—</a>
+        <span class="logout-link" id="connectedLogout">Logout</span>
+      </div>
       <a href="/profil" class="text-profile">🖼️ <span>Profile</span></a>
       <a href="/kasa" class="text-chips">🪙 <span>Buy Chips</span></a>
       <a href="/premium" class="text-premium">💎 <span>Premium</span></a>
@@ -148,7 +172,8 @@
         chips: 'Buy Chips',
         premium: 'Premium',
         games: 'GAMES',
-        tarot: 'TAROT & RITUAL'
+        tarot: 'TAROT & RITUAL',
+        logout: 'Logout'
       },
       fr: {
         register: 'Inscription',
@@ -157,7 +182,8 @@
         chips: 'Acheter des jetons',
         premium: 'Premium',
         games: 'JEUX',
-        tarot: 'TAROT & RITUEL'
+        tarot: 'TAROT & RITUEL',
+        logout: 'Déconnexion'
       },
       es: {
         register: 'Registro',
@@ -166,7 +192,8 @@
         chips: 'Comprar fichas',
         premium: 'Premium',
         games: 'JUEGOS',
-        tarot: 'TAROT Y RITUAL'
+        tarot: 'TAROT Y RITUAL',
+        logout: 'Cerrar sesión'
       },
       de: {
         register: 'Registrierung',
@@ -175,7 +202,8 @@
         chips: 'Chips kaufen',
         premium: 'Premium',
         games: 'SPIELE',
-        tarot: 'TAROT & RITUAL'
+        tarot: 'TAROT & RITUAL',
+        logout: 'Abmelden'
       },
       it: {
         register: 'Registrazione',
@@ -184,7 +212,8 @@
         chips: 'Acquista fiches',
         premium: 'Premium',
         games: 'GIOCHI',
-        tarot: 'TAROCCHI E RITUALE'
+        tarot: 'TAROCCHI E RITUALE',
+        logout: 'Esci'
       },
       nl: {
         register: 'Registreren',
@@ -193,7 +222,8 @@
         chips: 'Chips kopen',
         premium: 'Premium',
         games: 'SPELLEN',
-        tarot: 'TAROT & RITUAAL'
+        tarot: 'TAROT & RITUAAL',
+        logout: 'Uitloggen'
       },
       ru: {
         register: 'Регистрация',
@@ -202,7 +232,8 @@
         chips: 'Купить фишки',
         premium: 'Premium',
         games: 'ИГРЫ',
-        tarot: 'ТАРО И РИТУАЛ'
+        tarot: 'ТАРО И РИТУАЛ',
+        logout: 'Выйти'
       },
       ar: {
         register: 'تسجيل',
@@ -211,7 +242,8 @@
         chips: 'شراء رقاقات',
         premium: 'Premium',
         games: 'ألعاب',
-        tarot: 'التارو والطقس'
+        tarot: 'التارو والطقس',
+        logout: 'خروج'
       },
       pt: {
         register: 'Registrar',
@@ -220,7 +252,8 @@
         chips: 'Comprar fichas',
         premium: 'Premium',
         games: 'JOGOS',
-        tarot: 'TARÔ E RITUAL'
+        tarot: 'TARÔ E RITUAL',
+        logout: 'Sair'
       },
       pl: {
         register: 'Rejestracja',
@@ -229,7 +262,8 @@
         chips: 'Kup żetony',
         premium: 'Premium',
         games: 'GRY',
-        tarot: 'TAROT I RYTUAŁ'
+        tarot: 'TAROT I RYTUAŁ',
+        logout: 'Wyloguj'
       },
       tr: {
         register: 'Kayıt Ol',
@@ -238,7 +272,8 @@
         chips: 'Jeton Satın Al',
         premium: 'Premium',
         games: 'OYUNLAR',
-        tarot: 'TAROT VE RITÜEL'
+        tarot: 'TAROT VE RITÜEL',
+        logout: 'Çıkış Yap'
       },
       ja: {
         register: '登録',
@@ -247,7 +282,8 @@
         chips: 'チップ購入',
         premium: 'Premium',
         games: 'ゲーム',
-        tarot: 'タロット&儀式'
+        tarot: 'タロット&儀式',
+        logout: 'ログアウト'
       },
       zh: {
         register: '注册',
@@ -256,7 +292,8 @@
         chips: '购买筹码',
         premium: 'Premium',
         games: '游戏',
-        tarot: '塔罗和仪式'
+        tarot: '塔罗和仪式',
+        logout: '退出登录'
       },
       ko: {
         register: '등록',
@@ -265,7 +302,8 @@
         chips: '칩 구매',
         premium: 'Premium',
         games: '게임',
-        tarot: '타로 & 의식'
+        tarot: '타로 & 의식',
+        logout: '로그아웃'
       }
     };
 
@@ -278,11 +316,35 @@
       document.querySelector('.text-premium span').textContent = t.premium;
       document.querySelector('.text-games span').textContent = t.games;
       document.querySelector('.text-tarot span').textContent = t.tarot;
+      document.getElementById('connectedLogout').textContent = t.logout;
     }
 
     const selector = document.getElementById('langSelector');
     buildLangSelector(selector, applyPageTranslations, Object.keys(translations));
     applyPageTranslations(getSiteLang());
+
+    // Show who's connected instead of Register/Login once a profile is saved locally,
+    // so returning users can immediately see their account is signed in.
+    function montenoirSavedUser() {
+      return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || "";
+    }
+    function refreshConnectedState() {
+      const user = montenoirSavedUser();
+      const pill = document.getElementById('connectedPill');
+      document.getElementById('navRegisterLink').style.display = user ? 'none' : '';
+      document.getElementById('navLoginLink').style.display = user ? 'none' : '';
+      if (user) {
+        document.getElementById('connectedName').textContent = user;
+        pill.classList.add('show');
+      } else {
+        pill.classList.remove('show');
+      }
+    }
+    document.getElementById('connectedLogout').addEventListener('click', () => {
+      ["montenoirUser", "montenoirProfile", "codenamesAccount", "loggedUser", "loggedIn", "codenamesProfile", "codenamesSessionToken", "montenoirGender", "gender"].forEach(k => localStorage.removeItem(k));
+      refreshConnectedState();
+    });
+    refreshConnectedState();
   </script>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
