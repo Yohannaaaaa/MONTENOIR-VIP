@@ -484,6 +484,8 @@ const pokerCanvas = document.getElementById('pokerCanvas');
 const pRenderer = new THREE.WebGLRenderer({ canvas: pokerCanvas, antialias: true });
 pRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 pRenderer.outputColorSpace = THREE.SRGBColorSpace;
+pRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+pRenderer.toneMappingExposure = 0.65;
 pRenderer.shadowMap.enabled = true;
 pRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 

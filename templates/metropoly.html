@@ -668,6 +668,8 @@ const metCanvas = document.getElementById('metropolyCanvas');
 const mRenderer = new THREE.WebGLRenderer({ canvas: metCanvas, antialias: true });
 mRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 mRenderer.outputColorSpace = THREE.SRGBColorSpace;
+mRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+mRenderer.toneMappingExposure = 0.65;
 mRenderer.shadowMap.enabled = true;
 mRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 

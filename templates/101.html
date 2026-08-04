@@ -7,6 +7,13 @@
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <script src="/static/js/site_lang.js"></script>
 <script src="/static/js/site_sfx.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/js/vendor/three/three.module.min.js"
+  }
+}
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: radial-gradient(circle at top, #1a1512 0%, #050505 60%, #000 100%); color: #f5e6d3; font-family: Arial; min-height: 100vh; }
@@ -42,7 +49,10 @@
   .player-chip { display: flex; align-items: center; gap: 6px; background: rgba(10,10,10,.8); border: 2px solid #444; border-radius: 20px; padding: 6px 12px; font-size: 12px; }
   .player-chip.turn { border-color: #d4af37; box-shadow: 0 0 12px rgba(212,175,55,.7); }
   .player-chip.opened { border-color: #3a9d6d; }
-  .piles-row { display: flex; gap: 26px; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .piles-3d-wrap { position: relative; width: min(560px, 92vw); height: 150px; margin: 0 auto 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 4px #1a1a1a, 0 12px 30px rgba(0,0,0,.7); }
+  #pilesCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .piles-row { position: relative; z-index: 2; display: flex; gap: 26px; align-items: center; justify-content: center; height: 100%; }
+  .piles-row .okey-tile { opacity: 0; }
   .center-pile { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .pile-label { font-size: 11px; color: #ffe08a; letter-spacing: 1px; text-transform: uppercase; }
   .pile-count { font-size: 12px; color: #d4af37; }
@@ -142,19 +152,22 @@
     <button id="leaveTableBtn" data-i18n="btn_leave">🚪 Quitter</button>
   </div>
   <div class="players-row" id="playersRow"></div>
-  <div class="piles-row">
-    <div class="indicator-box">
-      <div class="pile-label" data-i18n="indicator_label">GÖSTERGE</div>
-      <div id="indicatorTile"></div>
-    </div>
-    <div class="center-pile">
-      <div class="pile-label" data-i18n="deck_label">PIOCHE</div>
-      <button class="stack-btn" id="deckPileBtn"><div class="okey-tile back"></div></button>
-      <div class="pile-count" id="deckCount"></div>
-    </div>
-    <div class="center-pile">
-      <div class="pile-label" data-i18n="discard_label">DÉFAUSSE</div>
-      <button class="stack-btn" id="discardPileBtn"><div id="discardTileWrap"><div class="okey-tile back"></div></div></button>
+  <div class="piles-3d-wrap">
+    <canvas id="pilesCanvas"></canvas>
+    <div class="piles-row">
+      <div class="indicator-box">
+        <div class="pile-label" data-i18n="indicator_label">GÖSTERGE</div>
+        <div id="indicatorTile"></div>
+      </div>
+      <div class="center-pile">
+        <div class="pile-label" data-i18n="deck_label">PIOCHE</div>
+        <button class="stack-btn" id="deckPileBtn"><div class="okey-tile back"></div></button>
+        <div class="pile-count" id="deckCount"></div>
+      </div>
+      <div class="center-pile">
+        <div class="pile-label" data-i18n="discard_label">DÉFAUSSE</div>
+        <button class="stack-btn" id="discardPileBtn"><div id="discardTileWrap"><div class="okey-tile back"></div></div></button>
+      </div>
     </div>
   </div>
   <div class="table-area" id="tableArea"></div>
@@ -181,7 +194,8 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
 const socket = io();
 function savedProfileUser(){ return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""; }
 (function(){
@@ -194,6 +208,7 @@ function savedProfileUser(){ return localStorage.getItem("montenoirUser") || loc
   }
 })();
 let user = '', avatar = '💯', room = '', myHand = [], myOrder = [], lastState = null, isOwner = false, prevMyTurn = false, prevStage = null;
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 let selectedTileIds = new Set(), stagedGroups = [];
 
 const I18N = {
@@ -475,6 +490,136 @@ function tileHtml(tile, opts) {
   return `<div class="${cls.join(' ')}" data-tile-id="${tile.id}" style="color:${COLOR_MAP[tile.color]}">${tile.number}</div>`;
 }
 
+// ==================== 3D piles (indicator / deck / discard) ====================
+const pilesCanvas = document.getElementById('pilesCanvas');
+const pRenderer = new THREE.WebGLRenderer({ canvas: pilesCanvas, antialias: true, alpha: true });
+pRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+pRenderer.outputColorSpace = THREE.SRGBColorSpace;
+pRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+pRenderer.toneMappingExposure = 0.65;
+pRenderer.shadowMap.enabled = true;
+pRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const pScene = new THREE.Scene();
+pScene.background = new THREE.Color(0x0a0a0a);
+
+const pCamera = new THREE.PerspectiveCamera(38, 1, 0.05, 20);
+pCamera.position.set(0, 0.62, 0.5);
+pCamera.lookAt(0, 0, 0);
+
+function resizePilesRenderer() {
+  const rect = pilesCanvas.parentElement.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return;
+  pRenderer.setSize(rect.width, rect.height, false);
+  pCamera.aspect = rect.width / rect.height;
+  pCamera.updateProjectionMatrix();
+}
+new ResizeObserver(resizePilesRenderer).observe(pilesCanvas.parentElement);
+
+pScene.add(new THREE.AmbientLight(0x9a8f80, 0.8));
+const pKey = new THREE.DirectionalLight(0xfff4d6, 2.2);
+pKey.position.set(0.4, 1.4, 0.6);
+pKey.castShadow = true;
+pKey.shadow.mapSize.set(512, 512);
+pScene.add(pKey);
+const pFill = new THREE.PointLight(0xffe6b0, 6, 3);
+pFill.position.set(-0.5, 0.8, -0.3);
+pScene.add(pFill);
+
+const pFeltMat = new THREE.MeshStandardMaterial({ color: 0x0f5c33, roughness: 0.9, metalness: 0.02 });
+const pFeltMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.5), pFeltMat);
+pFeltMesh.rotation.x = -Math.PI / 2;
+pFeltMesh.receiveShadow = true;
+pScene.add(pFeltMesh);
+
+const P_TILE_W = 0.075, P_TILE_H = 0.105;
+const pTileTexCache = {};
+function pTileFaceTexture(tile) {
+  const key = tile.color === 'joker' ? 'joker' : `${tile.color}_${tile.number}`;
+  if (pTileTexCache[key]) return pTileTexCache[key];
+  const W = 150, H = 210;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fdf6e3'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#b8a97a'; ctx.lineWidth = 4; ctx.strokeRect(2, 2, W-4, H-4);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (tile.color === 'joker') {
+    ctx.fillStyle = '#a0860d';
+    ctx.font = 'bold 30px Arial';
+    ctx.fillText('OKEY', W/2, H/2);
+  } else {
+    ctx.fillStyle = COLOR_MAP[tile.color] || '#111';
+    ctx.font = 'bold 90px Arial';
+    ctx.fillText(String(tile.number), W/2, H/2 + 4);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  pTileTexCache[key] = tex;
+  return tex;
+}
+let pTileBackTex = null;
+function pTileBackTexture() {
+  if (pTileBackTex) return pTileBackTex;
+  const W = 150, H = 210;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#5a1414'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 6; ctx.strokeRect(3, 3, W-6, H-6);
+  for (let i = -H; i < W + H; i += 12) {
+    ctx.strokeStyle = '#7a1c1c'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + H, H); ctx.stroke();
+  }
+  pTileBackTex = new THREE.CanvasTexture(c);
+  pTileBackTex.colorSpace = THREE.SRGBColorSpace;
+  return pTileBackTex;
+}
+function pMakeTileMesh(tile, faceUp) {
+  const tex = faceUp ? pTileFaceTexture(tile) : pTileBackTexture();
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(P_TILE_W, P_TILE_H),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+let pilesMeshes = [];
+function clearPilesMeshes() {
+  pilesMeshes.forEach(m => pScene.remove(m));
+  pilesMeshes = [];
+}
+function addPilesMesh(m) { pScene.add(m); pilesMeshes.push(m); }
+
+function renderPiles3D(state) {
+  clearPilesMeshes();
+  if (state.indicator) {
+    const mesh = pMakeTileMesh(state.indicator, true);
+    mesh.position.set(-0.42, 0.03, 0);
+    addPilesMesh(mesh);
+  }
+  const deckCount = Math.min(state.deckCount || 0, 10);
+  for (let i = 0; i < deckCount; i++) {
+    const mesh = pMakeTileMesh(null, false);
+    mesh.position.set(0, 0.03 + i * 0.0035, 0);
+    addPilesMesh(mesh);
+  }
+  if (state.discardTop) {
+    const mesh = pMakeTileMesh(state.discardTop, true);
+    mesh.position.set(0.42, 0.03, 0);
+    addPilesMesh(mesh);
+  }
+}
+
+function animatePiles() {
+  requestAnimationFrame(animatePiles);
+  pRenderer.render(pScene, pCamera);
+}
+resizePilesRenderer();
+requestAnimationFrame(animatePiles);
+// ==================== end 3D piles ====================
+
 function attachTileDrag(el, tileId) {
   let startX = 0, startY = 0, moved = false, active = false, hoverTile = null, hoverBefore = true;
   el.addEventListener('pointerdown', (e) => {
@@ -563,7 +708,7 @@ function render(state) {
     show('lobbyScreen');
     document.getElementById('roomCodeDisplay').textContent = state.code;
     document.getElementById('lobbyInfo').textContent = t('waiting_players');
-    document.getElementById('lobbyPlayersList').innerHTML = state.players.map(p => `<div class="player-item"><span>${p.token || '💯'} ${p.name}</span><span>🏆 ${p.roundsWon}</span></div>`).join('');
+    document.getElementById('lobbyPlayersList').innerHTML = state.players.map(p => `<div class="player-item"><span>${p.token || '💯'} ${esc(p.name)}</span><span>🏆 ${p.roundsWon}</span></div>`).join('');
     document.getElementById('startBtn').style.display = isOwner ? 'block' : 'none';
     document.getElementById('addBotBtn').style.display = (isOwner && state.players.length < 4) ? 'block' : 'none';
     return;
@@ -584,18 +729,19 @@ function render(state) {
     const cls = ['player-chip'];
     if (state.turn === p.name) cls.push('turn');
     if (p.opened) cls.push('opened');
-    return `<div class="${cls.join(' ')}">${p.token || '💯'} ${p.name === user ? t('you_label') : p.name} — ${p.handCount}${p.opened ? ' ✅' : ''}</div>`;
+    return `<div class="${cls.join(' ')}">${p.token || '💯'} ${p.name === user ? t('you_label') : esc(p.name)} — ${p.handCount}${p.opened ? ' ✅' : ''}</div>`;
   }).join('');
 
   document.getElementById('indicatorTile').innerHTML = state.indicator ? tileHtml(state.indicator, {small: true}) : '';
   document.getElementById('deckCount').textContent = state.deckCount;
   document.getElementById('discardTileWrap').innerHTML = state.discardTop ? tileHtml(state.discardTop, {small: false}) : '<div class="okey-tile back"></div>';
+  renderPiles3D(state);
 
   const canAddToMeld = myTurn && state.mustDiscard && opened && selectedTileIds.size === 1;
   document.getElementById('tableArea').innerHTML = (state.table || []).map((meld, idx) => {
     const cls = 'table-meld' + (canAddToMeld ? ' addable' : '');
     const tilesHtml = meld.tiles.map(tile => tileHtml(tile, {small: true})).join('');
-    return `<div class="${cls}" data-meld-idx="${idx}"><span class="meld-owner">${meld.owner}</span>${tilesHtml}</div>`;
+    return `<div class="${cls}" data-meld-idx="${idx}"><span class="meld-owner">${esc(meld.owner)}</span>${tilesHtml}</div>`;
   }).join('');
   if (canAddToMeld) {
     document.querySelectorAll('.table-meld.addable').forEach(el => {

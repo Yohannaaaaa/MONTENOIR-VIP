@@ -560,6 +560,8 @@ const okeyCanvas = document.getElementById('okeyCanvas');
 const oRenderer = new THREE.WebGLRenderer({ canvas: okeyCanvas, antialias: true });
 oRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 oRenderer.outputColorSpace = THREE.SRGBColorSpace;
+oRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+oRenderer.toneMappingExposure = 0.65;
 oRenderer.shadowMap.enabled = true;
 oRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
