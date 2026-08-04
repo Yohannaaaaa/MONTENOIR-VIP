@@ -418,7 +418,7 @@ def save_player_to_user(player):
 
 
 
-def ensure_user_account(account):
+def ensure_user_account(account, token=None):
     """Retourne la clé utilisateur exacte. Si l'interface a déjà un compte local,
     on crée une fiche serveur minimale pour éviter le faux message 'giriş yapmalısın'."""
     account = (account or '').strip()
@@ -438,7 +438,26 @@ def ensure_user_account(account):
             except RuntimeError:
                 sid = None
             if authenticated_sids.get(sid) != key:
-                return None
+                # Not authenticated on this socket yet. This can legitimately happen
+                # on the very first action after a page load: the client fires
+                # resume_session on connect, but if this action races ahead of that
+                # round-trip's response, authenticated_sids isn't set yet even though
+                # the browser really is logged in. Accept a token passed directly
+                # with THIS action as an equivalent proof, instead of forcing the
+                # action to fail and the user to retry.
+                tok = (token or '').strip()
+                valid = False
+                if tok:
+                    cached_key = SESSION_TOKENS.get(tok)
+                    if cached_key and cached_key.lower() == key.lower():
+                        valid = True
+                    elif users[key].get('sessionToken') == tok:
+                        valid = True
+                        SESSION_TOKENS[tok] = key
+                if not valid:
+                    return None
+                if sid:
+                    authenticated_sids[sid] = key
         return key
     users[account] = {
         'email': '',
@@ -3617,7 +3636,8 @@ function logoutAccount(){
     updateProfileChip();alert('Çıkış yapıldı.');
 }
 
-function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];prevCardOpen=[];lastRenderedClue=null;lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();soundGuessToggle();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){soundEndTurnSfx();socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a});closeModals()}
+function mySessionToken(){return localStorage.getItem('codenamesSessionToken')||''}
+function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount,token:mySessionToken()})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount,token:mySessionToken()})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount,token:mySessionToken()})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];prevCardOpen=[];lastRenderedClue=null;lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();soundGuessToggle();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){soundEndTurnSfx();socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a});closeModals()}
 function demoBuyChips(amount, provider){
     if(!currentAccount){alert('Önce giriş yap.');openAuth();return}
     if(!confirm(provider+' démo ile '+amount+' jeton eklensin mi?')) return;
@@ -4075,7 +4095,7 @@ socket.on('connect',()=>{
     let savedPassword=localStorage.getItem('codenamesPassword')||'';
     if(savedRoom && savedName){
         pendingAutoSit=true;
-        if(currentAccount){socket.emit('join_room_code',{room:savedRoom,password:savedPassword,account:currentAccount});}
+        if(currentAccount){socket.emit('join_room_code',{room:savedRoom,password:savedPassword,account:currentAccount,token:mySessionToken()});}
     }
 });socket.on('room_created',d=>{roomCode=d.room;isAdmin=true;roomText.innerHTML='Oda: '+roomCode+' 👑 Admin sensin';saveLocalProfile()});socket.on('room_joined',d=>{roomCode=d.room;isAdmin=false;roomText.innerHTML='Oda: '+roomCode;saveLocalProfile();if(pendingAutoSit){pendingAutoSit=false;setTimeout(()=>sitAtTable(),250)}});socket.on('error_msg',d=>{soundError();alert(d.msg)});socket.on('players_update',d=>{if(d.micStates) currentMicStates=d.micStates;if(d.ready) currentReady=d.ready;renderReady(d.players,d.ready||{});renderPlayers(d.players,d.locks)});socket.on('game_update',d=>{
     currentMicStates=d.micStates||currentMicStates||{};
@@ -4371,7 +4391,7 @@ def api_confirm_password_reset():
 
 @socketio.on('create_room')
 def create_room(data):
-    account = ensure_user_account(data.get('account'))
+    account = ensure_user_account(data.get('account'), data.get('token'))
     if not account:
         emit('error_msg', {'msg':'Oda oluşturmak için önce giriş yapmalısın.'})
         return
@@ -4381,7 +4401,7 @@ def create_room(data):
 
 @socketio.on('join_room_code')
 def join_room_code(data):
-    account = ensure_user_account(data.get('account'))
+    account = ensure_user_account(data.get('account'), data.get('token'))
     if not account:
         emit('error_msg', {'msg':'Odaya katılmak için önce giriş yapmalısın.'})
         return
@@ -4392,7 +4412,7 @@ def join_room_code(data):
 
 @socketio.on('sit')
 def sit(data):
-    account = ensure_user_account(data.get('account'))
+    account = ensure_user_account(data.get('account'), data.get('token'))
     if not account:
         emit('error_msg', {'msg':'Oynamak için önce giriş yapmalısın.'})
         return
