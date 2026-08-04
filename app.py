@@ -26,6 +26,19 @@ _state_lock = threading.RLock()
 # accounts may only be claimed (sit, create_room, chips, ...) by an authenticated sid;
 # accounts with no password (casual/guest play) are unaffected and stay frictionless.
 authenticated_sids = {}
+# token -> exact username key. Issued alongside every successful login/register (both
+# the REST /api/auth/* routes and the socket register_account/login_account handlers),
+# stored client-side in localStorage, and redeemed via the resume_session socket event
+# whenever a new socket connects (page load, reconnect, navigating between pages) so a
+# password-protected account doesn't have to re-type its password on every socket
+# connection just to satisfy authenticated_sids.
+SESSION_TOKENS = {}
+
+def issue_session_token(key):
+    token = hashlib.sha256(f"{key}:{time.time()}:{random.random()}".encode()).hexdigest()
+    SESSION_TOKENS[token] = key
+    return token
+
 OWNER_USERNAME = "yohanna"
 
 
@@ -1260,7 +1273,7 @@ def clean_register_user(username, email, password, gender=""):
         "gender": gender,
     })
     save_users(users)
-    return {"ok": True, "msg": "Kayıt başarılı.", "profile": clean_profile_payload(username, users[username])}
+    return {"ok": True, "msg": "Kayıt başarılı.", "profile": clean_profile_payload(username, users[username]), "sessionToken": issue_session_token(username)}
 
 def clean_login_user(username, password):
     username = clean_username(username)
@@ -1274,7 +1287,7 @@ def clean_login_user(username, password):
         return {"ok": False, "msg": "Şifre yanlış."}
     users[key]["lastLogin"] = str(int(time.time()))
     save_users(users)
-    return {"ok": True, "msg": "Giriş başarılı.", "profile": clean_profile_payload(key, users[key])}
+    return {"ok": True, "msg": "Giriş başarılı.", "profile": clean_profile_payload(key, users[key]), "sessionToken": issue_session_token(key)}
 
 def clean_get_profile(username):
     users = load_users()
@@ -1996,7 +2009,7 @@ html,body{margin:0;width:100%;min-height:100%;font-family:Arial,Helvetica,sans-s
 
 <script>
 function getSavedUser(){return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""}
-function saveUserProfile(profile){if(!profile||!profile.username)return;localStorage.setItem("montenoirUser",profile.username);localStorage.setItem("codenamesAccount",profile.username);localStorage.setItem("loggedUser",profile.username);localStorage.setItem("loggedIn","true");localStorage.setItem("montenoirProfile",JSON.stringify(profile));localStorage.setItem("codenamesProfile",JSON.stringify(profile));renderUserTop(profile)}
+function saveUserProfile(profile,sessionToken){if(!profile||!profile.username)return;localStorage.setItem("montenoirUser",profile.username);localStorage.setItem("codenamesAccount",profile.username);localStorage.setItem("loggedUser",profile.username);localStorage.setItem("loggedIn","true");localStorage.setItem("montenoirProfile",JSON.stringify(profile));localStorage.setItem("codenamesProfile",JSON.stringify(profile));if(sessionToken)localStorage.setItem("codenamesSessionToken",sessionToken);renderUserTop(profile)}
 function renderUserTop(profile){if(profile&&profile.username){document.getElementById("miniUser") && (miniUser.innerText=profile.username);document.getElementById("userBlock") && userBlock.classList.add("show")}else{document.getElementById("miniUser") && (miniUser.innerText="Üye");document.getElementById("userBlock") && userBlock.classList.remove("show")}}
 function loadSavedProfile(){let raw=localStorage.getItem("montenoirProfile")||localStorage.getItem("codenamesProfile");if(raw){try{renderUserTop(JSON.parse(raw))}catch(e){}}let u=getSavedUser();if(u){fetch("/api/auth/profile?username="+encodeURIComponent(u)).then(r=>r.json()).then(d=>{if(d.ok&&d.profile)saveUserProfile(d.profile);else renderUserTop(null)}).catch(()=>{})}else renderUserTop(null)}
 function toggleMenu(){sidePanel.classList.toggle('show');gamesPanel.classList.remove('show')}
@@ -2005,9 +2018,9 @@ function toggleGames(){gamesPanel.classList.toggle('show');sidePanel.classList.r
 function closeHomeModals(){homeAuthModal.style.display='none';homeProfileModal.style.display='none'}
 function openAuthHome(){homeAuthModal.style.display='flex';let u=getSavedUser();homeAuthStatus.innerHTML=u?"Aktif kullanıcı: "+u:"Henüz giriş yapılmadı."}
 function openProfileHome(){homeProfileModal.style.display='flex';let u=getSavedUser();if(!u){homeProfileBox.innerHTML='Giriş yapmadın. Önce üyelik/giriş yap.';return}homeProfileBox.innerHTML='Profil yükleniyor...';fetch("/api/auth/profile?username="+encodeURIComponent(u)).then(r=>r.json()).then(d=>{if(d.ok&&d.profile){saveUserProfile(d.profile);let p=d.profile;homeProfileBox.innerHTML='<b>👤 '+p.username+'</b><br>⭐ Seviye: '+(p.level||1)+'<br>🏆 XP: '+(p.xp||0)+'<br>🪙 Jeton: '+(p.chips||0)+'<br>🎖️ Rozet: '+(p.membershipLabel||'Yok')}else homeProfileBox.innerHTML=d.msg||"Profil bulunamadı."})}
-function homeRegister(){let u=hRegUsername.value.trim(),e=hRegEmail.value.trim(),p=hRegPassword.value,p2=hRegPassword2.value;if(!u||!e||!p||!p2){alert('Tüm alanları doldur.');return}fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,email:e,password:p,password2:p2,gender:(document.getElementById("hRegGender")?hRegGender.value:"")})}).then(r=>r.json()).then(d=>{homeAuthStatus.innerHTML=d.msg||JSON.stringify(d);if(d.ok&&d.profile){saveUserProfile(d.profile);closeHomeModals()}})}
-function homeLogin(){let u=hLoginUsername.value.trim(),p=hLoginPassword.value;if(!u||!p){alert('Kullanıcı adı ve şifre yaz.');return}fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})}).then(r=>r.json()).then(d=>{homeAuthStatus.innerHTML=d.msg||JSON.stringify(d);if(d.ok&&d.profile){saveUserProfile(d.profile);closeHomeModals()}})}
-function homeLogout(){localStorage.removeItem("montenoirUser");localStorage.removeItem("montenoirProfile");localStorage.removeItem("codenamesAccount");localStorage.removeItem("loggedUser");localStorage.removeItem("loggedIn");localStorage.removeItem("codenamesProfile");renderUserTop(null);homeAuthStatus.innerHTML='Çıkış yapıldı.'}
+function homeRegister(){let u=hRegUsername.value.trim(),e=hRegEmail.value.trim(),p=hRegPassword.value,p2=hRegPassword2.value;if(!u||!e||!p||!p2){alert('Tüm alanları doldur.');return}fetch("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,email:e,password:p,password2:p2,gender:(document.getElementById("hRegGender")?hRegGender.value:"")})}).then(r=>r.json()).then(d=>{homeAuthStatus.innerHTML=d.msg||JSON.stringify(d);if(d.ok&&d.profile){saveUserProfile(d.profile,d.sessionToken);closeHomeModals()}})}
+function homeLogin(){let u=hLoginUsername.value.trim(),p=hLoginPassword.value;if(!u||!p){alert('Kullanıcı adı ve şifre yaz.');return}fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})}).then(r=>r.json()).then(d=>{homeAuthStatus.innerHTML=d.msg||JSON.stringify(d);if(d.ok&&d.profile){saveUserProfile(d.profile,d.sessionToken);closeHomeModals()}})}
+function homeLogout(){localStorage.removeItem("montenoirUser");localStorage.removeItem("montenoirProfile");localStorage.removeItem("codenamesAccount");localStorage.removeItem("loggedUser");localStorage.removeItem("loggedIn");localStorage.removeItem("codenamesProfile");localStorage.removeItem("codenamesSessionToken");renderUserTop(null);homeAuthStatus.innerHTML='Çıkış yapıldı.'}
 document.addEventListener("DOMContentLoaded",loadSavedProfile);setTimeout(loadSavedProfile,250)
 </script>
 
@@ -3932,6 +3945,7 @@ socket.on('register_result',d=>{
     if(!d.ok){alert(d.msg);return}
     applyLoggedProfile(d.profile);
     saveLocalUser(currentProfile, regPassword.value);
+    if(d.sessionToken) localStorage.setItem('codenamesSessionToken', d.sessionToken);
     closeModals();
     alert('Hesap oluşturuldu.');
 });
@@ -3946,8 +3960,22 @@ socket.on('login_result',d=>{
     }
     applyLoggedProfile(d.profile);
     saveLocalUser(currentProfile, loginPassword.value);
+    if(d.sessionToken) localStorage.setItem('codenamesSessionToken', d.sessionToken);
     closeModals();
     requestFreshProfile();alert('Giriş yapıldı.');
+});
+
+socket.on('session_resumed',d=>{
+    if(d.ok) return;
+    // The stored token is gone (server restarted, expired, or was never valid) but the
+    // browser still thinks it's logged in — clear that stale state instead of letting
+    // the user hit a confusing "log in first" error on every action.
+    currentAccount=null; currentProfile=null;
+    localStorage.removeItem('codenamesAccount');
+    localStorage.removeItem('loggedUser');
+    localStorage.removeItem('codenamesSessionToken');
+    authStatus.innerHTML='Oturum süresi doldu, tekrar giriş yap.';
+    updateProfileChip();
 });
 
 socket.on('profile_fresh',p=>{
@@ -4020,6 +4048,12 @@ socket.on('connect',()=>{
         playerName.value=a;
         authStatus.innerHTML='Connecté : '+a;
         updateProfileChip();
+        // This is a brand-new socket connection (page load / reconnect) — the server's
+        // authenticated_sids has no entry for it yet even though the browser still
+        // thinks we're logged in. Redeem the session token from a previous login so
+        // create_room/join_room_code/sit don't reject us with "you must log in first".
+        let sessionToken=localStorage.getItem('codenamesSessionToken')||'';
+        if(sessionToken) socket.emit('resume_session', {account:a, token:sessionToken});
     }
     let savedRoom=localStorage.getItem('codenamesRoom')||'';
     let savedName=localStorage.getItem('codenamesName')||'';
@@ -4245,7 +4279,7 @@ def register_account(data):
     }
     save_users(users)
     authenticated_sids[request.sid] = username
-    emit('register_result', {'ok': True, 'profile': private_profile(username, users[username])})
+    emit('register_result', {'ok': True, 'profile': private_profile(username, users[username]), 'sessionToken': issue_session_token(username)})
 
 @socketio.on('login_account')
 def login_account(data):
@@ -4259,7 +4293,22 @@ def login_account(data):
         return
     save_users(users)  # verify_password() may have upgraded a legacy plaintext password
     authenticated_sids[request.sid] = key
-    emit('login_result', {'ok': True, 'profile': private_profile(key, users[key])})
+    emit('login_result', {'ok': True, 'profile': private_profile(key, users[key]), 'sessionToken': issue_session_token(key)})
+
+@socketio.on('resume_session')
+def resume_session(data):
+    # Re-establishes authenticated_sids for a *new* socket connection (page load,
+    # reconnect, navigating between pages) using a token issued at a previous
+    # login/register, instead of forcing the password to be re-typed every time.
+    data = data or {}
+    token = data.get('token') or ''
+    account = (data.get('account') or '').strip()
+    key = SESSION_TOKENS.get(token)
+    if not key or not account or key.lower() != account.lower():
+        emit('session_resumed', {'ok': False})
+        return
+    authenticated_sids[request.sid] = key
+    emit('session_resumed', {'ok': True})
 
 @socketio.on('request_profile')
 def request_profile(data):
@@ -4271,8 +4320,11 @@ def request_profile(data):
     emit('profile_fresh', private_profile(key, users[key]))
 
 @socketio.on('logout_account')
-def logout_account():
+def logout_account(data=None):
     authenticated_sids.pop(request.sid, None)
+    token = (data or {}).get('token') if data else None
+    if token:
+        SESSION_TOKENS.pop(token, None)
 
 @socketio.on('disconnect')
 def auth_disconnect_cleanup():
@@ -9174,6 +9226,7 @@ def register_page():
           localStorage.setItem('loggedIn', 'true');
           localStorage.setItem('montenoirProfile', JSON.stringify(p));
           localStorage.setItem('codenamesProfile', JSON.stringify(p));
+          if (d.sessionToken) localStorage.setItem('codenamesSessionToken', d.sessionToken);
           msgEl.className = 'msg success';
           msgEl.textContent = ct('auth_success_register');
           setTimeout(() => { window.location.href = '/'; }, 900);
@@ -9242,6 +9295,7 @@ def login_page():
           localStorage.setItem('loggedIn', 'true');
           localStorage.setItem('montenoirProfile', JSON.stringify(p));
           localStorage.setItem('codenamesProfile', JSON.stringify(p));
+          if (d.sessionToken) localStorage.setItem('codenamesSessionToken', d.sessionToken);
           msgEl.className = 'msg success';
           msgEl.textContent = ct('auth_success_login');
           setTimeout(() => { window.location.href = '/'; }, 900);
