@@ -170,6 +170,18 @@ def charge_play_fee(usernames):
     save_users(users)
     return True, None
 
+def refund_play_fee(usernames):
+    """Credit GAME_ENTRY_FEE chips back to each given username."""
+    usernames = [u for u in usernames if u]
+    if not usernames:
+        return
+    users = load_users()
+    for u in usernames:
+        key = find_user_key(users, u)
+        if key:
+            users[key]["chips"] = int(users[key].get("chips", 1000)) + GAME_ENTRY_FEE
+    save_users(users)
+
 def load_processed_stripe_sessions():
     try:
         with open(STRIPE_PROCESSED_FILE, "r", encoding="utf-8") as f:
@@ -8261,6 +8273,7 @@ def tavla_leave_room(data):
         del TAVLA_ROOMS[code]; return
     if r["stage"]=="playing":
         r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+        refund_play_fee([n for n in r["seatOrder"] if not r["players"][n].get("isBot")])
     tavla_broadcast(r)
 
 @socketio.on("tavla_start_game")
