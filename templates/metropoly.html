@@ -29,6 +29,7 @@
   .token-btn:hover { background: rgba(60,60,60,0.9); transform: scale(1.05); }
   .token-btn.selected { background: #d4af37; box-shadow: 0 0 20px #d4af37; transform: scale(1.1); }
   .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #d4af37, #a0860d); color: #1a1a1a; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: all 0.3s; margin-top: 15px; letter-spacing: 2px; text-transform: uppercase; }
+  .btn.grey { background: #444; color: #f5e6d3; }
   .btn:hover { transform: scale(1.02); box-shadow: 0 0 25px rgba(212,175,55,0.6); }
   .error { color: #ff6b6b; text-align: center; margin-top: 15px; font-size: 14px; min-height: 20px; }
   .lang-switch { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -38,6 +39,9 @@
   .players-list { background: rgba(10,10,10,0.8); border: 1px solid #d4af37; border-radius: 10px; padding: 15px; margin: 20px 0; max-height: 200px; overflow-y: auto; min-height: 100px; }
   .player-item { padding: 10px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 14px; }
   .player-item:last-child { border-bottom: none; }
+  .open-table-row { padding: 9px 4px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .open-table-row:last-child { border-bottom: none; }
+  .btn.small { width: auto; padding: 7px 14px; margin-top: 0; font-size: 12px; }
   #gameScreen { background: #0a0a0a; padding: 30px; overflow-y: auto; }
   .game-container { display: flex; gap: 30px; justify-content: center; align-items: flex-start; width: 100%; max-width: 1600px; margin: 0 auto; }
   .board-column { width: 1200px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; }
@@ -96,6 +100,9 @@
     <label class="label" data-i18n="label_or_join">OU REJOIGNEZ</label>
     <input type="text" id="roomCode" class="input" data-i18n-placeholder="placeholder_room_code" placeholder="Code de la salle">
     <button class="btn" id="joinBtn" data-i18n="btn_join">🔗 Rejoindre</button>
+    <label class="label" data-i18n="label_open_tables">🌐 Açık Masalar</label>
+    <div class="players-list" id="openTablesList"></div>
+    <button class="btn grey" id="refreshTablesBtn" data-i18n="btn_refresh_tables">🔄 Listeyi yenile</button>
     <div class="error" id="errorMsg"></div>
   </div>
 </div>
@@ -185,7 +192,8 @@ const I18N = {
     err_no_money_house: 'Pas assez d\'argent pour une maison (50€).',
     err_need_4_houses: "4 maisons déjà construites, passe à l'hôtel.",
     err_no_money_hotel: 'Pas assez d\'argent pour un hôtel (100€).',
-    groups: { green:'vert', brown:'marron', orange:'orange', purple:'violet', yellow:'jaune', blue:'bleu', red:'rouge' }
+    groups: { green:'vert', brown:'marron', orange:'orange', purple:'violet', yellow:'jaune', blue:'bleu', red:'rouge' },
+    label_open_tables: '🌐 Tables ouvertes', btn_refresh_tables: '🔄 Actualiser', btn_join_table: 'Rejoindre', empty_open_tables: 'Aucune salle en attente pour le moment.'
   },
   en: {
     label_username: '🎮 Your Nickname', placeholder_username: 'Enter your name',
@@ -243,7 +251,8 @@ const I18N = {
     err_no_money_house: 'Ev için yeterli paran yok (50€).',
     err_need_4_houses: '4 ev zaten yapıldı, otele geç.',
     err_no_money_hotel: 'Otel için yeterli paran yok (100€).',
-    groups: { green:'yeşil', brown:'kahverengi', orange:'turuncu', purple:'mor', yellow:'sarı', blue:'mavi', red:'kırmızı' }
+    groups: { green:'yeşil', brown:'kahverengi', orange:'turuncu', purple:'mor', yellow:'sarı', blue:'mavi', red:'kırmızı' },
+    label_open_tables: '🌐 Açık Masalar', btn_refresh_tables: '🔄 Listeyi yenile', btn_join_table: 'Katıl', empty_open_tables: 'Şu an bekleyen oda yok.'
   },
   es: {
     label_username: '🎮 Tu Apodo', placeholder_username: 'Introduce tu nombre',
@@ -851,6 +860,24 @@ document.getElementById('joinBtn').addEventListener('click', () => {
   playerTokens[user] = token;
   socket.emit('monopoly_join_room', {username: user, token, code: room});
 });
+
+function refreshOpenTables() { socket.emit('monopoly_list_rooms', {}); }
+socket.on('monopoly_rooms_list', (data) => {
+  const box = document.getElementById('openTablesList');
+  const list = (data && data.rooms) || [];
+  if (!list.length) { box.innerHTML = `<div class="open-table-row">${t('empty_open_tables')}</div>`; return; }
+  box.innerHTML = list.map(r => `<div class="open-table-row"><span>${r.code} — ${r.owner || '?'} (${r.count}/${r.max})</span><button class="btn small join-open-table" data-code="${r.code}">${t('btn_join_table')}</button></div>`).join('');
+  box.querySelectorAll('.join-open-table').forEach(btn => btn.addEventListener('click', () => {
+    user = document.getElementById('username').value.trim();
+    if (!user) { document.getElementById('errorMsg').textContent = t('err_username_required'); return; }
+    playerTokens[user] = token;
+    room = btn.dataset.code;
+    socket.emit('monopoly_join_room', {username: user, token, code: room});
+  }));
+});
+document.getElementById('refreshTablesBtn').addEventListener('click', refreshOpenTables);
+refreshOpenTables();
+setInterval(() => { if (document.getElementById('loginScreen').classList.contains('active')) refreshOpenTables(); }, 4000);
 
 document.getElementById('startBtn').addEventListener('click', () => {
   socket.emit('monopoly_start_game', {code: room});

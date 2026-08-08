@@ -45,6 +45,9 @@
   .players-list { background: rgba(10,10,10,0.8); border: 1px solid #d4af37; border-radius: 10px; padding: 14px; margin: 18px 0; max-height: 220px; overflow-y: auto; min-height: 60px; }
   .player-item { padding: 9px 4px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 14px; display: flex; justify-content: space-between; }
   .player-item:last-child { border-bottom: none; }
+  .open-table-row { padding: 9px 4px; color: #f5e6d3; border-bottom: 1px solid rgba(212,175,55,0.3); font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .open-table-row:last-child { border-bottom: none; }
+  .btn.small { width: auto; padding: 7px 14px; margin-top: 0; font-size: 12px; }
 
   #gameScreen { padding: 14px; }
   .table-wrap { position: relative; width: min(980px, 96vw); height: min(560px, 78vh); margin: 0 auto; border-radius: 50% / 42%; overflow: hidden;
@@ -130,6 +133,9 @@
     <label class="label" data-i18n="label_or_join">OU REJOIGNEZ</label>
     <input type="text" id="roomCode" class="input" data-i18n-placeholder="placeholder_room_code" placeholder="Code de la table">
     <button class="btn" id="joinBtn" data-i18n="btn_join">🔗 Rejoindre</button>
+    <label class="label" data-i18n="label_open_tables">🌐 Açık Masalar</label>
+    <div class="players-list" id="openTablesList"></div>
+    <button class="btn grey" id="refreshTablesBtn" data-i18n="btn_refresh_tables">🔄 Listeyi yenile</button>
     <div class="error" id="errorMsg"></div>
   </div>
 </div>
@@ -209,7 +215,8 @@ const I18N = {
     err_not_enough_chips:'Pas assez de jetons sur ton compte.', err_room_not_found:'Table introuvable.',
     err_table_full:'Table complète.', err_need_players:'Il faut au moins 2 joueurs.',
     err_not_your_turn:"Ce n'est pas ton tour.", err_cannot_check:'Tu dois suivre ou te coucher.',
-    err_invalid_raise:'Relance invalide.', you_label:'Toi' },
+    err_invalid_raise:'Relance invalide.', you_label:'Toi',
+    label_open_tables:'🌐 Tables ouvertes', btn_refresh_tables:'🔄 Actualiser', btn_join_table:'Rejoindre', empty_open_tables:'Aucune table en attente pour le moment.', },
   en: { label_username:'🎮 Your Nickname', placeholder_username:'Enter your name', label_avatar:'🃏 Choose your avatar',
     label_buyin:'💵 Buy-in', label_smallblind:'🔹 Small Blind', btn_create:'➕ Create a table',
     label_or_join:'OR JOIN', placeholder_room_code:'Table code', btn_join:'🔗 Join',
@@ -339,7 +346,8 @@ const I18N = {
     err_not_enough_chips:'Hesabında yeterli jeton yok.', err_room_not_found:'Masa bulunamadı.',
     err_table_full:'Masa dolu.', err_need_players:'En az 2 oyuncu gerekli.',
     err_not_your_turn:'Sıra sende değil.', err_cannot_check:'Görmek veya fold etmek zorundasın.',
-    err_invalid_raise:'Geçersiz yükseltme.', you_label:'Sen' },
+    err_invalid_raise:'Geçersiz yükseltme.', you_label:'Sen',
+    label_open_tables:'🌐 Açık Masalar', btn_refresh_tables:'🔄 Listeyi yenile', btn_join_table:'Katıl', empty_open_tables:'Şu an bekleyen masa yok.', },
   ja: { label_username:'🎮 ニックネーム', placeholder_username:'名前を入力', label_avatar:'🃏 アバターを選択',
     label_buyin:'💵 バイイン', label_smallblind:'🔹 スモールブラインド', btn_create:'➕ テーブルを作成',
     label_or_join:'または参加', placeholder_room_code:'テーブルコード', btn_join:'🔗 参加',
@@ -636,6 +644,23 @@ document.getElementById('joinBtn').addEventListener('click', () => {
   if (!user || !room) return document.getElementById('errorMsg').textContent = t('err_generic');
   socket.emit('poker_join_room', {username: user, token: avatar, code: room});
 });
+
+function refreshOpenTables() { socket.emit('poker_list_rooms', {}); }
+socket.on('poker_rooms_list', (data) => {
+  const box = document.getElementById('openTablesList');
+  const list = (data && data.rooms) || [];
+  if (!list.length) { box.innerHTML = `<div class="open-table-row">${t('empty_open_tables')}</div>`; return; }
+  box.innerHTML = list.map(r => `<div class="open-table-row"><span>${r.code} — ${r.owner || '?'} (${r.count}/${r.max})</span><button class="btn small join-open-table" data-code="${r.code}">${t('btn_join_table')}</button></div>`).join('');
+  box.querySelectorAll('.join-open-table').forEach(btn => btn.addEventListener('click', () => {
+    user = document.getElementById('username').value.trim();
+    if (!user) { document.getElementById('errorMsg').textContent = t('err_generic'); return; }
+    room = btn.dataset.code;
+    socket.emit('poker_join_room', {username: user, token: avatar, code: room});
+  }));
+});
+document.getElementById('refreshTablesBtn').addEventListener('click', refreshOpenTables);
+refreshOpenTables();
+setInterval(() => { if (document.getElementById('loginScreen').classList.contains('active')) refreshOpenTables(); }, 4000);
 
 document.getElementById('startBtn').addEventListener('click', () => {
   socket.emit('poker_start_game', {code: room});

@@ -259,6 +259,9 @@
   <input id="roomInput" placeholder="Code du salon">
   <button onclick="joinExistingRoom()">Rejoindre</button>
   <h3 id="roomText">Salon: -</h3>
+  <h3 style="margin-top:14px;">🌐 Açık Salonlar</h3>
+  <div id="openTablesList" style="max-height:200px;overflow-y:auto;margin-bottom:8px;"></div>
+  <button onclick="refreshOpenTables()">🔄 Listeyi yenile</button>
   <hr>
   <h3>Créer ton profil</h3>
   <input id="playerName" placeholder="Nom du joueur">
@@ -440,6 +443,25 @@ function joinExistingRoom() {
   }
   socket.emit('join_room_code', { room: code, username: currentAccount });
 }
+
+function refreshOpenTables() {
+  socket.emit('list_open_rooms', {});
+}
+socket.on('open_rooms_list', (data) => {
+  const box = document.getElementById('openTablesList');
+  const list = (data && data.rooms) || [];
+  if (!list.length) { box.innerHTML = '<p>Şu an açık salon yok.</p>'; return; }
+  box.innerHTML = list.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid #444;">
+    <span>${r.code} — ${r.owner || '?'} (${r.count}/${r.max})</span>
+    <button class="join-open-room" data-code="${r.code}">Katıl</button>
+  </div>`).join('');
+  box.querySelectorAll('.join-open-room').forEach(btn => btn.addEventListener('click', () => {
+    if (!currentAccount) { alert('Connectez-vous d\'abord'); return; }
+    socket.emit('join_room_code', { room: btn.dataset.code, username: currentAccount });
+  }));
+});
+setInterval(() => { if (!document.getElementById('lobby').classList.contains('hidden')) refreshOpenTables(); }, 4000);
+refreshOpenTables();
 
 function sitAtTable() {
   if (!roomCode) {

@@ -148,6 +148,20 @@ def stripe_configured():
 
 GAME_ENTRY_FEE = 100
 
+def open_rooms_list(rooms_dict, max_players=None):
+    """List rooms that haven't started yet (and aren't full), newest-first,
+    so a lobby screen can offer one-click join without a shared room code."""
+    out = []
+    for code, r in rooms_dict.items():
+        if r.get("started"):
+            continue
+        count = len(r.get("seatOrder") or r.get("players") or [])
+        if max_players is not None and count >= max_players:
+            continue
+        out.append({"code": code, "owner": r.get("owner"), "count": count, "max": max_players})
+    out.sort(key=lambda x: -x["count"])
+    return out
+
 def charge_play_fee(usernames):
     """Deduct GAME_ENTRY_FEE chips from each given username. All-or-nothing:
     if any player can't afford it, nobody is charged. Returns (True, None)
@@ -4422,6 +4436,20 @@ def join_room_code(data):
     if rooms[code]['password'] and rooms[code]['password'] != password: emit('error_msg', {'msg':'Oda şifresi yanlış.'}); return
     join_room(code); emit('room_joined', {'room': code}); emit('players_update', {'players': rooms[code]['players'], 'locks': rooms[code]['locks'], 'micStates': rooms[code].get('micStates', {}), 'ready': rooms[code].get('ready', {})})
 
+@socketio.on('list_open_rooms')
+def list_open_rooms(data):
+    out = []
+    for code, r in rooms.items():
+        if r.get('password'):
+            continue
+        players = r.get('players', [])
+        if len(players) >= MAX_PLAYERS:
+            continue
+        owner = next((p['name'] for p in players if p.get('isAdmin')), (players[0]['name'] if players else None))
+        out.append({'code': code, 'owner': owner, 'count': len(players), 'max': MAX_PLAYERS})
+    out.sort(key=lambda x: -x['count'])
+    emit('open_rooms_list', {'rooms': out})
+
 @socketio.on('sit')
 def sit(data):
     account = ensure_user_account(data.get('account'), data.get('token'))
@@ -6482,6 +6510,10 @@ def m_check_winner(r):
         r["winner"]=alive[0]
         r["lastLog"]=alive[0]+" tüm rakiplerini iflas ettirdi ve oyunu kazandı! 🏆"
 
+@socketio.on("monopoly_list_rooms")
+def monopoly_list_rooms(data):
+    emit("monopoly_rooms_list",{"rooms":open_rooms_list(METROPOLY_ROOMS,6)})
+
 @socketio.on("monopoly_create_room")
 def mc(data):
     u=(data or {}).get("username","Misafir").strip()[:20] or "Misafir"
@@ -6942,6 +6974,10 @@ def poker_give_chips(username,amount):
     users[key]["chips"]=int(users[key].get("chips",1000))+amount
     save_users(users)
 
+@socketio.on("poker_list_rooms")
+def poker_list_rooms(data):
+    emit("poker_rooms_list",{"rooms":open_rooms_list(POKER_ROOMS,8)})
+
 @socketio.on("poker_create_room")
 def poker_create_room(data):
     u=(data or {}).get("username","Misafir").strip() or "Misafir"
@@ -7243,6 +7279,10 @@ def okey_deal(r):
     r["deck"]=deck; r["discard"]=[]; r["order"]=order; r["turnIdx"]=0
     r["mustDiscard"]=True; r["stage"]="playing"; r["winningHand"]=None
     r["log"]=f"El #{r['handNo']} — {order[0]} başlıyor."
+
+@socketio.on("okey_list_rooms")
+def okey_list_rooms(data):
+    emit("okey_rooms_list",{"rooms":open_rooms_list(OKEY_ROOMS,4)})
 
 @socketio.on("okey_create_room")
 def okey_create_room(data):
@@ -7629,6 +7669,10 @@ def ludo_maybe_schedule_bots(code):
     r["botTaskRunning"]=True
     socketio.start_background_task(ludo_run_bot_turns,code)
 
+@socketio.on("ludo_list_rooms")
+def ludo_list_rooms(data):
+    emit("ludo_rooms_list",{"rooms":open_rooms_list(LUDO_ROOMS,4)})
+
 @socketio.on("ludo_create_room")
 def ludo_create_room(data):
     u=(data or {}).get("username","Misafir").strip() or "Misafir"
@@ -7838,6 +7882,10 @@ def r101_finish_round(r,u):
     r["stage"]="round_over"
     r["winner"]=u
     r["log"]=u+" — elini bitirdi, kazandı! 🎉"
+
+@socketio.on("r101_list_rooms")
+def r101_list_rooms(data):
+    emit("r101_rooms_list",{"rooms":open_rooms_list(R101_ROOMS,4)})
 
 @socketio.on("r101_create_room")
 def r101_create_room(data):
@@ -8220,6 +8268,10 @@ def tavla_public(r):
 def tavla_broadcast(r):
     socketio.emit("tavla_state",tavla_public(r),room=r["code"])
 
+@socketio.on("tavla_list_rooms")
+def tavla_list_rooms(data):
+    emit("tavla_rooms_list",{"rooms":open_rooms_list(TAVLA_ROOMS,2)})
+
 @socketio.on("tavla_create_room")
 def tavla_create_room(data):
     u=(data or {}).get("username","Misafir").strip() or "Misafir"
@@ -8539,6 +8591,10 @@ def bowling_public(r):
 
 def bowling_broadcast(r):
     socketio.emit("bowling_state",bowling_public(r),room=r["code"])
+
+@socketio.on("bowling_list_rooms")
+def bowling_list_rooms(data):
+    emit("bowling_rooms_list",{"rooms":open_rooms_list(BOWLING_ROOMS,4)})
 
 @socketio.on("bowling_create_room")
 def bowling_create_room(data):
@@ -8958,6 +9014,10 @@ def magic_duel_send_board(r, username):
         "bottles": magic_public_bottles(p["bottles"], p["hidden"]),
         "capacity": MAGIC_CAPACITY, "solved": p.get("finished", False),
     }, room=p["sid"])
+
+@socketio.on("magic_duel_list_rooms")
+def magic_duel_list_rooms(data):
+    emit("magic_duel_rooms_list",{"rooms":open_rooms_list(MAGIC_ROOMS,2)})
 
 @socketio.on("magic_duel_create_room")
 def magic_duel_create_room(data):
