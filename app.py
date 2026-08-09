@@ -794,7 +794,7 @@ def tarot_submit_request(data):
         return
     price = int(TAROT_PRICES[service])
     chips = int(users[key].get("chips", 1000))
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         if chips < price:
             emit("tarot_result", {"ok": False, "msg": "Yeterli jeton yok."})
             return
@@ -842,7 +842,7 @@ def tarot_lucky_wheel(data):
         emit("tarot_wheel_result", {"ok": False, "msg": "Giriş gerekli."})
         return
     today = time.strftime("%Y-%m-%d")
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         wheel_log = users[key].setdefault("wheelLog", {})
         used = int(wheel_log.get(today, 0))
         limit = int(settings.get("wheelDailyLimit", 1))
@@ -855,7 +855,7 @@ def tarot_lucky_wheel(data):
     weights = [int(v) for v in rw.values()]
     reward = random.choices(rewards, weights=weights, k=1)[0]
     users[key]["chips"] = int(users[key].get("chips", 1000)) + reward
-    if is_owner_name(key):
+    if is_owner_username(key):
         users[key]["chips"] = max(users[key]["chips"], 999999)
     users[key]["lastWheelDate"] = today
     save_users(users)
@@ -1041,7 +1041,7 @@ def save_site_settings(settings):
 
 @socketio.on("owner_get_panel")
 def owner_get_panel(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_panel_data", {"ok": False, "msg": "Bu panel sadece Yohanna Owner içindir."})
         return
     users = load_users()
@@ -1068,7 +1068,7 @@ def owner_get_panel(data):
 
 @socketio.on("owner_manage_user")
 def owner_manage_user(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     users = load_users()
@@ -1087,7 +1087,7 @@ def owner_manage_user(data):
     elif action == "unfreeze":
         users[key]["isFrozen"] = False
     elif action == "delete":
-        if is_owner_name(key):
+        if is_owner_username(key):
             emit("owner_action_result", {"ok": False, "msg": "Owner hesabı silinemez."})
             return
         users.pop(key, None)
@@ -1108,7 +1108,7 @@ def owner_manage_user(data):
 
 @socketio.on("owner_set_membership")
 def owner_set_membership(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     users = load_users()
@@ -1137,7 +1137,7 @@ def owner_set_membership(data):
 
 @socketio.on("owner_update_request")
 def owner_update_request(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     reqs = load_tarot_requests()
@@ -1153,7 +1153,7 @@ def owner_update_request(data):
 
 @socketio.on("owner_update_settings")
 def owner_update_settings(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     settings = load_site_settings()
@@ -5252,9 +5252,9 @@ def api_open_chest():
                "gold": [("chips", 500), ("frame", "gold"), ("badge", "🥇 Altın Şans")],
                "diamond": [("chips", 1500), ("frame", "diamond"), ("badge", "💎 Elmas Şans"), ("color", "rainbow")]}
     price = prices.get(chest, 100)
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < price:
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < price:
         return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         users[key]["chips"] = int(users[key].get("chips", 0)) - price
     kind, value = random.choice(rewards.get(chest, rewards["bronze"]))
     if kind == "chips":
@@ -5286,9 +5286,9 @@ def api_buy_cosmetic():
              "baroque-frame": ("ownedFrames", "baroque", 7500), "rainbow-name": ("ownedNameColors", "rainbow", 3000),
              "animated-profile": ("ownedBadges", "✨ Animasyonlu Profil", 10000)}
     group, value, price = items.get(item, items["gold-frame"])
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < price:
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < price:
         return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         users[key]["chips"] = int(users[key].get("chips", 0)) - price
     users[key].setdefault(group, [])
     if value not in users[key][group]: users[key][group].append(value)
@@ -5344,8 +5344,8 @@ def api_join_tournament():
     if not key: return {"ok": False, "msg": "Giriş gerekli."}
     tournament = data.get("tournament", "weekly-codenames")
     if tournament in users[key].get("tournaments", []): return {"ok": False, "msg": "Zaten kayıtlısın."}
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < 100: return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 100
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < 100: return {"ok": False, "msg": "Yeterli jeton yok."}
+    if not is_owner_username(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 100
     users[key].setdefault("tournaments", []).append(tournament)
     monte_add_xp(users, key, 50)
     save_users(users)
@@ -5356,8 +5356,8 @@ def api_premium_tarot():
     data = request.get_json(force=True, silent=True) or {}
     users, key = monte_find_or_create_user(data.get("u", ""))
     if not key: return {"ok": False, "msg": "Giriş gerekli."}
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < 1500: return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 1500
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < 1500: return {"ok": False, "msg": "Yeterli jeton yok."}
+    if not is_owner_username(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 1500
     q = (data.get("question") or "").strip()
     birth = (data.get("birthDate") or "").strip()
     photo = (data.get("photoNote") or "").strip()
