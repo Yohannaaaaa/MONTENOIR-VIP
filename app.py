@@ -759,54 +759,7 @@ def tarot_pdf(request_id):
     .page{{border:2px solid #d4af37;border-radius:24px;padding:35px;background:#0b0b0b;}}
     h1{{text-align:center;text-shadow:0 0 12px #d4af37;}}
     .box{{border:1px solid #d4af37;border-radius:16px;padding:18px;margin:15px 0;color:#f8e7a0;}}
-    
-.topLeftFixed{
-display:flex!important;
-flex-direction:column!important;
-align-items:flex-start!important;
-gap:6px!important;
-}
-.topLeftFixed button{
-width:190px!important;
-}
-.compactMenuWrap{
-width:190px!important;
-}
-
-.footer{margin-top:25px;text-align:center}
-.footerLine{width:220px;height:2px;margin:0 auto 12px auto;background:linear-gradient(90deg,transparent,#d4af37,transparent);box-shadow:0 0 12px #d4af37}
-.footerText{color:#d4af37;font-size:15px;letter-spacing:4px;font-weight:bold;text-shadow:0 0 10px rgba(212,175,55,.7)}
-
-
-.bigLogo,.mainTitle,.mainVip,.logoMark,.title,.vip{display:none!important}
-
-
-/* realism patch */
-.playerCard .colorDot{
-  width:18px!important;
-  height:18px!important;
-  border:2px solid rgba(255,255,255,.75)!important;
-}
-.playerCard{
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.52))!important;
-}
-.ownedLabel{
-  display:inline-block;
-  width:38px;
-  height:7px;
-  border-radius:6px;
-  margin-left:8px;
-  vertical-align:middle;
-}
-
-
-/* V2 controls dice chat fix */
-.dice{width:110px!important;height:110px!important;perspective:900px!important;filter:drop-shadow(0 22px 18px #000) drop-shadow(0 0 12px rgba(255,255,255,.35))!important}
-.face{width:110px!important;height:110px!important;border-radius:10px!important;background:linear-gradient(145deg,#fff,#e7e7e7 52%,#8c8c8c)!important;border:3px solid #fff!important}
-.front{transform:translateZ(55px)!important}.back{transform:rotateY(180deg) translateZ(55px)!important}.right{transform:rotateY(90deg) translateZ(55px)!important}.leftf{transform:rotateY(-90deg) translateZ(55px)!important}.topf{transform:rotateX(90deg) translateZ(55px)!important}.bottomf{transform:rotateX(-90deg) translateZ(55px)!important}.pip{width:17px!important;height:17px!important}
-.chatLog{position:fixed;left:18px;bottom:78px;z-index:170;min-width:260px;max-width:420px;padding:13px 16px;border:1px solid #d4af37;border-radius:14px;background:#000d;color:#fff;font-weight:900;box-shadow:0 0 20px #000;opacity:0;transform:translateY(10px);transition:.25s}.chatLog.show{opacity:1;transform:translateY(0)}
-.modeSaved{position:fixed;right:330px;top:76px;z-index:120;color:#ffd989;background:#000c;border:1px solid #d4af37;border-radius:12px;padding:8px 12px;font-weight:900;display:none}
-</style></head><body>
+    </style></head><body>
     <div class='page'>
     <h1>🔮 {title}</h1>
     <div class='box'><b>Kullanıcı:</b> {username}<br><b>Tarih:</b> {created}</div>
