@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
 import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading
+from contextlib import contextmanager
 try:
     import psycopg2
 except Exception:
@@ -42,10 +43,9 @@ def issue_session_token(key):
     # resume_session can still recognize it after a restart, instead of forcing
     # everyone to type their password again after the next deploy.
     try:
-        users = load_users()
-        if key in users:
-            users[key]['sessionToken'] = token
-            save_users(users)
+        with users_txn() as users:
+            if key in users:
+                users[key]['sessionToken'] = token
     except Exception as e:
         print("issue_session_token persist error", e, flush=True)
     return token
@@ -155,19 +155,19 @@ def charge_play_fee(usernames):
     usernames = [u for u in usernames if u]
     if not usernames:
         return True, None
-    users = load_users()
-    for u in usernames:
-        key = find_user_key(users, u)
-        if not key:
-            ensure_user_account(u)
-            users = load_users()
+    with users_txn() as users:
+        for u in usernames:
             key = find_user_key(users, u)
-        if not key or int(users[key].get("chips", 1000)) < GAME_ENTRY_FEE:
-            return False, u
-    for u in usernames:
-        key = find_user_key(users, u)
-        users[key]["chips"] = int(users[key].get("chips", 1000)) - GAME_ENTRY_FEE
-    save_users(users)
+            if not key:
+                ensure_user_account(u)
+                users.clear()
+                users.update(load_users())
+                key = find_user_key(users, u)
+            if not key or int(users[key].get("chips", 1000)) < GAME_ENTRY_FEE:
+                return False, u
+        for u in usernames:
+            key = find_user_key(users, u)
+            users[key]["chips"] = int(users[key].get("chips", 1000)) - GAME_ENTRY_FEE
     return True, None
 
 def load_processed_stripe_sessions():
@@ -267,6 +267,22 @@ def save_users(users):
         json.dump(users, f, ensure_ascii=False, indent=2)
     os.replace(tmp_path, USERS_FILE)
 
+# save_users() persists the *entire* users dict every time. With async_mode='threading',
+# handlers run on real concurrent OS threads, so two overlapping requests for the same
+# (or even a different) user -- e.g. an avatar upload racing a chip update or a profile
+# view -- can each call load_users() before either has saved; whichever save_users() runs
+# last then silently overwrites the other's change with its own stale snapshot (this is
+# how uploaded avatars kept getting wiped). users_txn() makes the whole load-mutate-save
+# sequence atomic so no other thread can read a snapshot mid-update.
+_users_lock = threading.RLock()
+
+@contextmanager
+def users_txn():
+    with _users_lock:
+        users = load_users()
+        yield users
+        save_users(users)
+
 def hash_password(password):
 
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
@@ -296,28 +312,27 @@ def bootstrap_admin_user():
     admin_password = os.environ.get("ADMIN_PASSWORD", "").strip()
     if not admin_password:
         return
-    users = load_users()
-    key = find_user_key(users, OWNER_USERNAME)
-    if not key:
-        key = OWNER_USERNAME
-        users[key] = {}
-    users[key].update({
-        "email": os.environ.get("ADMIN_EMAIL", "admin@montenoir.vip"),
-        "password_hash": hash_password(admin_password),
-        "chips": int(users[key].get("chips", 999999)),
-        "wins": int(users[key].get("wins", 0)),
-        "games": int(users[key].get("games", 0)),
-        "avatar": users[key].get("avatar", "woman.png"),
-        "avatarData": users[key].get("avatarData", ""),
-        "nameColor": users[key].get("nameColor", "gold"),
-        "avatarFrame": users[key].get("avatarFrame", "diamond"),
-        "inventory": users[key].get("inventory", []),
-        "membershipLabel": "ADMIN VIP",
-        "membershipLevel": "admin",
-        "isAdmin": True,
-        "createdAt": users[key].get("createdAt", str(int(time.time())))
-    })
-    save_users(users)
+    with users_txn() as users:
+        key = find_user_key(users, OWNER_USERNAME)
+        if not key:
+            key = OWNER_USERNAME
+            users[key] = {}
+        users[key].update({
+            "email": os.environ.get("ADMIN_EMAIL", "admin@montenoir.vip"),
+            "password_hash": hash_password(admin_password),
+            "chips": int(users[key].get("chips", 999999)),
+            "wins": int(users[key].get("wins", 0)),
+            "games": int(users[key].get("games", 0)),
+            "avatar": users[key].get("avatar", "woman.png"),
+            "avatarData": users[key].get("avatarData", ""),
+            "nameColor": users[key].get("nameColor", "gold"),
+            "avatarFrame": users[key].get("avatarFrame", "diamond"),
+            "inventory": users[key].get("inventory", []),
+            "membershipLabel": "ADMIN VIP",
+            "membershipLevel": "admin",
+            "isAdmin": True,
+            "createdAt": users[key].get("createdAt", str(int(time.time())))
+        })
     print("✅ Admin Yohanna prêt dans la base de données.", flush=True)
 
 def public_profile(username, data):
@@ -408,13 +423,12 @@ def save_player_to_user(player):
     username = player.get("account")
     if not username:
         return
-    users = load_users()
-    if username in users:
-        users[username]["chips"] = int(player.get("chips", users[username].get("chips", 1000)))
-        users[username]["vip"] = player.get("vip", users[username].get("vip", False))
-        users[username]["vipLevel"] = player.get("vipLevel", users[username].get("vipLevel", ""))
-        users[username]["vipUntil"] = player.get("vipUntil", users[username].get("vipUntil", 0))
-        save_users(users)
+    with users_txn() as users:
+        if username in users:
+            users[username]["chips"] = int(player.get("chips", users[username].get("chips", 1000)))
+            users[username]["vip"] = player.get("vip", users[username].get("vip", False))
+            users[username]["vipLevel"] = player.get("vipLevel", users[username].get("vipLevel", ""))
+            users[username]["vipUntil"] = player.get("vipUntil", users[username].get("vipUntil", 0))
 
 
 
@@ -459,21 +473,26 @@ def ensure_user_account(account, token=None):
                 if sid:
                     authenticated_sids[sid] = key
         return key
-    users[account] = {
-        'email': '',
-        'password_hash': '',
-        'chips': 1000,
-        'wins': 0,
-        'games': 0,
-        'avatar': 'woman.png',
-        'avatarData': '',
-        'nameColor': 'default',
-        'avatarFrame': 'none',
-        'inventory': [],
-        'createdAt': str(int(time.time())),
-        'autoCreated': True
-    }
-    save_users(users)
+    with users_txn() as users:
+        # Re-check inside the lock in case another thread created this same
+        # account in between the check above and getting here.
+        key = find_user_key(users, account)
+        if key:
+            return key
+        users[account] = {
+            'email': '',
+            'password_hash': '',
+            'chips': 1000,
+            'wins': 0,
+            'games': 0,
+            'avatar': 'woman.png',
+            'avatarData': '',
+            'nameColor': 'default',
+            'avatarFrame': 'none',
+            'inventory': [],
+            'createdAt': str(int(time.time())),
+            'autoCreated': True
+        }
     return account
 
 
@@ -505,22 +524,25 @@ def monte_calc_level(xp):
     progress = int(((xp - current_xp) / max(1, next_xp-current_xp)) * 100)
     return level, next_xp, max(0, min(100, progress))
 
-def monte_find_or_create_user(username):
+def monte_find_or_create_user(users, username):
+    """Must be called with `users` from an open users_txn() block -- the caller is
+    expected to keep mutating `users[key]` afterward and let that same transaction
+    persist everything in one save, instead of saving here and again later (two
+    separate saves racing a concurrent write, e.g. an avatar upload, in between)."""
     username = (username or "").strip()
     if not username:
-        return None, None
-    users = load_users()
+        return None
     key = find_user_key(users, username)
     if not key:
         ensure_user_account(username)
-        users = load_users()
+        users.clear()
+        users.update(load_users())
         key = find_user_key(users, username)
     if key:
         monte_ensure_user_defaults(users[key])
         lvl, nxt, prog = monte_calc_level(users[key].get("xp", 0))
         users[key]["level"] = lvl
-        save_users(users)
-    return users, key
+    return key
 
 def monte_add_xp(users, key, amount):
     if not users or not key or key not in users:
@@ -644,19 +666,18 @@ def update_winner(code, text):
     if 'KIRMIZI' in text:
         st['redWins'] += 1; st['history'].append('Kırmızı Takım'); winning_team = 'red'
 
-    users = load_users()
-    for p in rooms[code].get('players', []):
-        account = p.get('account')
-        if not account or account not in users:
-            continue
-        monte_ensure_user_defaults(users[account])
-        users[account]['games'] = int(users[account].get('games', 0)) + 1
-        users[account]['chips'] = int(p.get('chips', users[account].get('chips', 1000)))
-        monte_add_xp(users, account, 10)
-        if winning_team and p.get('team') == winning_team:
-            users[account]['wins'] = int(users[account].get('wins', 0)) + 1
-            monte_add_xp(users, account, 100)
-    save_users(users)
+    with users_txn() as users:
+        for p in rooms[code].get('players', []):
+            account = p.get('account')
+            if not account or account not in users:
+                continue
+            monte_ensure_user_defaults(users[account])
+            users[account]['games'] = int(users[account].get('games', 0)) + 1
+            users[account]['chips'] = int(p.get('chips', users[account].get('chips', 1000)))
+            monte_add_xp(users, account, 10)
+            if winning_team and p.get('team') == winning_team:
+                users[account]['wins'] = int(users[account].get('wins', 0)) + 1
+                monte_add_xp(users, account, 100)
 
 def save_history(code, text):
     # roundNo already reflects the number players saw for this round (set once,
@@ -759,54 +780,7 @@ def tarot_pdf(request_id):
     .page{{border:2px solid #d4af37;border-radius:24px;padding:35px;background:#0b0b0b;}}
     h1{{text-align:center;text-shadow:0 0 12px #d4af37;}}
     .box{{border:1px solid #d4af37;border-radius:16px;padding:18px;margin:15px 0;color:#f8e7a0;}}
-    
-.topLeftFixed{
-display:flex!important;
-flex-direction:column!important;
-align-items:flex-start!important;
-gap:6px!important;
-}
-.topLeftFixed button{
-width:190px!important;
-}
-.compactMenuWrap{
-width:190px!important;
-}
-
-.footer{margin-top:25px;text-align:center}
-.footerLine{width:220px;height:2px;margin:0 auto 12px auto;background:linear-gradient(90deg,transparent,#d4af37,transparent);box-shadow:0 0 12px #d4af37}
-.footerText{color:#d4af37;font-size:15px;letter-spacing:4px;font-weight:bold;text-shadow:0 0 10px rgba(212,175,55,.7)}
-
-
-.bigLogo,.mainTitle,.mainVip,.logoMark,.title,.vip{display:none!important}
-
-
-/* realism patch */
-.playerCard .colorDot{
-  width:18px!important;
-  height:18px!important;
-  border:2px solid rgba(255,255,255,.75)!important;
-}
-.playerCard{
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.52))!important;
-}
-.ownedLabel{
-  display:inline-block;
-  width:38px;
-  height:7px;
-  border-radius:6px;
-  margin-left:8px;
-  vertical-align:middle;
-}
-
-
-/* V2 controls dice chat fix */
-.dice{width:110px!important;height:110px!important;perspective:900px!important;filter:drop-shadow(0 22px 18px #000) drop-shadow(0 0 12px rgba(255,255,255,.35))!important}
-.face{width:110px!important;height:110px!important;border-radius:10px!important;background:linear-gradient(145deg,#fff,#e7e7e7 52%,#8c8c8c)!important;border:3px solid #fff!important}
-.front{transform:translateZ(55px)!important}.back{transform:rotateY(180deg) translateZ(55px)!important}.right{transform:rotateY(90deg) translateZ(55px)!important}.leftf{transform:rotateY(-90deg) translateZ(55px)!important}.topf{transform:rotateX(90deg) translateZ(55px)!important}.bottomf{transform:rotateX(-90deg) translateZ(55px)!important}.pip{width:17px!important;height:17px!important}
-.chatLog{position:fixed;left:18px;bottom:78px;z-index:170;min-width:260px;max-width:420px;padding:13px 16px;border:1px solid #d4af37;border-radius:14px;background:#000d;color:#fff;font-weight:900;box-shadow:0 0 20px #000;opacity:0;transform:translateY(10px);transition:.25s}.chatLog.show{opacity:1;transform:translateY(0)}
-.modeSaved{position:fixed;right:330px;top:76px;z-index:120;color:#ffd989;background:#000c;border:1px solid #d4af37;border-radius:12px;padding:8px 12px;font-weight:900;display:none}
-</style></head><body>
+    </style></head><body>
     <div class='page'>
     <h1>🔮 {title}</h1>
     <div class='box'><b>Kullanıcı:</b> {username}<br><b>Tarih:</b> {created}</div>
@@ -834,21 +808,21 @@ def tarot_submit_request(data):
     if service not in TAROT_PRICES:
         emit("tarot_result", {"ok": False, "msg": "Hizmet bulunamadı."})
         return
-    users = load_users()
-    key = find_user_key(users, account)
-    if not key:
-        emit("tarot_result", {"ok": False, "msg": "Kullanıcı bulunamadı."})
-        return
-    price = int(TAROT_PRICES[service])
-    chips = int(users[key].get("chips", 1000))
-    if not is_owner_name(key):
-        if chips < price:
-            emit("tarot_result", {"ok": False, "msg": "Yeterli jeton yok."})
+    with users_txn() as users:
+        key = find_user_key(users, account)
+        if not key:
+            emit("tarot_result", {"ok": False, "msg": "Kullanıcı bulunamadı."})
             return
-        users[key]["chips"] = chips - price
-    else:
-        users[key]["chips"] = max(chips, 999999)
-    save_users(users)
+        price = int(TAROT_PRICES[service])
+        chips = int(users[key].get("chips", 1000))
+        if not is_owner_username(key):
+            if chips < price:
+                emit("tarot_result", {"ok": False, "msg": "Yeterli jeton yok."})
+                return
+            users[key]["chips"] = chips - price
+        else:
+            users[key]["chips"] = max(chips, 999999)
+        profile = private_profile(key, users[key])
     reqs = load_tarot_requests()
     rid = str(int(time.time() * 1000))[-6:]
     service_label = TAROT_LABELS.get(service, service)
@@ -866,7 +840,7 @@ def tarot_submit_request(data):
     }
     reqs.insert(0, req)
     save_tarot_requests(reqs)
-    emit("tarot_result", {"ok": True, "msg": f"{service_label} talebin alındı. {price} jeton düşüldü.", "request": req, "profile": private_profile(key, users[key])})
+    emit("tarot_result", {"ok": True, "msg": f"{service_label} talebin alındı. {price} jeton düşüldü.", "request": req, "profile": profile})
 
 @socketio.on("tarot_get_requests")
 def tarot_get_requests(data):
@@ -883,30 +857,30 @@ def tarot_lucky_wheel(data):
         emit("tarot_wheel_result", {"ok": False, "msg": "Şans çarkı şu anda kapalı."})
         return
     account = ensure_user_account(data.get("account"))
-    users = load_users()
-    key = find_user_key(users, account)
-    if not key:
-        emit("tarot_wheel_result", {"ok": False, "msg": "Giriş gerekli."})
-        return
-    today = time.strftime("%Y-%m-%d")
-    if not is_owner_name(key):
-        wheel_log = users[key].setdefault("wheelLog", {})
-        used = int(wheel_log.get(today, 0))
-        limit = int(settings.get("wheelDailyLimit", 1))
-        if used >= limit:
-            emit("tarot_wheel_result", {"ok": False, "msg": f"Şans çarkını günde sadece {limit} kez çevirebilirsin."})
+    with users_txn() as users:
+        key = find_user_key(users, account)
+        if not key:
+            emit("tarot_wheel_result", {"ok": False, "msg": "Giriş gerekli."})
             return
-        wheel_log[today] = used + 1
-    rw = settings.get("wheelRewards", {"10":25, "20":20, "30":18, "50":15, "100":10, "200":8, "300":4})
-    rewards = [int(k) for k in rw.keys()]
-    weights = [int(v) for v in rw.values()]
-    reward = random.choices(rewards, weights=weights, k=1)[0]
-    users[key]["chips"] = int(users[key].get("chips", 1000)) + reward
-    if is_owner_name(key):
-        users[key]["chips"] = max(users[key]["chips"], 999999)
-    users[key]["lastWheelDate"] = today
-    save_users(users)
-    emit("tarot_wheel_result", {"ok": True, "reward": reward, "profile": private_profile(key, users[key])})
+        today = time.strftime("%Y-%m-%d")
+        if not is_owner_username(key):
+            wheel_log = users[key].setdefault("wheelLog", {})
+            used = int(wheel_log.get(today, 0))
+            limit = int(settings.get("wheelDailyLimit", 1))
+            if used >= limit:
+                emit("tarot_wheel_result", {"ok": False, "msg": f"Şans çarkını günde sadece {limit} kez çevirebilirsin."})
+                return
+            wheel_log[today] = used + 1
+        rw = settings.get("wheelRewards", {"10":25, "20":20, "30":18, "50":15, "100":10, "200":8, "300":4})
+        rewards = [int(k) for k in rw.keys()]
+        weights = [int(v) for v in rw.values()]
+        reward = random.choices(rewards, weights=weights, k=1)[0]
+        users[key]["chips"] = int(users[key].get("chips", 1000)) + reward
+        if is_owner_username(key):
+            users[key]["chips"] = max(users[key]["chips"], 999999)
+        users[key]["lastWheelDate"] = today
+        profile = private_profile(key, users[key])
+    emit("tarot_wheel_result", {"ok": True, "reward": reward, "profile": profile})
 
 
 TAROT_HTML = r"""
@@ -1088,7 +1062,7 @@ def save_site_settings(settings):
 
 @socketio.on("owner_get_panel")
 def owner_get_panel(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_panel_data", {"ok": False, "msg": "Bu panel sadece Yohanna Owner içindir."})
         return
     users = load_users()
@@ -1115,76 +1089,72 @@ def owner_get_panel(data):
 
 @socketio.on("owner_manage_user")
 def owner_manage_user(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
-    users = load_users()
-    key = find_user_key(users, data.get("target", ""))
-    if not key:
-        emit("owner_action_result", {"ok": False, "msg": "Kullanıcı bulunamadı."})
-        return
-    action = data.get("action")
-    amount = int(data.get("amount", 0) or 0)
-    if action == "add_chips":
-        users[key]["chips"] = int(users[key].get("chips", 1000)) + amount
-    elif action == "remove_chips":
-        users[key]["chips"] = max(0, int(users[key].get("chips", 1000)) - amount)
-    elif action == "freeze":
-        users[key]["isFrozen"] = True
-    elif action == "unfreeze":
-        users[key]["isFrozen"] = False
-    elif action == "delete":
-        if is_owner_name(key):
-            emit("owner_action_result", {"ok": False, "msg": "Owner hesabı silinemez."})
+    with users_txn() as users:
+        key = find_user_key(users, data.get("target", ""))
+        if not key:
+            emit("owner_action_result", {"ok": False, "msg": "Kullanıcı bulunamadı."})
             return
-        users.pop(key, None)
-        save_users(users)
-        emit("owner_action_result", {"ok": True, "msg": "Hesap silindi."})
-        return
-    elif action == "reset_avatar":
-        users[key]["avatarData"] = ""
-        users[key]["avatar"] = "woman.png"
-    elif action == "reset_password_link":
-        token = str(random.randint(100000, 999999))
-        users[key]["resetToken"] = token
-        save_users(users)
-        emit("owner_action_result", {"ok": True, "msg": "Şifre reset token: " + token})
-        return
-    save_users(users)
+        action = data.get("action")
+        amount = int(data.get("amount", 0) or 0)
+        if action == "add_chips":
+            users[key]["chips"] = int(users[key].get("chips", 1000)) + amount
+        elif action == "remove_chips":
+            users[key]["chips"] = max(0, int(users[key].get("chips", 1000)) - amount)
+        elif action == "freeze":
+            users[key]["isFrozen"] = True
+        elif action == "unfreeze":
+            users[key]["isFrozen"] = False
+        elif action == "delete":
+            if is_owner_username(key):
+                emit("owner_action_result", {"ok": False, "msg": "Owner hesabı silinemez."})
+                return
+            users.pop(key, None)
+            emit("owner_action_result", {"ok": True, "msg": "Hesap silindi."})
+            return
+        elif action == "reset_avatar":
+            users[key]["avatarData"] = ""
+            users[key]["avatar"] = "woman.png"
+        elif action == "reset_password_link":
+            token = str(random.randint(100000, 999999))
+            users[key]["resetToken"] = token
+            emit("owner_action_result", {"ok": True, "msg": "Şifre reset token: " + token})
+            return
     emit("owner_action_result", {"ok": True, "msg": "İşlem yapıldı."})
 
 @socketio.on("owner_set_membership")
 def owner_set_membership(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
-    users = load_users()
-    key = find_user_key(users, data.get("target", ""))
-    if not key:
-        emit("owner_action_result", {"ok": False, "msg": "Kullanıcı bulunamadı."})
-        return
-    level = data.get("level", "")
-    duration = data.get("duration", "forever")
-    labels = {"bronze": "🥉 Bronz", "silver": "🥈 Gümüş", "gold": "🥇 Altın", "diamond": "💎 Elmas", "none": ""}
-    if level == "none":
-        users[key]["membershipLevel"] = ""
-        users[key]["membershipLabel"] = ""
-        users[key]["membershipUntil"] = 0
-    else:
-        users[key]["membershipLevel"] = level
-        users[key]["membershipLabel"] = labels.get(level, level)
-        if duration == "30":
-            users[key]["membershipUntil"] = int(time.time()) + 30*86400
-        elif duration == "90":
-            users[key]["membershipUntil"] = int(time.time()) + 90*86400
-        else:
+    with users_txn() as users:
+        key = find_user_key(users, data.get("target", ""))
+        if not key:
+            emit("owner_action_result", {"ok": False, "msg": "Kullanıcı bulunamadı."})
+            return
+        level = data.get("level", "")
+        duration = data.get("duration", "forever")
+        labels = {"bronze": "🥉 Bronz", "silver": "🥈 Gümüş", "gold": "🥇 Altın", "diamond": "💎 Elmas", "none": ""}
+        if level == "none":
+            users[key]["membershipLevel"] = ""
+            users[key]["membershipLabel"] = ""
             users[key]["membershipUntil"] = 0
-    save_users(users)
+        else:
+            users[key]["membershipLevel"] = level
+            users[key]["membershipLabel"] = labels.get(level, level)
+            if duration == "30":
+                users[key]["membershipUntil"] = int(time.time()) + 30*86400
+            elif duration == "90":
+                users[key]["membershipUntil"] = int(time.time()) + 90*86400
+            else:
+                users[key]["membershipUntil"] = 0
     emit("owner_action_result", {"ok": True, "msg": "Üyelik güncellendi."})
 
 @socketio.on("owner_update_request")
 def owner_update_request(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     reqs = load_tarot_requests()
@@ -1200,7 +1170,7 @@ def owner_update_request(data):
 
 @socketio.on("owner_update_settings")
 def owner_update_settings(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     settings = load_site_settings()
@@ -1285,51 +1255,55 @@ def clean_register_user(username, email, password, gender=""):
     if len(password) < 4:
         return {"ok": False, "msg": "Şifre en az 4 karakter olmalı."}
 
-    users = load_users()
-    if clean_find_user_key(users, username):
-        return {"ok": False, "msg": "Bu kullanıcı adı zaten var."}
+    with users_txn() as users:
+        if clean_find_user_key(users, username):
+            return {"ok": False, "msg": "Bu kullanıcı adı zaten var."}
 
-    for _, u in users.items():
-        if clean_email(u.get("email", "")) == email:
-            return {"ok": False, "msg": "Bu email zaten kayıtlı."}
+        for _, u in users.items():
+            if clean_email(u.get("email", "")) == email:
+                return {"ok": False, "msg": "Bu email zaten kayıtlı."}
 
-    users[username] = normalize_user_record(username, {
-        "username": username,
-        "email": email,
-        "password_hash": hash_password(password),
-        "chips": 1000,
-        "xp": 0,
-        "level": 1,
-        "avatar": "👤",
-        "createdAt": str(int(time.time())),
-        "lastLogin": str(int(time.time())),
-        "gender": gender,
-    })
-    save_users(users)
-    return {"ok": True, "msg": "Kayıt başarılı.", "profile": clean_profile_payload(username, users[username]), "sessionToken": issue_session_token(username)}
+        users[username] = normalize_user_record(username, {
+            "username": username,
+            "email": email,
+            "password_hash": hash_password(password),
+            "chips": 1000,
+            "xp": 0,
+            "level": 1,
+            "avatar": "👤",
+            "createdAt": str(int(time.time())),
+            "lastLogin": str(int(time.time())),
+            "gender": gender,
+        })
+        profile = clean_profile_payload(username, users[username])
+    return {"ok": True, "msg": "Kayıt başarılı.", "profile": profile, "sessionToken": issue_session_token(username)}
 
 def clean_login_user(username, password):
     username = clean_username(username)
     password = password or ""
-    users = load_users()
-    key = clean_find_user_key(users, username)
-    if not key:
-        return {"ok": False, "msg": "Kullanıcı bulunamadı."}
-    users[key] = normalize_user_record(key, users[key])
-    if users[key].get("password_hash") != hash_password(password):
-        return {"ok": False, "msg": "Şifre yanlış."}
-    users[key]["lastLogin"] = str(int(time.time()))
-    save_users(users)
-    return {"ok": True, "msg": "Giriş başarılı.", "profile": clean_profile_payload(key, users[key]), "sessionToken": issue_session_token(key)}
+    with users_txn() as users:
+        key = clean_find_user_key(users, username)
+        if not key:
+            return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+        users[key] = normalize_user_record(key, users[key])
+        if users[key].get("password_hash") != hash_password(password):
+            return {"ok": False, "msg": "Şifre yanlış."}
+        users[key]["lastLogin"] = str(int(time.time()))
+        profile = clean_profile_payload(key, users[key])
+    return {"ok": True, "msg": "Giriş başarılı.", "profile": profile, "sessionToken": issue_session_token(key)}
 
 def clean_get_profile(username):
+    # Read-only: normalize in memory for the response but don't write back on every
+    # view. This used to unconditionally save_users() on every profile fetch (fired on
+    # essentially every page load) -- a pure read persisting the *entire* users dataset
+    # is a prime way to race a concurrent write elsewhere (e.g. an avatar upload) and
+    # silently revert it with a stale snapshot.
     users = load_users()
     key = clean_find_user_key(users, username)
     if not key:
         return {"ok": False, "msg": "Kullanıcı bulunamadı."}
-    users[key] = normalize_user_record(key, users[key])
-    save_users(users)
-    return {"ok": True, "profile": clean_profile_payload(key, users[key])}
+    profile_data = normalize_user_record(key, users[key])
+    return {"ok": True, "profile": clean_profile_payload(key, profile_data)}
 
 @app.route("/api/auth/register", methods=["POST"])
 def api_clean_register():
@@ -4239,21 +4213,20 @@ def coming_soon(game):
 
 def do_request_password_reset(email):
     email = (email or '').strip().lower()
-    users = load_users()
-    found_user = None
-    for username, udata in users.items():
-        if udata.get('email','').lower() == email:
-            found_user = username
-            break
+    with users_txn() as users:
+        found_user = None
+        for username, udata in users.items():
+            if udata.get('email','').lower() == email:
+                found_user = username
+                break
 
-    # Réponse neutre pour ne pas révéler les emails enregistrés.
-    if not found_user:
-        return {'sent': True}
+        # Réponse neutre pour ne pas révéler les emails enregistrés.
+        if not found_user:
+            return {'sent': True}
 
-    token = ''.join(random.choices(string.ascii_letters + string.digits, k=42))
-    users[found_user]['resetToken'] = token
-    users[found_user]['resetExpires'] = int(time.time()) + 3600
-    save_users(users)
+        token = ''.join(random.choices(string.ascii_letters + string.digits, k=42))
+        users[found_user]['resetToken'] = token
+        users[found_user]['resetExpires'] = int(time.time()) + 3600
 
     base_url = os.environ.get('PUBLIC_BASE_URL', '').rstrip('/')
     if not base_url:
@@ -4270,14 +4243,13 @@ def do_confirm_password_reset(token, new_password):
     if not token or not new_password:
         return {'ok': False, 'msg': 'Token ve yeni şifre gerekli.'}
 
-    users = load_users()
-    for username, udata in users.items():
-        if udata.get('resetToken') == token and int(udata.get('resetExpires', 0)) >= int(time.time()):
-            users[username]['password_hash'] = hash_password(new_password)
-            users[username].pop('resetToken', None)
-            users[username].pop('resetExpires', None)
-            save_users(users)
-            return {'ok': True}
+    with users_txn() as users:
+        for username, udata in users.items():
+            if udata.get('resetToken') == token and int(udata.get('resetExpires', 0)) >= int(time.time()):
+                users[username]['password_hash'] = hash_password(new_password)
+                users[username].pop('resetToken', None)
+                users[username].pop('resetExpires', None)
+                return {'ok': True}
 
     return {'ok': False, 'msg': 'Token geçersiz veya süresi dolmuş.'}
 
@@ -4302,33 +4274,33 @@ def register_account(data):
     if len(password) < 4:
         emit('register_result', {'ok': False, 'msg': 'Şifre en az 4 karakter olmalı.'})
         return
-    users = load_users()
-    if find_user_key(users, username):
-        emit('register_result', {'ok': False, 'msg': 'Bu kullanıcı adı zaten var.'})
-        return
-    users[username] = {
-        'email': email, 'password_hash': hash_password(password), 'chips': 1000,
-        'wins': 0, 'games': 0, 'avatar': data.get('avatar') or 'woman.png', 'avatarData': '',
-        'nameColor': 'default', 'avatarFrame': 'none', 'inventory': [],
-        'createdAt': str(int(time.time())),
-    }
-    save_users(users)
+    with users_txn() as users:
+        if find_user_key(users, username):
+            emit('register_result', {'ok': False, 'msg': 'Bu kullanıcı adı zaten var.'})
+            return
+        users[username] = {
+            'email': email, 'password_hash': hash_password(password), 'chips': 1000,
+            'wins': 0, 'games': 0, 'avatar': data.get('avatar') or 'woman.png', 'avatarData': '',
+            'nameColor': 'default', 'avatarFrame': 'none', 'inventory': [],
+            'createdAt': str(int(time.time())),
+        }
+        profile = private_profile(username, users[username])
     authenticated_sids[request.sid] = username
-    emit('register_result', {'ok': True, 'profile': private_profile(username, users[username]), 'sessionToken': issue_session_token(username)})
+    emit('register_result', {'ok': True, 'profile': profile, 'sessionToken': issue_session_token(username)})
 
 @socketio.on('login_account')
 def login_account(data):
     data = data or {}
     username = (data.get('username') or '').strip()
     password = data.get('password') or ''
-    users = load_users()
-    key = find_user_key(users, username)
-    if not key or not verify_password(users[key], password):
-        emit('login_result', {'ok': False, 'msg': 'Kullanıcı adı veya şifre hatalı.'})
-        return
-    save_users(users)  # verify_password() may have upgraded a legacy plaintext password
+    with users_txn() as users:  # verify_password() may upgrade a legacy plaintext password
+        key = find_user_key(users, username)
+        if not key or not verify_password(users[key], password):
+            emit('login_result', {'ok': False, 'msg': 'Kullanıcı adı veya şifre hatalı.'})
+            return
+        profile = private_profile(key, users[key])
     authenticated_sids[request.sid] = key
-    emit('login_result', {'ok': True, 'profile': private_profile(key, users[key]), 'sessionToken': issue_session_token(key)})
+    emit('login_result', {'ok': True, 'profile': profile, 'sessionToken': issue_session_token(key)})
 
 @socketio.on('resume_session')
 def resume_session(data):
@@ -4369,10 +4341,9 @@ def logout_account(data=None):
     if token:
         key = SESSION_TOKENS.pop(token, None)
         if key:
-            users = load_users()
-            if key in users and users[key].get('sessionToken') == token:
-                users[key]['sessionToken'] = ''
-                save_users(users)
+            with users_txn() as users:
+                if key in users and users[key].get('sessionToken') == token:
+                    users[key]['sessionToken'] = ''
 
 @socketio.on('disconnect')
 def auth_disconnect_cleanup():
@@ -4673,15 +4644,15 @@ def upload_avatar(data):
         emit('avatar_upload_result', {'ok': False, 'msg': 'Resim çok büyük. 1.8 MB altında bir avatar seç.'})
         return
 
-    users = load_users()
-    user_key = find_user_key(users, account)
-    if not user_key:
-        user_key = ensure_user_account(account)
-        users = load_users()
-
-    users[user_key]['avatarData'] = avatar_data
-    users[user_key]['avatar'] = users[user_key].get('avatar', 'woman.png')
-    save_users(users)
+    with users_txn() as users:
+        user_key = find_user_key(users, account)
+        if not user_key:
+            ensure_user_account(account)
+            users.clear()
+            users.update(load_users())
+            user_key = find_user_key(users, account)
+        users[user_key]['avatarData'] = avatar_data
+        users[user_key]['avatar'] = users[user_key].get('avatar', 'woman.png')
 
     if code in rooms:
         for p in rooms[code].get('players', []):
@@ -4699,14 +4670,13 @@ def upload_avatar(data):
 @socketio.on('delete_avatar')
 def delete_avatar(data):
     account = _account_from_data_or_sid(data) if "_account_from_data_or_sid" in globals() else data.get("account")
-    users = load_users()
-    user_key = find_user_key(users, account)
-    if not user_key:
-        emit('avatar_upload_result', {'ok': False, 'msg': 'Kullanıcı bulunamadı.'})
-        return
-    users[user_key]['avatarData'] = ''
-    users[user_key]['avatar'] = 'woman.png'
-    save_users(users)
+    with users_txn() as users:
+        user_key = find_user_key(users, account)
+        if not user_key:
+            emit('avatar_upload_result', {'ok': False, 'msg': 'Kullanıcı bulunamadı.'})
+            return
+        users[user_key]['avatarData'] = ''
+        users[user_key]['avatar'] = 'woman.png'
     emit('avatar_upload_result', {'ok': True, 'profile': private_profile(user_key, users[user_key])})
 @socketio.on('buy_vip_with_chips')
 def buy_vip_with_chips(data):
@@ -4719,50 +4689,50 @@ def buy_vip_with_chips(data):
 
     pkg = VIP_PACKAGES[pack]
     player = by_sid(code, request.sid) if code in rooms else None
-    users = load_users()
-    key = find_user_key(users, username)
+    with users_txn() as users:
+        key = find_user_key(users, username)
 
-    if not key:
-        emit('error_msg', {'msg': 'Önce giriş yapmalısın.'})
-        return
+        if not key:
+            emit('error_msg', {'msg': 'Önce giriş yapmalısın.'})
+            return
 
-    chips = int(users[key].get('chips', 1000))
-    if player:
-        chips = int(player.get('chips', chips))
+        chips = int(users[key].get('chips', 1000))
+        if player:
+            chips = int(player.get('chips', chips))
 
-    if chips < pkg['price']:
-        emit('error_msg', {'msg': 'Yeterli jeton yok.'})
-        return
+        if chips < pkg['price']:
+            emit('error_msg', {'msg': 'Yeterli jeton yok.'})
+            return
 
-    chips -= pkg['price']
-    until = int(time.time()) + int(pkg['days']) * 86400
+        chips -= pkg['price']
+        until = int(time.time()) + int(pkg['days']) * 86400
 
-    users[key]['chips'] = chips
-    users[key]['vip'] = True
-    users[key]['vipLevel'] = pkg['label']
-    users[key]['vipUntil'] = until
+        users[key]['chips'] = chips
+        users[key]['vip'] = True
+        users[key]['vipLevel'] = pkg['label']
+        users[key]['vipUntil'] = until
 
-    if pack == 'vip-bronze':
-        users[key]['avatarFrame'] = users[key].get('avatarFrame', 'frame-gold') or 'frame-gold'
-        users[key]['nameColor'] = users[key].get('nameColor', 'name-green') or 'name-green'
-    elif pack == 'vip-gold':
-        users[key]['avatarFrame'] = 'frame-vip'
-        users[key]['nameColor'] = 'name-green'
-    elif pack == 'vip-diamond':
-        users[key]['avatarFrame'] = 'frame-legendary'
-        users[key]['nameColor'] = 'name-rainbow'
+        if pack == 'vip-bronze':
+            users[key]['avatarFrame'] = users[key].get('avatarFrame', 'frame-gold') or 'frame-gold'
+            users[key]['nameColor'] = users[key].get('nameColor', 'name-green') or 'name-green'
+        elif pack == 'vip-gold':
+            users[key]['avatarFrame'] = 'frame-vip'
+            users[key]['nameColor'] = 'name-green'
+        elif pack == 'vip-diamond':
+            users[key]['avatarFrame'] = 'frame-legendary'
+            users[key]['nameColor'] = 'name-rainbow'
 
-    save_users(users)
+        if player:
+            player['chips'] = chips
+            player['vip'] = True
+            player['vipLevel'] = pkg['label']
+            player['vipUntil'] = until
+            player['avatarFrame'] = users[key].get('avatarFrame', player.get('avatarFrame','none'))
+            player['nameColor'] = users[key].get('nameColor', player.get('nameColor','default'))
 
-    if player:
-        player['chips'] = chips
-        player['vip'] = True
-        player['vipLevel'] = pkg['label']
-        player['vipUntil'] = until
-        player['avatarFrame'] = users[key].get('avatarFrame', player.get('avatarFrame','none'))
-        player['nameColor'] = users[key].get('nameColor', player.get('nameColor','default'))
+        profile = private_profile(key, users[key])
 
-    emit('profile_updated', private_profile(key, users[key]))
+    emit('profile_updated', profile)
     if code in rooms:
         emit('game_update', pdata(code), to=code)
     emit('error_msg', {'msg': pkg['label'] + ' aktif edildi.'})
@@ -4775,48 +4745,48 @@ def buy_cosmetic(data):
     if item not in COSMETIC_PRICES:
         emit('cosmetic_result', {'ok': False, 'msg': 'Ürün bulunamadı.'})
         return
-    users = load_users()
-    if not account or account not in users:
-        emit('cosmetic_result', {'ok': False, 'msg': 'Satın almak için önce giriş yapmalısın.'})
-        return
-    inv = users[account].setdefault('inventory', [])
-    if item in inv:
-        emit('cosmetic_result', {'ok': True, 'msg': 'Bu ürün zaten sende.', 'profile': private_profile(account, users[account])})
-        return
-    price = COSMETIC_PRICES[item]
-    if int(users[account].get('chips', 1000)) < price:
-        emit('cosmetic_result', {'ok': False, 'msg': 'Yeterli jeton yok.'})
-        return
-    users[account]['chips'] = int(users[account].get('chips', 1000)) - price
-    inv.append(item)
-    save_users(users)
+    with users_txn() as users:
+        if not account or account not in users:
+            emit('cosmetic_result', {'ok': False, 'msg': 'Satın almak için önce giriş yapmalısın.'})
+            return
+        inv = users[account].setdefault('inventory', [])
+        if item in inv:
+            emit('cosmetic_result', {'ok': True, 'msg': 'Bu ürün zaten sende.', 'profile': private_profile(account, users[account])})
+            return
+        price = COSMETIC_PRICES[item]
+        if int(users[account].get('chips', 1000)) < price:
+            emit('cosmetic_result', {'ok': False, 'msg': 'Yeterli jeton yok.'})
+            return
+        users[account]['chips'] = int(users[account].get('chips', 1000)) - price
+        inv.append(item)
+        chips_after = users[account]['chips']
+        profile = private_profile(account, users[account])
     if code in rooms:
         for p in rooms[code].get('players', []):
             if p.get('account') == account or p.get('sid') == request.sid:
-                p['chips'] = users[account]['chips']
+                p['chips'] = chips_after
         emit('game_update', pdata(code), to=code)
-    emit('cosmetic_result', {'ok': True, 'msg': 'Satın alındı.', 'profile': private_profile(account, users[account])})
+    emit('cosmetic_result', {'ok': True, 'msg': 'Satın alındı.', 'profile': profile})
 
 @socketio.on('equip_cosmetic')
 def equip_cosmetic(data):
     account = _account_from_data_or_sid(data)
     item = data.get('item')
     code = data.get('room')
-    users = load_users()
-    if not account or account not in users:
-        emit('cosmetic_result', {'ok': False, 'msg': 'Kullanmak için önce giriş yapmalısın.'})
-        return
-    if item not in users[account].get('inventory', []) and item not in ['frame-none', 'name-default']:
-        emit('cosmetic_result', {'ok': False, 'msg': 'Bu ürün envanterinde yok.'})
-        return
-    if item.startswith('frame-'):
-        users[account]['avatarFrame'] = item
-    elif item.startswith('name-'):
-        users[account]['nameColor'] = item
-    else:
-        emit('cosmetic_result', {'ok': False, 'msg': 'Ürün tipi bilinmiyor.'})
-        return
-    save_users(users)
+    with users_txn() as users:
+        if not account or account not in users:
+            emit('cosmetic_result', {'ok': False, 'msg': 'Kullanmak için önce giriş yapmalısın.'})
+            return
+        if item not in users[account].get('inventory', []) and item not in ['frame-none', 'name-default']:
+            emit('cosmetic_result', {'ok': False, 'msg': 'Bu ürün envanterinde yok.'})
+            return
+        if item.startswith('frame-'):
+            users[account]['avatarFrame'] = item
+        elif item.startswith('name-'):
+            users[account]['nameColor'] = item
+        else:
+            emit('cosmetic_result', {'ok': False, 'msg': 'Ürün tipi bilinmiyor.'})
+            return
     if code in rooms:
         for p in rooms[code].get('players', []):
             if p.get('account') == account or p.get('sid') == request.sid:
@@ -5279,139 +5249,139 @@ def game_rules_page():
 # =========================
 @app.route("/api/monte_profile")
 def api_monte_profile():
-    users, key = monte_find_or_create_user(request.args.get("u", ""))
-    if not key:
-        return {"ok": False, "msg": "Giriş gerekli."}
-    monte_unlock_achievements(users, key)
-    save_users(users)
-    return {"ok": True, "profile": monte_public_payload(key, users[key])}
+    with users_txn() as users:
+        key = monte_find_or_create_user(users, request.args.get("u", ""))
+        if not key:
+            return {"ok": False, "msg": "Giriş gerekli."}
+        monte_unlock_achievements(users, key)
+        profile = monte_public_payload(key, users[key])
+    return {"ok": True, "profile": profile}
 
 @app.route("/api/open_chest", methods=["POST"])
 def api_open_chest():
     data = request.get_json(force=True, silent=True) or {}
-    users, key = monte_find_or_create_user(data.get("u", ""))
-    if not key:
-        return {"ok": False, "msg": "Giriş gerekli."}
-    chest = data.get("chest", "bronze")
-    prices = {"bronze": 100, "silver": 300, "gold": 800, "diamond": 2000}
-    rewards = {"bronze": [("chips", 50), ("chips", 100), ("badge", "🥉 Bronz Şans")],
-               "silver": [("chips", 150), ("chips", 300), ("color", "silver")],
-               "gold": [("chips", 500), ("frame", "gold"), ("badge", "🥇 Altın Şans")],
-               "diamond": [("chips", 1500), ("frame", "diamond"), ("badge", "💎 Elmas Şans"), ("color", "rainbow")]}
-    price = prices.get(chest, 100)
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < price:
-        return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key):
-        users[key]["chips"] = int(users[key].get("chips", 0)) - price
-    kind, value = random.choice(rewards.get(chest, rewards["bronze"]))
-    if kind == "chips":
-        users[key]["chips"] = int(users[key].get("chips", 0)) + int(value); msg = f"🪙 {value} jeton kazandın!"
-    elif kind == "frame":
-        users[key].setdefault("ownedFrames", [])
-        if value not in users[key]["ownedFrames"]: users[key]["ownedFrames"].append(value)
-        msg = f"🎨 {value} çerçeve kazandın!"
-    elif kind == "color":
-        users[key].setdefault("ownedNameColors", [])
-        if value not in users[key]["ownedNameColors"]: users[key]["ownedNameColors"].append(value)
-        msg = f"🌈 {value} isim rengi kazandın!"
-    else:
-        users[key].setdefault("ownedBadges", [])
-        if value not in users[key]["ownedBadges"]: users[key]["ownedBadges"].append(value)
-        msg = f"🎖️ {value} rozeti kazandın!"
-    users[key]["openedChests"] = int(users[key].get("openedChests", 0)) + 1
-    monte_add_xp(users, key, 25)
-    save_users(users)
-    return {"ok": True, "msg": msg, "profile": monte_public_payload(key, users[key])}
+    with users_txn() as users:
+        key = monte_find_or_create_user(users, data.get("u", ""))
+        if not key:
+            return {"ok": False, "msg": "Giriş gerekli."}
+        chest = data.get("chest", "bronze")
+        prices = {"bronze": 100, "silver": 300, "gold": 800, "diamond": 2000}
+        rewards = {"bronze": [("chips", 50), ("chips", 100), ("badge", "🥉 Bronz Şans")],
+                   "silver": [("chips", 150), ("chips", 300), ("color", "silver")],
+                   "gold": [("chips", 500), ("frame", "gold"), ("badge", "🥇 Altın Şans")],
+                   "diamond": [("chips", 1500), ("frame", "diamond"), ("badge", "💎 Elmas Şans"), ("color", "rainbow")]}
+        price = prices.get(chest, 100)
+        if not is_owner_username(key) and int(users[key].get("chips", 0)) < price:
+            return {"ok": False, "msg": "Yeterli jeton yok."}
+        if not is_owner_username(key):
+            users[key]["chips"] = int(users[key].get("chips", 0)) - price
+        kind, value = random.choice(rewards.get(chest, rewards["bronze"]))
+        if kind == "chips":
+            users[key]["chips"] = int(users[key].get("chips", 0)) + int(value); msg = f"🪙 {value} jeton kazandın!"
+        elif kind == "frame":
+            users[key].setdefault("ownedFrames", [])
+            if value not in users[key]["ownedFrames"]: users[key]["ownedFrames"].append(value)
+            msg = f"🎨 {value} çerçeve kazandın!"
+        elif kind == "color":
+            users[key].setdefault("ownedNameColors", [])
+            if value not in users[key]["ownedNameColors"]: users[key]["ownedNameColors"].append(value)
+            msg = f"🌈 {value} isim rengi kazandın!"
+        else:
+            users[key].setdefault("ownedBadges", [])
+            if value not in users[key]["ownedBadges"]: users[key]["ownedBadges"].append(value)
+            msg = f"🎖️ {value} rozeti kazandın!"
+        users[key]["openedChests"] = int(users[key].get("openedChests", 0)) + 1
+        monte_add_xp(users, key, 25)
+        profile = monte_public_payload(key, users[key])
+    return {"ok": True, "msg": msg, "profile": profile}
 
 @app.route("/api/buy_cosmetic", methods=["POST"])
 def api_buy_cosmetic():
     data = request.get_json(force=True, silent=True) or {}
-    users, key = monte_find_or_create_user(data.get("u", ""))
-    if not key: return {"ok": False, "msg": "Giriş gerekli."}
-    item = data.get("item", "gold-frame")
-    items = {"gold-frame": ("ownedFrames", "gold", 1000), "diamond-frame": ("ownedFrames", "diamond", 5000),
-             "baroque-frame": ("ownedFrames", "baroque", 7500), "rainbow-name": ("ownedNameColors", "rainbow", 3000),
-             "animated-profile": ("ownedBadges", "✨ Animasyonlu Profil", 10000)}
-    group, value, price = items.get(item, items["gold-frame"])
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < price:
-        return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key):
-        users[key]["chips"] = int(users[key].get("chips", 0)) - price
-    users[key].setdefault(group, [])
-    if value not in users[key][group]: users[key][group].append(value)
-    monte_add_xp(users, key, 20)
-    save_users(users)
-    return {"ok": True, "msg": "Satın alındı.", "profile": monte_public_payload(key, users[key])}
+    with users_txn() as users:
+        key = monte_find_or_create_user(users, data.get("u", ""))
+        if not key: return {"ok": False, "msg": "Giriş gerekli."}
+        item = data.get("item", "gold-frame")
+        items = {"gold-frame": ("ownedFrames", "gold", 1000), "diamond-frame": ("ownedFrames", "diamond", 5000),
+                 "baroque-frame": ("ownedFrames", "baroque", 7500), "rainbow-name": ("ownedNameColors", "rainbow", 3000),
+                 "animated-profile": ("ownedBadges", "✨ Animasyonlu Profil", 10000)}
+        group, value, price = items.get(item, items["gold-frame"])
+        if not is_owner_username(key) and int(users[key].get("chips", 0)) < price:
+            return {"ok": False, "msg": "Yeterli jeton yok."}
+        if not is_owner_username(key):
+            users[key]["chips"] = int(users[key].get("chips", 0)) - price
+        users[key].setdefault(group, [])
+        if value not in users[key][group]: users[key][group].append(value)
+        monte_add_xp(users, key, 20)
+        profile = monte_public_payload(key, users[key])
+    return {"ok": True, "msg": "Satın alındı.", "profile": profile}
 
 @app.route("/api/friend_request", methods=["POST"])
 def api_friend_request():
     data = request.get_json(force=True, silent=True) or {}
-    users = load_users()
-    key = find_user_key(users, data.get("u", ""))
-    tkey = find_user_key(users, data.get("target", ""))
-    if not key or not tkey: return {"ok": False, "msg": "Kullanıcı bulunamadı."}
-    monte_ensure_user_defaults(users[key]); monte_ensure_user_defaults(users[tkey])
-    if key == tkey: return {"ok": False, "msg": "Kendini ekleyemezsin."}
-    if key not in users[tkey].setdefault("friendRequests", []): users[tkey]["friendRequests"].append(key)
-    save_users(users)
+    with users_txn() as users:
+        key = find_user_key(users, data.get("u", ""))
+        tkey = find_user_key(users, data.get("target", ""))
+        if not key or not tkey: return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+        monte_ensure_user_defaults(users[key]); monte_ensure_user_defaults(users[tkey])
+        if key == tkey: return {"ok": False, "msg": "Kendini ekleyemezsin."}
+        if key not in users[tkey].setdefault("friendRequests", []): users[tkey]["friendRequests"].append(key)
     return {"ok": True, "msg": "Arkadaş isteği gönderildi."}
 
 @app.route("/api/accept_friend", methods=["POST"])
 def api_accept_friend():
     data = request.get_json(force=True, silent=True) or {}
-    users = load_users()
-    key = find_user_key(users, data.get("u", ""))
-    rkey = find_user_key(users, data.get("requester", ""))
-    if not key or not rkey: return {"ok": False, "msg": "Kullanıcı bulunamadı."}
-    monte_ensure_user_defaults(users[key]); monte_ensure_user_defaults(users[rkey])
-    if rkey in users[key].get("friendRequests", []): users[key]["friendRequests"].remove(rkey)
-    if rkey not in users[key]["friends"]: users[key]["friends"].append(rkey)
-    if key not in users[rkey]["friends"]: users[rkey]["friends"].append(key)
-    save_users(users)
+    with users_txn() as users:
+        key = find_user_key(users, data.get("u", ""))
+        rkey = find_user_key(users, data.get("requester", ""))
+        if not key or not rkey: return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+        monte_ensure_user_defaults(users[key]); monte_ensure_user_defaults(users[rkey])
+        if rkey in users[key].get("friendRequests", []): users[key]["friendRequests"].remove(rkey)
+        if rkey not in users[key]["friends"]: users[key]["friends"].append(rkey)
+        if key not in users[rkey]["friends"]: users[rkey]["friends"].append(key)
     return {"ok": True, "msg": "Arkadaş eklendi."}
 
 @app.route("/api/send_private_message", methods=["POST"])
 def api_send_private_message():
     data = request.get_json(force=True, silent=True) or {}
-    users = load_users()
-    key = find_user_key(users, data.get("u", ""))
-    tkey = find_user_key(users, data.get("target", ""))
-    msg = (data.get("msg") or "").strip()
-    if not key or not tkey or not msg: return {"ok": False, "msg": "Eksik bilgi."}
-    monte_ensure_user_defaults(users[tkey])
-    users[tkey].setdefault("messages", []).insert(0, {"from": key, "msg": msg, "time": int(time.time())})
-    users[tkey]["messages"] = users[tkey]["messages"][:50]
-    save_users(users)
+    with users_txn() as users:
+        key = find_user_key(users, data.get("u", ""))
+        tkey = find_user_key(users, data.get("target", ""))
+        msg = (data.get("msg") or "").strip()
+        if not key or not tkey or not msg: return {"ok": False, "msg": "Eksik bilgi."}
+        monte_ensure_user_defaults(users[tkey])
+        users[tkey].setdefault("messages", []).insert(0, {"from": key, "msg": msg, "time": int(time.time())})
+        users[tkey]["messages"] = users[tkey]["messages"][:50]
     return {"ok": True, "msg": "Mesaj gönderildi."}
 
 @app.route("/api/join_tournament", methods=["POST"])
 def api_join_tournament():
     data = request.get_json(force=True, silent=True) or {}
-    users, key = monte_find_or_create_user(data.get("u", ""))
-    if not key: return {"ok": False, "msg": "Giriş gerekli."}
-    tournament = data.get("tournament", "weekly-codenames")
-    if tournament in users[key].get("tournaments", []): return {"ok": False, "msg": "Zaten kayıtlısın."}
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < 100: return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 100
-    users[key].setdefault("tournaments", []).append(tournament)
-    monte_add_xp(users, key, 50)
-    save_users(users)
+    with users_txn() as users:
+        key = monte_find_or_create_user(users, data.get("u", ""))
+        if not key: return {"ok": False, "msg": "Giriş gerekli."}
+        tournament = data.get("tournament", "weekly-codenames")
+        if tournament in users[key].get("tournaments", []): return {"ok": False, "msg": "Zaten kayıtlısın."}
+        if not is_owner_username(key) and int(users[key].get("chips", 0)) < 100: return {"ok": False, "msg": "Yeterli jeton yok."}
+        if not is_owner_username(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 100
+        users[key].setdefault("tournaments", []).append(tournament)
+        monte_add_xp(users, key, 50)
     return {"ok": True, "msg": "Turnuvaya katıldın. 100 jeton kesildi."}
 
 @app.route("/api/premium_tarot", methods=["POST"])
 def api_premium_tarot():
     data = request.get_json(force=True, silent=True) or {}
-    users, key = monte_find_or_create_user(data.get("u", ""))
-    if not key: return {"ok": False, "msg": "Giriş gerekli."}
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < 1500: return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 1500
-    q = (data.get("question") or "").strip()
-    birth = (data.get("birthDate") or "").strip()
-    photo = (data.get("photoNote") or "").strip()
-    result = f"🤖 AI Tarot Premium Yorumu\\n\\nDoğum tarihi: {birth or '-'}\\nSoru: {q or '-'}\\nFotoğraf notu: {photo or '-'}\\n\\nKartların enerjisi dönüşüm, karar ve içsel netleşme dönemini gösteriyor. Sezgilerini dinle, acele karar verme ve niyetini netleştir."
-    users[key].setdefault("premiumTarotRequests", []).insert(0, {"time": int(time.time()), "question": q, "birthDate": birth, "photoNote": photo, "result": result})
-    monte_add_xp(users, key, 75)
-    save_users(users)
+    with users_txn() as users:
+        key = monte_find_or_create_user(users, data.get("u", ""))
+        if not key: return {"ok": False, "msg": "Giriş gerekli."}
+        if not is_owner_username(key) and int(users[key].get("chips", 0)) < 1500: return {"ok": False, "msg": "Yeterli jeton yok."}
+        if not is_owner_username(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 1500
+        q = (data.get("question") or "").strip()
+        birth = (data.get("birthDate") or "").strip()
+        photo = (data.get("photoNote") or "").strip()
+        result = f"🤖 AI Tarot Premium Yorumu\\n\\nDoğum tarihi: {birth or '-'}\\nSoru: {q or '-'}\\nFotoğraf notu: {photo or '-'}\\n\\nKartların enerjisi dönüşüm, karar ve içsel netleşme dönemini gösteriyor. Sezgilerini dinle, acele karar verme ve niyetini netleştir."
+        users[key].setdefault("premiumTarotRequests", []).insert(0, {"time": int(time.time()), "question": q, "birthDate": birth, "photoNote": photo, "result": result})
+        monte_add_xp(users, key, 75)
     return {"ok": True, "msg": result}
 
 
@@ -5982,28 +5952,27 @@ def is_owner_username(username):
 
 def ensure_owner_user():
     try:
-        users = load_users()
-        key = None
-        for k in users:
-            if is_owner_username(k):
-                key = k
-                break
-        if not key:
-            key = "Yohanna"
-            users[key] = {}
-        users[key].update({
-            "username": key,
-            "chips": 999999999,
-            "xp": 999999,
-            "level": 999,
-            "membershipLabel": "OWNER",
-            "membershipLevel": "owner",
-            "isAdmin": True,
-            "isOwner": True,
-            "avatarFrame": "diamond",
-            "nameColor": "gold"
-        })
-        save_users(users)
+        with users_txn() as users:
+            key = None
+            for k in users:
+                if is_owner_username(k):
+                    key = k
+                    break
+            if not key:
+                key = "Yohanna"
+                users[key] = {}
+            users[key].update({
+                "username": key,
+                "chips": 999999999,
+                "xp": 999999,
+                "level": 999,
+                "membershipLabel": "OWNER",
+                "membershipLevel": "owner",
+                "isAdmin": True,
+                "isOwner": True,
+                "avatarFrame": "diamond",
+                "nameColor": "gold"
+            })
     except Exception as e:
         print("owner init error", e, flush=True)
 
@@ -6022,20 +5991,19 @@ def api_profile_avatar():
     if ext not in ["jpg", "jpeg", "png", "webp"]:
         return {"ok": False, "msg": "Sadece JPG, PNG veya WEBP yüklenebilir."}
 
-    users = load_users()
-    key = next((k for k in users if k.lower() == username.lower()), None)
-    if not key:
-        return {"ok": False, "msg": "Kullanıcı bulunamadı."}
-
     file_bytes = f.read()
     if len(file_bytes) > 3 * 1024 * 1024:
         return {"ok": False, "msg": "Avatar dosyası çok büyük (maksimum 3MB)."}
 
     mime = "jpeg" if ext == "jpg" else ext
     avatar_url = f"data:image/{mime};base64," + base64.b64encode(file_bytes).decode("ascii")
-    users[key]["avatar"] = avatar_url
-    users[key]["avatarData"] = avatar_url
-    save_users(users)
+
+    with users_txn() as users:
+        key = next((k for k in users if k.lower() == username.lower()), None)
+        if not key:
+            return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+        users[key]["avatar"] = avatar_url
+        users[key]["avatarData"] = avatar_url
 
     return {"ok": True, "msg": "Avatar güncellendi.", "avatar": avatar_url}
 
@@ -6046,13 +6014,12 @@ def api_profile_avatar_delete():
     username = (data.get("username") or "").strip()
     if not username:
         return {"ok": False, "msg": "Önce giriş yap."}
-    users = load_users()
-    key = next((k for k in users if k.lower() == username.lower()), None)
-    if not key:
-        return {"ok": False, "msg": "Kullanıcı bulunamadı."}
-    users[key]["avatarData"] = ""
-    users[key]["avatar"] = "woman.png"
-    save_users(users)
+    with users_txn() as users:
+        key = next((k for k in users if k.lower() == username.lower()), None)
+        if not key:
+            return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+        users[key]["avatarData"] = ""
+        users[key]["avatar"] = "woman.png"
     return {"ok": True, "msg": "Avatar silindi."}
 
 
@@ -6063,30 +6030,30 @@ def api_daily_reward():
     if not username:
         return {"ok": False, "msg": "Önce giriş yap."}
 
-    users = load_users()
-    key = next((k for k in users if k.lower() == username.lower()), None)
-    if not key:
-        return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+    with users_txn() as users:
+        key = next((k for k in users if k.lower() == username.lower()), None)
+        if not key:
+            return {"ok": False, "msg": "Kullanıcı bulunamadı."}
 
-    today = time.strftime("%Y-%m-%d")
+        today = time.strftime("%Y-%m-%d")
 
-    if not is_owner_username(key) and users[key].get("lastDailyRewardDate") == today:
-        return {"ok": False, "msg": "Günlük ödülünü bugün aldın. Yarın tekrar çevir."}
+        if not is_owner_username(key) and users[key].get("lastDailyRewardDate") == today:
+            return {"ok": False, "msg": "Günlük ödülünü bugün aldın. Yarın tekrar çevir."}
 
-    # 30/50/100 sık, 1000+2000 toplam %5
-    prizes = [30, 50, 100, 300, 1000, 2000]
-    weights = [40, 30, 18, 7, 3, 2]
-    prize = random.choices(prizes, weights=weights, k=1)[0]
+        # 30/50/100 sık, 1000+2000 toplam %5
+        prizes = [30, 50, 100, 300, 1000, 2000]
+        weights = [40, 30, 18, 7, 3, 2]
+        prize = random.choices(prizes, weights=weights, k=1)[0]
 
-    if is_owner_username(key):
-        prize = 2000
+        if is_owner_username(key):
+            prize = 2000
 
-    users[key]["chips"] = int(users[key].get("chips", 0)) + prize
-    users[key]["lastDailyReward"] = str(int(time.time()))
-    users[key]["lastDailyRewardDate"] = today
-    save_users(users)
+        users[key]["chips"] = int(users[key].get("chips", 0)) + prize
+        users[key]["lastDailyReward"] = str(int(time.time()))
+        users[key]["lastDailyRewardDate"] = today
+        chips_after = users[key]["chips"]
 
-    return {"ok": True, "prize": prize, "chips": users[key]["chips"], "msg": f"{prize} jeton kazandın!"}
+    return {"ok": True, "prize": prize, "chips": chips_after, "msg": f"{prize} jeton kazandın!"}
 
 
 @app.route("/premium")
@@ -6242,14 +6209,14 @@ def credit_chips_for_stripe_session(session_id):
         chips = 0
     if not username or chips <= 0:
         return None
-    users = load_users()
-    key = find_user_key(users, username)
-    if not key:
-        return None
-    users[key]["chips"] = int(users[key].get("chips", 1000)) + chips
-    save_users(users)
+    with users_txn() as users:
+        key = find_user_key(users, username)
+        if not key:
+            return None
+        users[key]["chips"] = int(users[key].get("chips", 1000)) + chips
+        new_balance = users[key]["chips"]
     mark_stripe_session_processed(session_id)
-    return {"username": username, "chips_added": chips, "new_balance": users[key]["chips"]}
+    return {"username": username, "chips_added": chips, "new_balance": new_balance}
 
 @app.route("/api/chips/confirm")
 def api_chips_confirm():
@@ -6912,23 +6879,22 @@ def poker_broadcast(r):
     socketio.emit("poker_state",poker_public(r),room=r["code"])
 
 def poker_take_chips(username,amount):
-    users=load_users()
-    key=find_user_key(users,username)
-    if not key:
-        ensure_user_account(username); users=load_users(); key=find_user_key(users,username)
-    if not key: return None
-    chips=int(users[key].get("chips",1000))
-    if chips<amount: return False
-    users[key]["chips"]=chips-amount; save_users(users)
+    with users_txn() as users:
+        key=find_user_key(users,username)
+        if not key:
+            ensure_user_account(username); users.clear(); users.update(load_users()); key=find_user_key(users,username)
+        if not key: return None
+        chips=int(users[key].get("chips",1000))
+        if chips<amount: return False
+        users[key]["chips"]=chips-amount
     return True
 
 def poker_give_chips(username,amount):
     if amount<=0: return
-    users=load_users()
-    key=find_user_key(users,username)
-    if not key: return
-    users[key]["chips"]=int(users[key].get("chips",1000))+amount
-    save_users(users)
+    with users_txn() as users:
+        key=find_user_key(users,username)
+        if not key: return
+        users[key]["chips"]=int(users[key].get("chips",1000))+amount
 
 @socketio.on("poker_create_room")
 def poker_create_room(data):
