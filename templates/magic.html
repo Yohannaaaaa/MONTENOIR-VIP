@@ -204,7 +204,10 @@ let user = '', avatar = '🧪', room = '', mode = '', level = 1, isOwner = false
 let selectedIdx = null;
 let lastSoloState = null, lastDuelState = null, myBottles = null, capacity = 4;
 
-const MAGIC_COLORS = ['#e63946','#2a6fd6','#2a9d48','#e9b949','#8a4fd6','#ff8c42','#17c3b2','#e84393','#6c5ce7','#c8c8c8'];
+// 16 hues spread around the wheel (not just rotated -- brown/maroon/olive/slate also
+// vary lightness/saturation) so high levels keep introducing genuinely new colors
+// instead of capping out at 10 and reusing the same set forever past level ~22.
+const MAGIC_COLORS = ['#e63946','#ff8c42','#e9b949','#a4de02','#2a9d48','#17c3b2','#00b4d8','#2a6fd6','#6c5ce7','#8a4fd6','#d6249f','#e84393','#8b5a2b','#9d0208','#6b8e23','#5c7a99'];
 
 const I18N = {
   fr: { label_username:'🎮 Ton Pseudo', placeholder_username:'Entre ton nom', label_avatar:'🧪 Choisis ton avatar',

@@ -8936,7 +8936,10 @@ MAGIC_SOLO = {}    # sid -> solo session state
 MAGIC_ROOMS = {}   # code -> duel room state
 
 def magic_level_params(level):
-    num_colors = min(3 + (level - 1) // 3, 10)
+    # Capped at 10 (MAGIC_COLORS' old length) meant every level from ~22 onward reused
+    # the exact same 10 colors forever -- MAGIC_COLORS now has 16, so let variety keep
+    # growing with level up to that new cap instead of plateauing so early.
+    num_colors = min(3 + (level - 1) // 3, 16)
     return {"numColors": num_colors, "numEmpty": 2}
 
 def magic_generate(level, seed=None):
