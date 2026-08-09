@@ -8931,15 +8931,20 @@ def bowling_run_bots(code):
 
 
 # ===== MAGIC (Water Sort puzzle) =====
-MAGIC_CAPACITY = 4
+# 5 (not 4) so bottles read as "busy"/multi-striped from early levels without needing
+# more bottles to hold the complexity -- difficulty now leans more on stripes-per-bottle
+# than on bottle count (see magic_level_params below).
+MAGIC_CAPACITY = 5
 MAGIC_SOLO = {}    # sid -> solo session state
 MAGIC_ROOMS = {}   # code -> duel room state
 
 def magic_level_params(level):
-    # Capped at 10 (MAGIC_COLORS' old length) meant every level from ~22 onward reused
-    # the exact same 10 colors forever -- MAGIC_COLORS now has 16, so let variety keep
-    # growing with level up to that new cap instead of plateauing so early.
-    num_colors = min(3 + (level - 1) // 3, 16)
+    # Bottle count used to grow every 3 levels and cap at 16 colors (18 bottles at high
+    # levels) -- too many bottles crowded onto one row. Grow it every 5 levels instead,
+    # capped lower at 12, so the board stays a reasonable size; the extra capacity above
+    # (4 -> 5) keeps each bottle looking busy/multi-colored even while there are fewer
+    # of them.
+    num_colors = min(3 + (level - 1) // 5, 12)
     return {"numColors": num_colors, "numEmpty": 2}
 
 def magic_generate(level, seed=None):

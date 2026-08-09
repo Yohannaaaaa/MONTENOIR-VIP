@@ -454,7 +454,7 @@ const mRenderer = new THREE.WebGLRenderer({ canvas: magicCanvas, antialias: true
 mRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 mRenderer.outputColorSpace = THREE.SRGBColorSpace;
 mRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-mRenderer.toneMappingExposure = 1.05;
+mRenderer.toneMappingExposure = 1.18;
 mRenderer.shadowMap.enabled = true;
 mRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -487,13 +487,15 @@ function resizeMagicRenderer() {
 }
 new ResizeObserver(resizeMagicRenderer).observe(magicCanvas.parentElement);
 
-mScene.add(new THREE.AmbientLight(0x9a8f80, 0.8));
-const mKey = new THREE.DirectionalLight(0xfff4d6, 2.2);
+// Whiter/brighter than before -- the previous amber-heavy lighting (0x9a8f80/0xfff4d6)
+// tinted and muted the liquid colors instead of letting them read as bold/saturated.
+mScene.add(new THREE.AmbientLight(0xb0aaa0, 0.85));
+const mKey = new THREE.DirectionalLight(0xfff8ec, 2.4);
 mKey.position.set(0.5, 3, 1.4);
 mKey.castShadow = true;
 mKey.shadow.mapSize.set(1024, 1024);
 mScene.add(mKey);
-const mFill = new THREE.PointLight(0xffe6b0, 10, 8);
+const mFill = new THREE.PointLight(0xffefc8, 11, 8);
 mFill.position.set(-1.2, 1.4, -0.6);
 mScene.add(mFill);
 
@@ -533,7 +535,7 @@ function buildBottles3D(numBottles, cap) {
     root.position.x = -totalRowWidth / 2 + idx * BOTTLE_GAP;
     mScene.add(root);
 
-    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, roughness: 0.08, metalness: 0, side: THREE.DoubleSide });
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0, side: THREE.DoubleSide });
     const glass = new THREE.Mesh(new THREE.CylinderGeometry(BOTTLE_RADIUS, BOTTLE_RADIUS * 0.92, LIQUID_TOTAL_H, 20, 1, true), glassMat);
     glass.position.y = LIQUID_TOTAL_H / 2;
     root.add(glass);
@@ -560,9 +562,15 @@ function buildBottles3D(numBottles, cap) {
 
     const layers = [];
     for (let s = 0; s < cap; s++) {
+      // Physical material with clearcoat + a bit of emissive (kept in sync with the base
+      // color in applyLayerValue) so the liquid reads as bold/glossy/saturated under any
+      // lighting instead of a duller, purely lit-from-outside standard material.
       const mesh = new THREE.Mesh(
         new THREE.CylinderGeometry(BOTTLE_RADIUS * 0.88, BOTTLE_RADIUS * 0.88, layerH, 20),
-        new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.05, transparent: true, opacity: 0.94 })
+        new THREE.MeshPhysicalMaterial({
+          color: 0x888888, roughness: 0.12, metalness: 0, clearcoat: 0.7, clearcoatRoughness: 0.12,
+          transparent: true, opacity: 0.97, emissive: 0x000000, emissiveIntensity: 0.32,
+        })
       );
       mesh.position.y = s * layerH + layerH / 2;
       mesh.scale.y = 0.001;
@@ -600,8 +608,11 @@ function applyLayerValue(bottleObj, s, val, animate) {
   const targetScale = visible ? 1 : 0.001;
   if (val === null) {
     mesh.material.color.set(0x555560);
+    mesh.material.emissive.set(0x000000);
   } else if (val !== undefined) {
-    mesh.material.color.set(MAGIC_COLORS[val % MAGIC_COLORS.length]);
+    const c = MAGIC_COLORS[val % MAGIC_COLORS.length];
+    mesh.material.color.set(c);
+    mesh.material.emissive.set(c);
   }
   mesh.userData.qSprite.visible = val === null;
   if (animate) {
