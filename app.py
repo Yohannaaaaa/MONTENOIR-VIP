@@ -22,6 +22,15 @@ MAX_PLAYERS = 10
 # the read-modify-write sections of shared room/user state that must not interleave
 # (e.g. two players revealing a card at the same instant).
 _state_lock = threading.RLock()
+
+def seat_sid_ok(r, u, sid):
+    """True when `u` is seated in room `r` under the socket connection `sid` that is
+    actually calling in. The table games (poker/okey/101/ludo/tavla/bowling/magic
+    duel) resolve the acting player from a client-supplied username with no proof
+    it's really them -- anyone who knows a seated player's name could act on their
+    behalf. Call this right after resolving `u` and before mutating anything."""
+    return bool(u) and u in r.get("players", {}) and r["players"][u].get("sid") == sid
+
 # sid -> exact username key, set only once a socket connection has proven it knows
 # that account's password via register_account/login_account. Password-protected
 # accounts may only be claimed (sit, create_room, chips, ...) by an authenticated sid;
@@ -169,6 +178,19 @@ def charge_play_fee(usernames):
             key = find_user_key(users, u)
             users[key]["chips"] = int(users[key].get("chips", 1000)) - GAME_ENTRY_FEE
     return True, None
+
+def refund_play_fee(usernames):
+    """Give GAME_ENTRY_FEE back to each given username. Used when a hand/game that
+    was already charged for gets cancelled before anyone could actually play it out
+    (e.g. a seated player leaves or disconnects mid-hand)."""
+    usernames = [u for u in usernames if u]
+    if not usernames:
+        return
+    with users_txn() as users:
+        for u in usernames:
+            key = find_user_key(users, u)
+            if key:
+                users[key]["chips"] = int(users[key].get("chips", 1000)) + GAME_ENTRY_FEE
 
 def load_processed_stripe_sessions():
     try:
@@ -1390,7 +1412,6 @@ def montenoir_user_online(data):
 def montenoir_get_online():
     emit("montenoir_online_update", {"users": online_payload()})
 
-@socketio.on("disconnect")
 def montenoir_online_disconnect():
     if request.sid in ONLINE_USERS:
         ONLINE_USERS.pop(request.sid, None)
@@ -4345,7 +4366,6 @@ def logout_account(data=None):
                 if key in users and users[key].get('sessionToken') == token:
                     users[key]['sessionToken'] = ''
 
-@socketio.on('disconnect')
 def auth_disconnect_cleanup():
     authenticated_sids.pop(request.sid, None)
 
@@ -4927,7 +4947,6 @@ def leave_table(data):
     emit('players_update', {'players': rooms[code]['players'], 'locks': rooms[code]['locks'], 'micStates': rooms[code].get('micStates', {}), 'ready': rooms[code].get('ready', {})}, to=code)
     emit('game_update', pdata(code), to=code)
 
-@socketio.on('disconnect')
 def codenames_disconnect_cleanup():
     # Nothing removed a player from a room's roster on tab-close/refresh, so a single
     # ghost player could permanently block start_game (never ready) or freeze a turn
@@ -6437,6 +6456,24 @@ def m_check_winner(r):
         r["winner"]=alive[0]
         r["lastLog"]=alive[0]+" tüm rakiplerini iflas ettirdi ve oyunu kazandı! 🏆"
 
+def m_disconnect_cleanup(sid):
+    # No leave_room ever existed for Monopoly, so a dropped connection used to leave
+    # the room waiting on that player's turn forever with no way out for anyone else.
+    for c,r in list(METROPOLY_ROOMS.items()):
+        u=m_by_sid(r,sid)
+        if not u: continue
+        with _state_lock:
+            if not r.get("started"):
+                r["players"].pop(u,None)
+                if not r["players"]:
+                    METROPOLY_ROOMS.pop(c,None)
+                    continue
+                r["lastLog"]=u+" odadan ayrıldı."
+            elif not r.get("winner") and u==m_current_turn_user(r):
+                r["lastLog"]=u+" bağlantısı koptu, sıra geçti."
+                m_advance_turn(r)
+        socketio.emit("monopoly_room_state",m_public(r),room=c)
+
 @socketio.on("monopoly_create_room")
 def mc(data):
     u=(data or {}).get("username","Misafir").strip()[:20] or "Misafir"
@@ -6542,9 +6579,9 @@ def monopoly_skip_buy(data):
     if not r: return
     u=m_by_sid(r,request.sid)
     if not u: return
-    pb=r.get("pendingBuy")
-    if not pb or pb.get("user")!=u: return
     with _state_lock:
+        pb=r.get("pendingBuy")
+        if not pb or pb.get("user")!=u: return
         r["pendingBuy"]=None
         r["lastLog"]=u+" satın almadı."
         m_advance_turn(r)
@@ -6556,8 +6593,9 @@ def me(data):
     c=((data or {}).get("code","") or "").strip().upper(); r=METROPOLY_ROOMS.get(c)
     if not r: return
     u=m_by_sid(r,request.sid)
-    if not u or r.get("winner") or r.get("pendingBuy") or u!=m_current_turn_user(r): return
+    if not u: return
     with _state_lock:
+        if r.get("winner") or r.get("pendingBuy") or u!=m_current_turn_user(r): return
         m_advance_turn(r)
         r["lastLog"]="Sıra: "+(m_current_turn_user(r) or "-")
     emit("monopoly_room_state",m_public(r),room=c)
@@ -6610,27 +6648,30 @@ def monopoly_add_house(data):
     if typ!="property":
         emit("monopoly_error",{"code":"build_property_only"})
         return
-    if r.get("owners",{}).get(cell)!=u:
-        emit("monopoly_error",{"code":"not_owner"})
-        return
-    if not owns_full_group(r,u,grp):
-        emit("monopoly_error",{"code":"need_group"})
-        return
-    if r["hotels"].get(cell):
-        emit("monopoly_error",{"code":"hotel_exists"})
-        return
-    count=int(r["houses"].get(cell,0))
-    if count>=4:
-        emit("monopoly_error",{"code":"need_hotel"})
-        return
-    group_counts=[int(r["houses"].get(str(i),0)) for i in group_cells_for(grp) if not r["hotels"].get(str(i))]
-    if group_counts and count>min(group_counts):
-        emit("monopoly_error",{"code":"balanced_building"})
-        return
-    if r["players"][u]["money"]<50:
-        emit("monopoly_error",{"code":"no_money_house"})
-        return
+    # All validation is re-checked *inside* the lock (not just read before it) so two
+    # concurrent build requests for the same cell can't both pass the checks before
+    # either one deducts money -- otherwise the player gets charged twice for one house.
     with _state_lock:
+        if r.get("owners",{}).get(cell)!=u:
+            emit("monopoly_error",{"code":"not_owner"})
+            return
+        if not owns_full_group(r,u,grp):
+            emit("monopoly_error",{"code":"need_group"})
+            return
+        if r["hotels"].get(cell):
+            emit("monopoly_error",{"code":"hotel_exists"})
+            return
+        count=int(r["houses"].get(cell,0))
+        if count>=4:
+            emit("monopoly_error",{"code":"need_hotel"})
+            return
+        group_counts=[int(r["houses"].get(str(i),0)) for i in group_cells_for(grp) if not r["hotels"].get(str(i))]
+        if group_counts and count>min(group_counts):
+            emit("monopoly_error",{"code":"balanced_building"})
+            return
+        if r["players"][u]["money"]<50:
+            emit("monopoly_error",{"code":"no_money_house"})
+            return
         r["players"][u]["money"]-=50
         r["houses"][cell]=count+1
         r["lastLog"]=u+" a construit une maison sur "+name+"."
@@ -6656,22 +6697,22 @@ def monopoly_add_hotel(data):
     if typ!="property":
         emit("monopoly_error",{"code":"build_property_only"})
         return
-    if r.get("owners",{}).get(cell)!=u:
-        emit("monopoly_error",{"code":"not_owner"})
-        return
-    if not owns_full_group(r,u,grp):
-        emit("monopoly_error",{"code":"need_group"})
-        return
-    if r["hotels"].get(cell):
-        emit("monopoly_error",{"code":"hotel_exists"})
-        return
-    if int(r["houses"].get(cell,0))<4:
-        emit("monopoly_error",{"code":"need_4_houses"})
-        return
-    if r["players"][u]["money"]<100:
-        emit("monopoly_error",{"code":"no_money_hotel"})
-        return
     with _state_lock:
+        if r.get("owners",{}).get(cell)!=u:
+            emit("monopoly_error",{"code":"not_owner"})
+            return
+        if not owns_full_group(r,u,grp):
+            emit("monopoly_error",{"code":"need_group"})
+            return
+        if r["hotels"].get(cell):
+            emit("monopoly_error",{"code":"hotel_exists"})
+            return
+        if int(r["houses"].get(cell,0))<4:
+            emit("monopoly_error",{"code":"need_4_houses"})
+            return
+        if r["players"][u]["money"]<100:
+            emit("monopoly_error",{"code":"no_money_hotel"})
+            return
         r["players"][u]["money"]-=100
         r["houses"][cell]=0
         r["hotels"][cell]=1
@@ -6949,41 +6990,57 @@ def poker_add_bot(data):
 def poker_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
     r=POKER_ROOMS.get(code)
-    if not r or u not in r["players"]: return
-    stack=r["players"][u]["stack"]
-    mid_hand=u in r.get("order",[]) and r["stage"] not in ("waiting","showdown")
-    if mid_hand:
-        r["players"][u]["folded"]=True
-        r["toAct"].discard(u)
-        handOrder=list(r["order"])
-        not_folded=[x for x in handOrder if not r["players"][x]["folded"]]
-        if len(not_folded)==1:
-            poker_award_pot_single(r,not_folded[0])
-        elif not r["toAct"]:
-            poker_advance_stage(r,handOrder)
-        elif r["order"][r["actIdx"]]==u:
-            r["actIdx"]=poker_next_actor(r,r["actIdx"])
-            if r["actIdx"] is None:
+    if not r: return
+    # Everything from the stack read to the removal happens under one lock: two
+    # overlapping leave events for the same player (flaky reconnect, double click)
+    # used to both read the stack before either zeroed it, paying it out twice.
+    with _state_lock:
+        if u not in r["players"] or not seat_sid_ok(r,u,request.sid): return
+        stack=r["players"][u]["stack"]
+        mid_hand=u in r.get("order",[]) and r["stage"] not in ("waiting","showdown")
+        if mid_hand:
+            r["players"][u]["folded"]=True
+            r["toAct"].discard(u)
+            handOrder=list(r["order"])
+            not_folded=[x for x in handOrder if not r["players"][x]["folded"]]
+            if len(not_folded)==1:
+                poker_award_pot_single(r,not_folded[0])
+            elif not r["toAct"]:
                 poker_advance_stage(r,handOrder)
-    poker_give_chips(u,stack)
-    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
-    if mid_hand:
-        r["players"][u]["stack"]=0
-    else:
-        del r["players"][u]
-    r["log"]=u+" a quitté la table."
-    if not r["players"]:
-        del POKER_ROOMS[code]; return
+            elif r["order"][r["actIdx"]]==u:
+                r["actIdx"]=poker_next_actor(r,r["actIdx"])
+                if r["actIdx"] is None:
+                    poker_advance_stage(r,handOrder)
+        poker_give_chips(u,stack)
+        r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+        if mid_hand:
+            r["players"][u]["stack"]=0
+        else:
+            del r["players"][u]
+        r["log"]=u+" a quitté la table."
+        room_empty=not r["players"]
+        if room_empty:
+            del POKER_ROOMS[code]
+    if room_empty:
+        return
     if mid_hand:
         poker_maybe_schedule_bots(code)
     poker_broadcast(r)
 
+def poker_disconnect_cleanup(sid):
+    for code,r in list(POKER_ROOMS.items()):
+        u=next((n for n,p in r["players"].items() if p.get("sid")==sid),None)
+        if u:
+            poker_leave_room({"username":u,"code":code})
+
 @socketio.on("poker_start_game")
 def poker_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=POKER_ROOMS.get(code)
-    if not r or len(r["seatOrder"])<2: emit("poker_error",{"code":"need_players"}); return
-    r["started"]=True
-    poker_start_new_hand(r)
+    if not r or r["started"] or len(r["seatOrder"])<2: emit("poker_error",{"code":"need_players"}); return
+    with _state_lock:
+        if r["started"]: return
+        r["started"]=True
+        poker_start_new_hand(r)
     poker_maybe_schedule_bots(code)
     poker_broadcast(r)
 
@@ -7070,18 +7127,21 @@ def poker_run_bot_turns(code):
             socketio.sleep(1.6)
             r=POKER_ROOMS.get(code)
             if not r or not poker_next_is_bot(r): return
-            u=r["order"][r["actIdx"]]
-            action,amount=poker_bot_decide(r,u)
-            poker_apply_action(r,u,action,amount)
+            with _state_lock:
+                if not poker_next_is_bot(r): return
+                u=r["order"][r["actIdx"]]
+                action,amount=poker_bot_decide(r,u)
+                poker_apply_action(r,u,action,amount)
             poker_broadcast(r)
     finally:
         r=POKER_ROOMS.get(code)
         if r: r["botTaskRunning"]=False
 
 def poker_maybe_schedule_bots(code):
-    r=POKER_ROOMS.get(code)
-    if not r or r.get("botTaskRunning") or not poker_next_is_bot(r): return
-    r["botTaskRunning"]=True
+    with _state_lock:
+        r=POKER_ROOMS.get(code)
+        if not r or r.get("botTaskRunning") or not poker_next_is_bot(r): return
+        r["botTaskRunning"]=True
     socketio.start_background_task(poker_run_bot_turns,code)
 
 @socketio.on("poker_action")
@@ -7090,9 +7150,11 @@ def poker_action(data):
     action=(data or {}).get("action",""); amount=int((data or {}).get("amount",0) or 0)
     r=POKER_ROOMS.get(code)
     if not r or not r.get("order") or u not in r["players"]: return
-    if r["stage"] in ("waiting","showdown"): return
-    if r["order"][r["actIdx"]]!=u: emit("poker_error",{"code":"not_your_turn"}); return
-    poker_apply_action(r,u,action,amount)
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"] in ("waiting","showdown"): return
+        if r["order"][r["actIdx"]]!=u: emit("poker_error",{"code":"not_your_turn"}); return
+        poker_apply_action(r,u,action,amount)
     poker_maybe_schedule_bots(code)
     poker_broadcast(r)
 
@@ -7243,15 +7305,32 @@ def okey_add_bot(data):
 def okey_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
     r=OKEY_ROOMS.get(code)
-    if not r or u not in r["players"]: return
-    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
-    del r["players"][u]
-    r["log"]=u+" a quitté la table."
-    if not r["players"]:
-        del OKEY_ROOMS[code]; return
-    if u in r.get("order",[]) and r["stage"]=="playing":
-        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, el iptal edildi."
+    if not r: return
+    with _state_lock:
+        if u not in r["players"] or not seat_sid_ok(r,u,request.sid): return
+        cancelled=u in r.get("order",[]) and r["stage"]=="playing"
+        refund_list=[n for n in r["seatOrder"] if not r["players"][n].get("isBot")] if cancelled else []
+        r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+        del r["players"][u]
+        r["log"]=u+" a quitté la table."
+        room_empty=not r["players"]
+        if room_empty:
+            del OKEY_ROOMS[code]
+        elif cancelled:
+            r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, el iptal edildi."
+    # Everyone seated (leaver included) already paid the entry fee for this hand;
+    # refund it since nobody got to actually finish playing it out.
+    if cancelled:
+        refund_play_fee(refund_list)
+    if room_empty:
+        return
     okey_broadcast(r)
+
+def okey_disconnect_cleanup(sid):
+    for code,r in list(OKEY_ROOMS.items()):
+        u=next((n for n,p in r["players"].items() if p.get("sid")==sid),None)
+        if u:
+            okey_leave_room({"username":u,"code":code})
 
 def okey_finish_round(r,u,hand):
     r["players"][u]["roundsWon"]=r["players"][u].get("roundsWon",0)+1
@@ -7320,56 +7399,81 @@ def okey_next_is_bot(r):
     return bool(p and p.get("isBot"))
 
 def okey_run_bot_turns(code):
+    # Each mutation step takes the lock only for the in-memory work, never across the
+    # socketio.sleep() pacing calls -- _state_lock is shared site-wide, so holding it
+    # during a sleep would stall every other room's handlers for that long.
     try:
         for _ in range(50):
             r=OKEY_ROOMS.get(code)
             if not r or not okey_next_is_bot(r): return
-            u=r["order"][r["turnIdx"]]
-            p=r["players"][u]
-            if not r["mustDiscard"]:
-                source=okey_bot_decide_source(r,u)
-                ok=okey_perform_draw(r,u,source)
+            drew=False
+            with _state_lock:
+                if not okey_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]
+                if not r["mustDiscard"]:
+                    source=okey_bot_decide_source(r,u)
+                    ok=okey_perform_draw(r,u,source)
+                    drew=True
+            if drew:
                 okey_broadcast(r)
                 socketio.sleep(1.6)
                 r=OKEY_ROOMS.get(code)
                 if not r or not ok or r["stage"]!="playing": return
                 if not okey_next_is_bot(r): return
-                u=r["order"][r["turnIdx"]]; p=r["players"][u]
-            hand=p["hand"]
-            if okey_can_partition(hand,r):
-                okey_finish_round(r,u,hand)
-                okey_broadcast(r)
-                return
-            idx=okey_bot_pick_discard(hand,r)
-            tile=hand.pop(idx)
-            r["discard"].append(tile)
-            r["mustDiscard"]=False
-            r["log"]=u+" taş attı."
-            if okey_can_partition(hand,r):
-                okey_finish_round(r,u,hand)
-                okey_broadcast(r)
-                return
-            r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+            finished=False
+            with _state_lock:
+                if not okey_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]
+                p=r["players"][u]
+                hand=p["hand"]
+                if okey_can_partition(hand,r):
+                    okey_finish_round(r,u,hand)
+                    finished=True
+                else:
+                    idx=okey_bot_pick_discard(hand,r)
+                    tile=hand.pop(idx)
+                    r["discard"].append(tile)
+                    r["mustDiscard"]=False
+                    r["log"]=u+" taş attı."
+                    if okey_can_partition(hand,r):
+                        okey_finish_round(r,u,hand)
+                        finished=True
+                    else:
+                        r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
             okey_broadcast(r)
+            if finished:
+                return
             socketio.sleep(1.6)
     finally:
         r=OKEY_ROOMS.get(code)
         if r: r["botTaskRunning"]=False
 
 def okey_maybe_schedule_bots(code):
-    r=OKEY_ROOMS.get(code)
-    if not r or r.get("botTaskRunning") or not okey_next_is_bot(r): return
-    r["botTaskRunning"]=True
+    with _state_lock:
+        r=OKEY_ROOMS.get(code)
+        if not r or r.get("botTaskRunning") or not okey_next_is_bot(r): return
+        r["botTaskRunning"]=True
     socketio.start_background_task(okey_run_bot_turns,code)
 
 @socketio.on("okey_start_game")
 def okey_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
-    if not r or len(r["seatOrder"])<2: emit("okey_error",{"code":"need_players"}); return
+    if not r or r["started"] or len(r["seatOrder"])<2: emit("okey_error",{"code":"need_players"}); return
+    # Claim the start under the lock *before* charging: charge_play_fee() has its own
+    # lock but nothing stopped two concurrent start requests from both slipping past
+    # the (unlocked-at-charge-time) "already started" check and both paying the entry
+    # fee, with only one of them actually getting to deal -- the other silently lost
+    # its fee. Claiming first means only one thread can ever reach the charge.
+    with _state_lock:
+        if r["started"]: return
+        r["started"]=True
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("okey_error",{"code":"not_enough_chips"}); return
-    r["started"]=True
-    okey_deal(r)
+    if not ok:
+        with _state_lock:
+            r["started"]=False
+        emit("okey_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        okey_deal(r)
     okey_maybe_schedule_bots(code)
     okey_broadcast(r)
 
@@ -7377,9 +7481,16 @@ def okey_start_game(data):
 def okey_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=OKEY_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    with _state_lock:
+        if r["stage"]=="playing": return
+        r["stage"]="playing"
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("okey_error",{"code":"not_enough_chips"}); return
-    okey_deal(r)
+    if not ok:
+        with _state_lock:
+            if r["stage"]=="playing": r["stage"]="waiting"
+        emit("okey_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        okey_deal(r)
     okey_maybe_schedule_bots(code)
     okey_broadcast(r)
 
@@ -7389,11 +7500,14 @@ def okey_draw(data):
     source=(data or {}).get("source","deck")
     r=OKEY_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
-    if r["mustDiscard"]: emit("okey_error",{"code":"must_discard"}); return
-    if source=="discard" and not r["discard"]:
-        emit("okey_error",{"code":"discard_empty"}); return
-    okey_perform_draw(r,u,source)
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
+        if r["mustDiscard"]: emit("okey_error",{"code":"must_discard"}); return
+        if source=="discard" and not r["discard"]:
+            emit("okey_error",{"code":"discard_empty"}); return
+        okey_perform_draw(r,u,source)
     okey_broadcast(r)
 
 @socketio.on("okey_discard")
@@ -7402,10 +7516,14 @@ def okey_discard(data):
     tileId=(data or {}).get("tileId")
     r=OKEY_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
-    if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
-    okey_perform_discard(r,u,tileId)
-    if r["stage"]=="playing":
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
+        if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
+        okey_perform_discard(r,u,tileId)
+        should_schedule=r["stage"]=="playing"
+    if should_schedule:
         okey_maybe_schedule_bots(code)
     okey_broadcast(r)
 
@@ -7414,12 +7532,15 @@ def okey_declare_finish(data):
     code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
     r=OKEY_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
-    if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
-    hand=r["players"][u]["hand"]
-    if not okey_can_partition(hand,r):
-        emit("okey_error",{"code":"invalid_hand"}); return
-    okey_finish_round(r,u,hand)
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if r["order"][r["turnIdx"]]!=u: emit("okey_error",{"code":"not_your_turn"}); return
+        if not r["mustDiscard"]: emit("okey_error",{"code":"must_draw"}); return
+        hand=r["players"][u]["hand"]
+        if not okey_can_partition(hand,r):
+            emit("okey_error",{"code":"invalid_hand"}); return
+        okey_finish_round(r,u,hand)
     okey_broadcast(r)
 
 
@@ -7542,45 +7663,53 @@ def ludo_run_bot_turns(code):
             socketio.sleep(1.6)
             r=LUDO_ROOMS.get(code)
             if not r or not ludo_next_is_bot(r): return
-            u=r["order"][r["turnIdx"]]
-            roll=random.randint(1,6)
-            r["lastRoll"]=roll
-            r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
-            if r["sixCount"]>=3:
-                r["log"]=u+" üç kere 6 attı, sıra geçti."
-                ludo_advance_turn(r)
-                ludo_broadcast(r)
-                continue
-            moves=ludo_valid_moves_for(r,u,roll)
-            if not moves:
-                r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
-                ludo_broadcast(r)
+            won=False; six_streak=False; no_moves=False; roll=None
+            with _state_lock:
+                if not ludo_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]
+                roll=random.randint(1,6)
+                r["lastRoll"]=roll
+                r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
+                if r["sixCount"]>=3:
+                    r["log"]=u+" üç kere 6 attı, sıra geçti."
+                    ludo_advance_turn(r)
+                    six_streak=True
+                else:
+                    moves=ludo_valid_moves_for(r,u,roll)
+                    if not moves:
+                        r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
+                        no_moves=True
+                    else:
+                        move=ludo_bot_pick_move(moves,r)
+                        won=ludo_apply_move(r,move)
+            ludo_broadcast(r)
+            if six_streak: continue
+            if won: return
+            if no_moves:
                 if roll!=6:
                     socketio.sleep(1.0)
                     r=LUDO_ROOMS.get(code)
                     if not r: return
-                    ludo_advance_turn(r)
+                    with _state_lock:
+                        ludo_advance_turn(r)
                     ludo_broadcast(r)
                 continue
-            move=ludo_bot_pick_move(moves,r)
-            won=ludo_apply_move(r,move)
-            ludo_broadcast(r)
-            if won: return
             if roll!=6:
                 socketio.sleep(1.0)
                 r=LUDO_ROOMS.get(code)
                 if not r: return
-                ludo_advance_turn(r)
+                with _state_lock:
+                    ludo_advance_turn(r)
                 ludo_broadcast(r)
     finally:
         r=LUDO_ROOMS.get(code)
         if r: r["botTaskRunning"]=False
 
 def ludo_maybe_schedule_bots(code):
-    r=LUDO_ROOMS.get(code)
-    if not r or not ludo_next_is_bot(r): return
-    if r.get("botTaskRunning"): return
-    r["botTaskRunning"]=True
+    with _state_lock:
+        r=LUDO_ROOMS.get(code)
+        if not r or not ludo_next_is_bot(r) or r.get("botTaskRunning"): return
+        r["botTaskRunning"]=True
     socketio.start_background_task(ludo_run_bot_turns,code)
 
 @socketio.on("ludo_create_room")
@@ -7632,15 +7761,30 @@ def ludo_add_bot(data):
 def ludo_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
     r=LUDO_ROOMS.get(code)
-    if not r or u not in r["players"]: return
-    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
-    del r["players"][u]
-    r["log"]=u+" a quitté la table."
-    if not r["players"]:
-        del LUDO_ROOMS[code]; return
-    if r["stage"]=="playing":
-        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    if not r: return
+    with _state_lock:
+        if u not in r["players"] or not seat_sid_ok(r,u,request.sid): return
+        cancelled=r["stage"]=="playing"
+        refund_list=[n for n in r["seatOrder"] if not r["players"][n].get("isBot")] if cancelled else []
+        r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+        del r["players"][u]
+        r["log"]=u+" a quitté la table."
+        room_empty=not r["players"]
+        if room_empty:
+            del LUDO_ROOMS[code]
+        elif cancelled:
+            r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    if cancelled:
+        refund_play_fee(refund_list)
+    if room_empty:
+        return
     ludo_broadcast(r)
+
+def ludo_disconnect_cleanup(sid):
+    for code,r in list(LUDO_ROOMS.items()):
+        u=next((n for n,p in r["players"].items() if p.get("sid")==sid),None)
+        if u:
+            ludo_leave_room({"username":u,"code":code})
 
 @socketio.on("ludo_set_team_mode")
 def ludo_set_team_mode(data):
@@ -7652,12 +7796,19 @@ def ludo_set_team_mode(data):
 @socketio.on("ludo_start_game")
 def ludo_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=LUDO_ROOMS.get(code)
-    if not r or len(r["seatOrder"])<2: emit("ludo_error",{"code":"need_players"}); return
+    if not r or r["started"] or len(r["seatOrder"])<2: emit("ludo_error",{"code":"need_players"}); return
+    with _state_lock:
+        if r["started"]: return
+        r["started"]=True
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("ludo_error",{"code":"not_enough_chips"}); return
-    r["started"]=True; r["stage"]="playing"; r["order"]=list(r["seatOrder"]); r["turnIdx"]=0
-    r["sixCount"]=0; r["pendingMoves"]=[]; r["winner"]=None; r["lastRoll"]=None
-    r["log"]="Oyun başladı — "+r["order"][0]+" başlıyor."
+    if not ok:
+        with _state_lock:
+            r["started"]=False
+        emit("ludo_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        r["stage"]="playing"; r["order"]=list(r["seatOrder"]); r["turnIdx"]=0
+        r["sixCount"]=0; r["pendingMoves"]=[]; r["winner"]=None; r["lastRoll"]=None
+        r["log"]="Oyun başladı — "+r["order"][0]+" başlıyor."
     ludo_maybe_schedule_bots(r["code"])
     ludo_broadcast(r)
 
@@ -7666,33 +7817,35 @@ def ludo_roll_dice(data):
     code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
     r=LUDO_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("ludo_error",{"code":"not_your_turn"}); return
-    if r.get("pendingMoves"): emit("ludo_error",{"code":"must_move"}); return
-    roll=random.randint(1,6)
-    r["lastRoll"]=roll
-    r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
-    if r["sixCount"]>=3:
-        r["log"]=u+" üç kere 6 attı, sıra geçti."
-        ludo_advance_turn(r)
-        ludo_maybe_schedule_bots(r["code"])
-        ludo_broadcast(r)
-        return
-    moves=ludo_valid_moves_for(r,u,roll)
-    if not moves:
-        r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
-        if roll!=6:
+    if not seat_sid_ok(r,u,request.sid): return
+    six_streak=False; no_moves=False; single=False; roll=None; won=False
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("ludo_error",{"code":"not_your_turn"}); return
+        if r.get("pendingMoves"): emit("ludo_error",{"code":"must_move"}); return
+        roll=random.randint(1,6)
+        r["lastRoll"]=roll
+        r["sixCount"]=r.get("sixCount",0)+1 if roll==6 else 0
+        if r["sixCount"]>=3:
+            r["log"]=u+" üç kere 6 attı, sıra geçti."
             ludo_advance_turn(r)
+            six_streak=True
+        else:
+            moves=ludo_valid_moves_for(r,u,roll)
+            if not moves:
+                r["log"]=f"{u} {roll} attı, oynanabilecek pion yok."
+                if roll!=6:
+                    ludo_advance_turn(r)
+                no_moves=True
+            elif len(moves)==1:
+                won=ludo_apply_move(r,moves[0])
+                if not won and roll!=6:
+                    ludo_advance_turn(r)
+                single=True
+            else:
+                r["pendingMoves"]=moves
+    if six_streak or no_moves or single:
         ludo_maybe_schedule_bots(r["code"])
-        ludo_broadcast(r)
-        return
-    if len(moves)==1:
-        won=ludo_apply_move(r,moves[0])
-        if not won and roll!=6:
-            ludo_advance_turn(r)
-        ludo_maybe_schedule_bots(r["code"])
-        ludo_broadcast(r)
-        return
-    r["pendingMoves"]=moves
     ludo_broadcast(r)
 
 @socketio.on("ludo_move_token")
@@ -7701,14 +7854,17 @@ def ludo_move_token(data):
     ownerSel=(data or {}).get("owner",""); idxSel=(data or {}).get("index",-1)
     r=LUDO_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if not r.get("order") or r["order"][r["turnIdx"]]!=u: return
-    moves=r.get("pendingMoves") or []
-    match=next((m for m in moves if m["owner"]==ownerSel and m["index"]==int(idxSel)),None)
-    if not match: emit("ludo_error",{"code":"invalid_move"}); return
-    r["pendingMoves"]=[]
-    won=ludo_apply_move(r,match)
-    if not won and r["lastRoll"]!=6:
-        ludo_advance_turn(r)
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if not r.get("order") or r["order"][r["turnIdx"]]!=u: return
+        moves=r.get("pendingMoves") or []
+        match=next((m for m in moves if m["owner"]==ownerSel and m["index"]==int(idxSel)),None)
+        if not match: emit("ludo_error",{"code":"invalid_move"}); return
+        r["pendingMoves"]=[]
+        won=ludo_apply_move(r,match)
+        if not won and r["lastRoll"]!=6:
+            ludo_advance_turn(r)
     ludo_maybe_schedule_bots(r["code"])
     ludo_broadcast(r)
 
@@ -7838,24 +7994,45 @@ def r101_add_bot(data):
 def r101_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
     r=R101_ROOMS.get(code)
-    if not r or u not in r["players"]: return
-    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
-    del r["players"][u]
-    r["log"]=u+" a quitté la table."
-    if not r["players"]:
-        del R101_ROOMS[code]; return
-    if r["stage"]=="playing":
-        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, el iptal edildi."
+    if not r: return
+    with _state_lock:
+        if u not in r["players"] or not seat_sid_ok(r,u,request.sid): return
+        cancelled=r["stage"]=="playing"
+        refund_list=[n for n in r["seatOrder"] if not r["players"][n].get("isBot")] if cancelled else []
+        r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+        del r["players"][u]
+        r["log"]=u+" a quitté la table."
+        room_empty=not r["players"]
+        if room_empty:
+            del R101_ROOMS[code]
+        elif cancelled:
+            r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, el iptal edildi."
+    if cancelled:
+        refund_play_fee(refund_list)
+    if room_empty:
+        return
     r101_broadcast(r)
+
+def r101_disconnect_cleanup(sid):
+    for code,r in list(R101_ROOMS.items()):
+        u=next((n for n,p in r["players"].items() if p.get("sid")==sid),None)
+        if u:
+            r101_leave_room({"username":u,"code":code})
 
 @socketio.on("r101_start_game")
 def r101_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
-    if not r or len(r["seatOrder"])<2: emit("r101_error",{"code":"need_players"}); return
+    if not r or r["started"] or len(r["seatOrder"])<2: emit("r101_error",{"code":"need_players"}); return
+    with _state_lock:
+        if r["started"]: return
+        r["started"]=True
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("r101_error",{"code":"not_enough_chips"}); return
-    r["started"]=True
-    r101_deal(r)
+    if not ok:
+        with _state_lock:
+            r["started"]=False
+        emit("r101_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        r101_deal(r)
     r101_run_bots(r["code"])
     r101_broadcast(r)
 
@@ -7863,9 +8040,16 @@ def r101_start_game(data):
 def r101_next_hand(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=R101_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    with _state_lock:
+        if r["stage"]=="playing": return
+        r["stage"]="playing"
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("r101_error",{"code":"not_enough_chips"}); return
-    r101_deal(r)
+    if not ok:
+        with _state_lock:
+            if r["stage"]=="playing": r["stage"]="waiting"
+        emit("r101_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        r101_deal(r)
     r101_run_bots(r["code"])
     r101_broadcast(r)
 
@@ -7875,11 +8059,14 @@ def r101_draw(data):
     source=(data or {}).get("source","deck")
     r=R101_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
-    if r["mustDiscard"]: emit("r101_error",{"code":"must_discard"}); return
-    if source=="discard" and not r["discard"]:
-        emit("r101_error",{"code":"discard_empty"}); return
-    r101_perform_draw(r,u,source)
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+        if r["mustDiscard"]: emit("r101_error",{"code":"must_discard"}); return
+        if source=="discard" and not r["discard"]:
+            emit("r101_error",{"code":"discard_empty"}); return
+        r101_perform_draw(r,u,source)
     r101_broadcast(r)
 
 def r101_perform_draw(r,u,source):
@@ -7901,29 +8088,31 @@ def r101_open(data):
     groupsSel=(data or {}).get("groups") or []
     r=R101_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
-    if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
-    p=r["players"][u]
-    if p.get("opened"): emit("r101_error",{"code":"already_opened"}); return
-    hand=p["hand"]
-    by_id={t["id"]:t for t in hand}
-    total=0; groupsTiles=[]
-    for ids in groupsSel:
-        try: tiles=[by_id[int(i)] for i in ids]
-        except (KeyError,ValueError): emit("r101_error",{"code":"invalid_group"}); return
-        val=r101_meld_value(tiles,r)
-        if val is None: emit("r101_error",{"code":"invalid_group"}); return
-        total+=val; groupsTiles.append(tiles)
-    if total<101: emit("r101_error",{"code":"not_enough_points"}); return
-    used_ids=set(i for ids in groupsSel for i in [int(x) for x in ids])
-    p["hand"]=[t for t in hand if t["id"] not in used_ids]
-    for tiles in groupsTiles:
-        r["table"].append({"owner":u,"tiles":tiles})
-    p["opened"]=True
-    r["log"]=f"{u} açıldı ({total} puan)."
-    if not p["hand"]:
-        r101_finish_round(r,u)
-        r101_broadcast(r); return
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+        if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
+        p=r["players"][u]
+        if p.get("opened"): emit("r101_error",{"code":"already_opened"}); return
+        hand=p["hand"]
+        by_id={t["id"]:t for t in hand}
+        total=0; groupsTiles=[]
+        for ids in groupsSel:
+            try: tiles=[by_id[int(i)] for i in ids]
+            except (KeyError,ValueError): emit("r101_error",{"code":"invalid_group"}); return
+            val=r101_meld_value(tiles,r)
+            if val is None: emit("r101_error",{"code":"invalid_group"}); return
+            total+=val; groupsTiles.append(tiles)
+        if total<101: emit("r101_error",{"code":"not_enough_points"}); return
+        used_ids=set(i for ids in groupsSel for i in [int(x) for x in ids])
+        p["hand"]=[t for t in hand if t["id"] not in used_ids]
+        for tiles in groupsTiles:
+            r["table"].append({"owner":u,"tiles":tiles})
+        p["opened"]=True
+        r["log"]=f"{u} açıldı ({total} puan)."
+        if not p["hand"]:
+            r101_finish_round(r,u)
     r101_broadcast(r)
 
 @socketio.on("r101_add_to_meld")
@@ -7932,29 +8121,35 @@ def r101_add_to_meld(data):
     tileId=(data or {}).get("tileId"); meldIdx=(data or {}).get("meldIndex")
     r=R101_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
-    if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
-    p=r["players"][u]
-    if not p.get("opened"): emit("r101_error",{"code":"not_opened"}); return
-    try: meldIdx=int(meldIdx)
-    except (TypeError,ValueError): return
-    if meldIdx<0 or meldIdx>=len(r["table"]): emit("r101_error",{"code":"invalid_move"}); return
-    hand=p["hand"]
-    idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
-    if idx is None: return
-    tile=hand[idx]
-    meld=r["table"][meldIdx]["tiles"]
-    for pos in range(len(meld)+1):
-        candidate=meld[:pos]+[tile]+meld[pos:]
-        if r101_meld_value(candidate,r) is not None:
-            r["table"][meldIdx]["tiles"]=candidate
-            hand.pop(idx)
-            r["log"]=u+" masaya taş ekledi."
-            if not hand:
-                r101_finish_round(r,u)
-                r101_broadcast(r); return
-            r101_broadcast(r); return
-    emit("r101_error",{"code":"invalid_move"})
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+        if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
+        p=r["players"][u]
+        if not p.get("opened"): emit("r101_error",{"code":"not_opened"}); return
+        try: meldIdx=int(meldIdx)
+        except (TypeError,ValueError): return
+        if meldIdx<0 or meldIdx>=len(r["table"]): emit("r101_error",{"code":"invalid_move"}); return
+        hand=p["hand"]
+        idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
+        if idx is None: return
+        tile=hand[idx]
+        meld=r["table"][meldIdx]["tiles"]
+        placed=False
+        for pos in range(len(meld)+1):
+            candidate=meld[:pos]+[tile]+meld[pos:]
+            if r101_meld_value(candidate,r) is not None:
+                r["table"][meldIdx]["tiles"]=candidate
+                hand.pop(idx)
+                r["log"]=u+" masaya taş ekledi."
+                placed=True
+                if not hand:
+                    r101_finish_round(r,u)
+                break
+        if not placed:
+            emit("r101_error",{"code":"invalid_move"}); return
+    r101_broadcast(r)
 
 @socketio.on("r101_discard")
 def r101_discard(data):
@@ -7962,19 +8157,22 @@ def r101_discard(data):
     tileId=(data or {}).get("tileId")
     r=R101_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
-    if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
-    hand=r["players"][u]["hand"]
-    idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
-    if idx is None: return
-    tile=hand.pop(idx)
-    r["discard"].append(tile)
-    r["mustDiscard"]=False
-    if not hand:
-        r101_finish_round(r,u)
-        r101_broadcast(r); return
-    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
-    r["log"]=u+" taş attı."
+    if not seat_sid_ok(r,u,request.sid): return
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if r["order"][r["turnIdx"]]!=u: emit("r101_error",{"code":"not_your_turn"}); return
+        if not r["mustDiscard"]: emit("r101_error",{"code":"must_draw"}); return
+        hand=r["players"][u]["hand"]
+        idx=next((i for i,t in enumerate(hand) if t["id"]==tileId),None)
+        if idx is None: return
+        tile=hand.pop(idx)
+        r["discard"].append(tile)
+        r["mustDiscard"]=False
+        if not hand:
+            r101_finish_round(r,u)
+            r101_broadcast(r); return
+        r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+        r["log"]=u+" taş attı."
     r101_run_bots(r["code"])
     r101_broadcast(r)
 
@@ -8002,38 +8200,50 @@ def r101_run_bot_turns(code):
             socketio.sleep(1.5)
             r=R101_ROOMS.get(code)
             if not r or not r101_next_is_bot(r): return
-            u=r["order"][r["turnIdx"]]
-            p=r["players"][u]
-            if not r["mustDiscard"]:
-                source="discard" if (r["discard"] and random.random()<0.3) else "deck"
-                if source=="discard" and not r["discard"]: source="deck"
-                ok=r101_perform_draw(r,u,source)
+            drew=False
+            with _state_lock:
+                if not r101_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]
+                if not r["mustDiscard"]:
+                    source="discard" if (r["discard"] and random.random()<0.3) else "deck"
+                    if source=="discard" and not r["discard"]: source="deck"
+                    ok=r101_perform_draw(r,u,source)
+                    drew=True
+            if drew:
                 r101_broadcast(r)
                 if not ok or r["stage"]!="playing": return
                 socketio.sleep(1.5)
                 r=R101_ROOMS.get(code)
-                if not r or r["stage"]!="playing": return
-            hand=p["hand"]
-            if not hand: return
-            idx=r101_bot_pick_discard(hand,r)
-            tile=hand.pop(idx)
-            r["discard"].append(tile)
-            r["mustDiscard"]=False
-            r["log"]=u+" taş attı."
-            if not hand:
-                r101_finish_round(r,u)
-                r101_broadcast(r); return
-            r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
+                if not r or r["stage"]!="playing" or not r101_next_is_bot(r): return
+            finished=False
+            with _state_lock:
+                if not r101_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]
+                p=r["players"][u]
+                hand=p["hand"]
+                if not hand: return
+                idx=r101_bot_pick_discard(hand,r)
+                tile=hand.pop(idx)
+                r["discard"].append(tile)
+                r["mustDiscard"]=False
+                r["log"]=u+" taş attı."
+                if not hand:
+                    r101_finish_round(r,u)
+                    finished=True
+                else:
+                    r["turnIdx"]=(r["turnIdx"]+1)%len(r["order"])
             r101_broadcast(r)
+            if finished:
+                return
     finally:
         r=R101_ROOMS.get(code)
         if r: r["botTaskRunning"]=False
 
 def r101_run_bots(code):
-    r=R101_ROOMS.get(code)
-    if not r or not r101_next_is_bot(r): return
-    if r.get("botTaskRunning"): return
-    r["botTaskRunning"]=True
+    with _state_lock:
+        r=R101_ROOMS.get(code)
+        if not r or not r101_next_is_bot(r) or r.get("botTaskRunning"): return
+        r["botTaskRunning"]=True
     socketio.start_background_task(r101_run_bot_turns,code)
 
 
@@ -8219,24 +8429,45 @@ def tavla_add_bot(data):
 def tavla_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
     r=TAVLA_ROOMS.get(code)
-    if not r or u not in r["players"]: return
-    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
-    del r["players"][u]
-    r["log"]=u+" a quitté la table."
-    if not r["players"]:
-        del TAVLA_ROOMS[code]; return
-    if r["stage"]=="playing":
-        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    if not r: return
+    with _state_lock:
+        if u not in r["players"] or not seat_sid_ok(r,u,request.sid): return
+        cancelled=r["stage"]=="playing"
+        refund_list=[n for n in r["seatOrder"] if not r["players"][n].get("isBot")] if cancelled else []
+        r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+        del r["players"][u]
+        r["log"]=u+" a quitté la table."
+        room_empty=not r["players"]
+        if room_empty:
+            del TAVLA_ROOMS[code]
+        elif cancelled:
+            r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    if cancelled:
+        refund_play_fee(refund_list)
+    if room_empty:
+        return
     tavla_broadcast(r)
+
+def tavla_disconnect_cleanup(sid):
+    for code,r in list(TAVLA_ROOMS.items()):
+        u=next((n for n,p in r["players"].items() if p.get("sid")==sid),None)
+        if u:
+            tavla_leave_room({"username":u,"code":code})
 
 @socketio.on("tavla_start_game")
 def tavla_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
-    if not r or len(r["seatOrder"])!=2: emit("tavla_error",{"code":"need_players"}); return
+    if not r or r["started"] or len(r["seatOrder"])!=2: emit("tavla_error",{"code":"need_players"}); return
+    with _state_lock:
+        if r["started"]: return
+        r["started"]=True
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("tavla_error",{"code":"not_enough_chips"}); return
-    r["started"]=True
-    tavla_deal(r)
+    if not ok:
+        with _state_lock:
+            r["started"]=False
+        emit("tavla_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        tavla_deal(r)
     tavla_run_bots(r["code"])
     tavla_broadcast(r)
 
@@ -8244,9 +8475,16 @@ def tavla_start_game(data):
 def tavla_next_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=TAVLA_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    with _state_lock:
+        if r["stage"]=="playing": return
+        r["stage"]="playing"
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("tavla_error",{"code":"not_enough_chips"}); return
-    tavla_deal(r)
+    if not ok:
+        with _state_lock:
+            if r["stage"]=="playing": r["stage"]="waiting"
+        emit("tavla_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        tavla_deal(r)
     tavla_run_bots(r["code"])
     tavla_broadcast(r)
 
@@ -8255,16 +8493,22 @@ def tavla_roll_dice(data):
     code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
     r=TAVLA_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("tavla_error",{"code":"not_your_turn"}); return
-    if r["dice"]: emit("tavla_error",{"code":"already_rolled"}); return
-    player=r["players"][u]["color"]
-    d1=random.randint(1,6); d2=random.randint(1,6)
-    r["dice"]=[d1,d1,d1,d1] if d1==d2 else [d1,d2]
-    r["log"]=f"{u} {d1}-{d2} attı."
-    tavla_prune_dead_dice(r,player)
-    if not r["dice"]:
-        r["log"]+=" Oynanabilecek hamle yok, sıra geçti."
-        tavla_advance_turn(r)
+    if not seat_sid_ok(r,u,request.sid): return
+    should_run_bots=False
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("tavla_error",{"code":"not_your_turn"}); return
+        if r["dice"]: emit("tavla_error",{"code":"already_rolled"}); return
+        player=r["players"][u]["color"]
+        d1=random.randint(1,6); d2=random.randint(1,6)
+        r["dice"]=[d1,d1,d1,d1] if d1==d2 else [d1,d2]
+        r["log"]=f"{u} {d1}-{d2} attı."
+        tavla_prune_dead_dice(r,player)
+        if not r["dice"]:
+            r["log"]+=" Oynanabilecek hamle yok, sıra geçti."
+            tavla_advance_turn(r)
+            should_run_bots=True
+    if should_run_bots:
         tavla_run_bots(r["code"])
     tavla_broadcast(r)
 
@@ -8274,24 +8518,30 @@ def tavla_move(data):
     frm=(data or {}).get("from"); die=(data or {}).get("die")
     r=TAVLA_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("tavla_error",{"code":"not_your_turn"}); return
-    try: die=int(die)
-    except (TypeError,ValueError): return
-    if die not in r["dice"]: emit("tavla_error",{"code":"invalid_die"}); return
-    player=r["players"][u]["color"]
-    moves=tavla_legal_moves(r,player,die)
-    frm_norm="bar" if frm=="bar" else int(frm)
-    match=next((m for m in moves if m["from"]==frm_norm),None)
-    if not match: emit("tavla_error",{"code":"invalid_move"}); return
-    tavla_apply_move(r,player,match)
-    r["dice"].remove(die)
-    r["log"]=f"{u}: hamle yaptı."
-    if r["off"][player]==15:
-        r["stage"]="finished"; r["winner"]=u; r["log"]=u+" kazandı! 🏆"
-        tavla_broadcast(r); return
-    tavla_prune_dead_dice(r,player)
-    if not r["dice"]:
-        tavla_advance_turn(r)
+    if not seat_sid_ok(r,u,request.sid): return
+    should_run_bots=False
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("tavla_error",{"code":"not_your_turn"}); return
+        try: die=int(die)
+        except (TypeError,ValueError): return
+        if die not in r["dice"]: emit("tavla_error",{"code":"invalid_die"}); return
+        player=r["players"][u]["color"]
+        moves=tavla_legal_moves(r,player,die)
+        frm_norm="bar" if frm=="bar" else int(frm)
+        match=next((m for m in moves if m["from"]==frm_norm),None)
+        if not match: emit("tavla_error",{"code":"invalid_move"}); return
+        tavla_apply_move(r,player,match)
+        r["dice"].remove(die)
+        r["log"]=f"{u}: hamle yaptı."
+        if r["off"][player]==15:
+            r["stage"]="finished"; r["winner"]=u; r["log"]=u+" kazandı! 🏆"
+            tavla_broadcast(r); return
+        tavla_prune_dead_dice(r,player)
+        if not r["dice"]:
+            tavla_advance_turn(r)
+            should_run_bots=True
+    if should_run_bots:
         tavla_run_bots(r["code"])
     tavla_broadcast(r)
 
@@ -8316,54 +8566,64 @@ def tavla_run_bot_turns(code):
         while True:
             r=TAVLA_ROOMS.get(code)
             if not r or not tavla_next_is_bot(r): return
-            u=r["order"][r["turnIdx"]]
-            player=r["players"][u]["color"]
             if not r["dice"]:
                 socketio.sleep(1.4)
                 r=TAVLA_ROOMS.get(code)
                 if not r or not tavla_next_is_bot(r): return
-                d1=random.randint(1,6); d2=random.randint(1,6)
-                r["dice"]=[d1,d1,d1,d1] if d1==d2 else [d1,d2]
-                r["log"]=f"{u} {d1}-{d2} attı."
-                tavla_prune_dead_dice(r,player)
-                if not r["dice"]:
-                    tavla_advance_turn(r)
-                    tavla_broadcast(r)
-                    continue
+                rolled_out=False
+                with _state_lock:
+                    if not tavla_next_is_bot(r): return
+                    u=r["order"][r["turnIdx"]]
+                    player=r["players"][u]["color"]
+                    d1=random.randint(1,6); d2=random.randint(1,6)
+                    r["dice"]=[d1,d1,d1,d1] if d1==d2 else [d1,d2]
+                    r["log"]=f"{u} {d1}-{d2} attı."
+                    tavla_prune_dead_dice(r,player)
+                    if not r["dice"]:
+                        tavla_advance_turn(r)
+                        rolled_out=True
                 tavla_broadcast(r)
+                if rolled_out: continue
             socketio.sleep(1.5)
             r=TAVLA_ROOMS.get(code)
             if not r or not tavla_next_is_bot(r): return
             if not r["dice"]: continue
-            chosen_die=None; moves=[]
-            for d in set(r["dice"]):
-                mv=tavla_legal_moves(r,player,d)
-                if mv: chosen_die=d; moves=mv; break
-            if chosen_die is None:
-                r["dice"]=[]
-                tavla_advance_turn(r)
-                tavla_broadcast(r)
-                continue
-            move=tavla_bot_pick_move(r,player,moves)
-            tavla_apply_move(r,player,move)
-            r["dice"].remove(chosen_die)
-            r["log"]=f"{u}: hamle yaptı."
-            if r["off"][player]==15:
-                r["stage"]="finished"; r["winner"]=u; r["log"]=u+" kazandı! 🏆"
-                tavla_broadcast(r); return
-            tavla_prune_dead_dice(r,player)
-            if not r["dice"]:
-                tavla_advance_turn(r)
+            finished=False
+            with _state_lock:
+                if not tavla_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]
+                player=r["players"][u]["color"]
+                if not r["dice"]: continue
+                chosen_die=None; moves=[]
+                for d in set(r["dice"]):
+                    mv=tavla_legal_moves(r,player,d)
+                    if mv: chosen_die=d; moves=mv; break
+                if chosen_die is None:
+                    r["dice"]=[]
+                    tavla_advance_turn(r)
+                else:
+                    move=tavla_bot_pick_move(r,player,moves)
+                    tavla_apply_move(r,player,move)
+                    r["dice"].remove(chosen_die)
+                    r["log"]=f"{u}: hamle yaptı."
+                    if r["off"][player]==15:
+                        r["stage"]="finished"; r["winner"]=u; r["log"]=u+" kazandı! 🏆"
+                        finished=True
+                    else:
+                        tavla_prune_dead_dice(r,player)
+                        if not r["dice"]:
+                            tavla_advance_turn(r)
             tavla_broadcast(r)
+            if finished: return
     finally:
         r=TAVLA_ROOMS.get(code)
         if r: r["botTaskRunning"]=False
 
 def tavla_run_bots(code):
-    r=TAVLA_ROOMS.get(code)
-    if not r or not tavla_next_is_bot(r): return
-    if r.get("botTaskRunning"): return
-    r["botTaskRunning"]=True
+    with _state_lock:
+        r=TAVLA_ROOMS.get(code)
+        if not r or not tavla_next_is_bot(r) or r.get("botTaskRunning"): return
+        r["botTaskRunning"]=True
     socketio.start_background_task(tavla_run_bot_turns,code)
 
 
@@ -8538,24 +8798,45 @@ def bowling_add_bot(data):
 def bowling_leave_room(data):
     u=(data or {}).get("username","").strip(); code=((data or {}).get("code","") or "").strip().upper()
     r=BOWLING_ROOMS.get(code)
-    if not r or u not in r["players"]: return
-    r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
-    del r["players"][u]
-    r["log"]=u+" a quitté le salon."
-    if not r["players"]:
-        del BOWLING_ROOMS[code]; return
-    if r["stage"]=="playing":
-        r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    if not r: return
+    with _state_lock:
+        if u not in r["players"] or not seat_sid_ok(r,u,request.sid): return
+        cancelled=r["stage"]=="playing"
+        refund_list=[n for n in r["seatOrder"] if not r["players"][n].get("isBot")] if cancelled else []
+        r["seatOrder"]=[n for n in r["seatOrder"] if n!=u]
+        del r["players"][u]
+        r["log"]=u+" a quitté le salon."
+        room_empty=not r["players"]
+        if room_empty:
+            del BOWLING_ROOMS[code]
+        elif cancelled:
+            r["stage"]="waiting"; r["order"]=[]; r["log"]=u+" ayrıldı, oyun iptal edildi."
+    if cancelled:
+        refund_play_fee(refund_list)
+    if room_empty:
+        return
     bowling_broadcast(r)
+
+def bowling_disconnect_cleanup(sid):
+    for code,r in list(BOWLING_ROOMS.items()):
+        u=next((n for n,p in r["players"].items() if p.get("sid")==sid),None)
+        if u:
+            bowling_leave_room({"username":u,"code":code})
 
 @socketio.on("bowling_start_game")
 def bowling_start_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
-    if not r or len(r["seatOrder"])<2: emit("bowling_error",{"code":"need_players"}); return
+    if not r or r["started"] or len(r["seatOrder"])<2: emit("bowling_error",{"code":"need_players"}); return
+    with _state_lock:
+        if r["started"]: return
+        r["started"]=True
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("bowling_error",{"code":"not_enough_chips"}); return
-    r["started"]=True
-    bowling_deal(r)
+    if not ok:
+        with _state_lock:
+            r["started"]=False
+        emit("bowling_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        bowling_deal(r)
     bowling_run_bots(r["code"])
     bowling_broadcast(r)
 
@@ -8563,9 +8844,16 @@ def bowling_start_game(data):
 def bowling_next_game(data):
     code=((data or {}).get("code","") or "").strip().upper(); r=BOWLING_ROOMS.get(code)
     if not r or not r["started"] or r["stage"]=="playing": return
+    with _state_lock:
+        if r["stage"]=="playing": return
+        r["stage"]="playing"
     ok,_=charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
-    if not ok: emit("bowling_error",{"code":"not_enough_chips"}); return
-    bowling_deal(r)
+    if not ok:
+        with _state_lock:
+            if r["stage"]=="playing": r["stage"]="waiting"
+        emit("bowling_error",{"code":"not_enough_chips"}); return
+    with _state_lock:
+        bowling_deal(r)
     bowling_run_bots(r["code"])
     bowling_broadcast(r)
 
@@ -8574,21 +8862,27 @@ def bowling_roll(data):
     code=((data or {}).get("code","") or "").strip().upper(); u=(data or {}).get("username","").strip()
     r=BOWLING_ROOMS.get(code)
     if not r or r["stage"]!="playing" or u not in r["players"]: return
-    if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("bowling_error",{"code":"not_your_turn"}); return
-    p=r["players"][u]
-    if p["curFrame"]>=10: emit("bowling_error",{"code":"frame_done"}); return
-    fresh=bowling_rack_is_fresh(p)
-    pins=bowling_roll_pins(10 if fresh else p["pinsUp"])
-    frame_before=p["curFrame"]
-    bowling_apply_roll(p,pins,fresh)
-    r["lastRoll"]={"player":u,"pins":pins,"pinsUp":p["pinsUp"],"fresh":fresh}
-    r["log"]=f"{u}: {pins} lobut devirdi."
-    if p["curFrame"]!=frame_before:
-        if bowling_check_finished(r):
-            bowling_finish_game(r)
-        else:
-            bowling_advance_turn(r)
-            bowling_run_bots(r["code"])
+    if not seat_sid_ok(r,u,request.sid): return
+    should_run_bots=False
+    with _state_lock:
+        if r["stage"]!="playing": return
+        if not r.get("order") or r["order"][r["turnIdx"]]!=u: emit("bowling_error",{"code":"not_your_turn"}); return
+        p=r["players"][u]
+        if p["curFrame"]>=10: emit("bowling_error",{"code":"frame_done"}); return
+        fresh=bowling_rack_is_fresh(p)
+        pins=bowling_roll_pins(10 if fresh else p["pinsUp"])
+        frame_before=p["curFrame"]
+        bowling_apply_roll(p,pins,fresh)
+        r["lastRoll"]={"player":u,"pins":pins,"pinsUp":p["pinsUp"],"fresh":fresh}
+        r["log"]=f"{u}: {pins} lobut devirdi."
+        if p["curFrame"]!=frame_before:
+            if bowling_check_finished(r):
+                bowling_finish_game(r)
+            else:
+                bowling_advance_turn(r)
+                should_run_bots=True
+    if should_run_bots:
+        bowling_run_bots(r["code"])
     bowling_broadcast(r)
 
 def bowling_next_is_bot(r):
@@ -8604,30 +8898,35 @@ def bowling_run_bot_turns(code):
             socketio.sleep(1.3)
             r=BOWLING_ROOMS.get(code)
             if not r or not bowling_next_is_bot(r): return
-            u=r["order"][r["turnIdx"]]
-            p=r["players"][u]
-            fresh=bowling_rack_is_fresh(p)
-            pins=bowling_roll_pins(10 if fresh else p["pinsUp"])
-            frame_before=p["curFrame"]
-            bowling_apply_roll(p,pins,fresh)
-            r["lastRoll"]={"player":u,"pins":pins,"pinsUp":p["pinsUp"],"fresh":fresh}
-            r["log"]=f"{u}: {pins} lobut devirdi."
-            if p["curFrame"]!=frame_before:
-                if bowling_check_finished(r):
-                    bowling_finish_game(r)
-                    bowling_broadcast(r)
-                    return
-                bowling_advance_turn(r)
+            finished=False
+            with _state_lock:
+                if not bowling_next_is_bot(r): return
+                u=r["order"][r["turnIdx"]]
+                p=r["players"][u]
+                fresh=bowling_rack_is_fresh(p)
+                pins=bowling_roll_pins(10 if fresh else p["pinsUp"])
+                frame_before=p["curFrame"]
+                bowling_apply_roll(p,pins,fresh)
+                r["lastRoll"]={"player":u,"pins":pins,"pinsUp":p["pinsUp"],"fresh":fresh}
+                r["log"]=f"{u}: {pins} lobut devirdi."
+                if p["curFrame"]!=frame_before:
+                    if bowling_check_finished(r):
+                        bowling_finish_game(r)
+                        finished=True
+                    else:
+                        bowling_advance_turn(r)
             bowling_broadcast(r)
+            if finished:
+                return
     finally:
         r=BOWLING_ROOMS.get(code)
         if r: r["botTaskRunning"]=False
 
 def bowling_run_bots(code):
-    r=BOWLING_ROOMS.get(code)
-    if not r or not bowling_next_is_bot(r): return
-    if r.get("botTaskRunning"): return
-    r["botTaskRunning"]=True
+    with _state_lock:
+        r=BOWLING_ROOMS.get(code)
+        if not r or not bowling_next_is_bot(r) or r.get("botTaskRunning"): return
+        r["botTaskRunning"]=True
     socketio.start_background_task(bowling_run_bot_turns,code)
 
 
@@ -8964,36 +9263,64 @@ def magic_duel_leave_room(data):
     u = (data or {}).get("username", "").strip()
     code = ((data or {}).get("code", "") or "").strip().upper()
     r = MAGIC_ROOMS.get(code)
-    if not r or u not in r["players"]:
+    if not r:
         return
-    r["seatOrder"] = [n for n in r["seatOrder"] if n != u]
-    del r["players"][u]
-    if not r["players"]:
-        del MAGIC_ROOMS[code]; return
-    r["started"] = False
+    with _state_lock:
+        if u not in r["players"] or not seat_sid_ok(r, u, request.sid):
+            return
+        # Only a genuinely interrupted match is refunded -- once r["winner"] is set the
+        # duel was won fairly, and "started" alone stays True forever after that (only
+        # a leave ever resets it), so gating on "started" alone refunded every player
+        # who left the lobby *after* a completed, fully-played match too.
+        cancelled = bool(r.get("started")) and not r.get("winner")
+        refund_list = [n for n in r["seatOrder"] if not r["players"][n].get("isBot")] if cancelled else []
+        r["seatOrder"] = [n for n in r["seatOrder"] if n != u]
+        del r["players"][u]
+        room_empty = not r["players"]
+        if room_empty:
+            del MAGIC_ROOMS[code]
+        else:
+            r["started"] = False
+    if cancelled:
+        refund_play_fee(refund_list)
+    if room_empty:
+        return
     magic_duel_broadcast(r)
+
+def magic_duel_disconnect_cleanup(sid):
+    # Found via the player's own stored sid, so seat_sid_ok() inside leave_room
+    # passes naturally -- no need to fake anything up.
+    for code, r in list(MAGIC_ROOMS.items()):
+        u = next((n for n, p in r["players"].items() if p.get("sid") == sid), None)
+        if u:
+            magic_duel_leave_room({"username": u, "code": code})
 
 @socketio.on("magic_duel_start")
 def magic_duel_start(data):
     code = ((data or {}).get("code", "") or "").strip().upper()
     r = MAGIC_ROOMS.get(code)
-    if not r or len(r["seatOrder"]) != 2:
+    if not r or r.get("started") or len(r["seatOrder"]) != 2:
         emit("magic_error", {"code": "need_players"}); return
+    with _state_lock:
+        if r.get("started"): return
+        r["started"] = True
     ok, _ = charge_play_fee([u for u in r["seatOrder"] if not r["players"][u].get("isBot")])
     if not ok:
+        with _state_lock:
+            r["started"] = False
         emit("magic_error", {"code": "not_enough_chips"}); return
-    level = r.get("level", 10)
-    gen = magic_generate(level, seed=random.randint(1, 10**9))
-    r["started"] = True
-    r["winner"] = None
-    r["log"] = "Partie lancée !"
-    for u in r["seatOrder"]:
-        p = r["players"][u]
-        p["bottles"] = [list(b) for b in gen["bottles"]]
-        p["hidden"] = list(gen["hidden"])
-        p["moves"] = 0
-        p["finished"] = False
-    r["solution"] = magic_solve(gen["bottles"]) or []
+    with _state_lock:
+        level = r.get("level", 10)
+        gen = magic_generate(level, seed=random.randint(1, 10**9))
+        r["winner"] = None
+        r["log"] = "Partie lancée !"
+        for u in r["seatOrder"]:
+            p = r["players"][u]
+            p["bottles"] = [list(b) for b in gen["bottles"]]
+            p["hidden"] = list(gen["hidden"])
+            p["moves"] = 0
+            p["finished"] = False
+        r["solution"] = magic_solve(gen["bottles"]) or []
     magic_duel_broadcast(r)
     for u in r["seatOrder"]:
         magic_duel_send_board(r, u)
@@ -9006,32 +9333,37 @@ def magic_duel_pour(data):
     r = MAGIC_ROOMS.get(code)
     if not r or not r["started"] or u not in r["players"]:
         return
-    p = r["players"][u]
-    if p.get("finished") or r.get("winner"):
+    if not seat_sid_ok(r, u, request.sid):
         return
-    src, dst = (data or {}).get("src"), (data or {}).get("dst")
-    if not isinstance(src, int) or not isinstance(dst, int):
-        return
-    if not magic_apply_pour(p["bottles"], src, dst):
-        emit("magic_error", {"code": "invalid_move"}); return
-    magic_update_hidden(p["hidden"], p["bottles"], src)
-    p["moves"] += 1
-    if magic_is_solved(p["bottles"]):
-        p["finished"] = True
-        if not r.get("winner"):
-            r["winner"] = u
-            r["log"] = f"{u} a gagné ! 🏆"
+    with _state_lock:
+        if not r["started"]: return
+        p = r["players"][u]
+        if p.get("finished") or r.get("winner"):
+            return
+        src, dst = (data or {}).get("src"), (data or {}).get("dst")
+        if not isinstance(src, int) or not isinstance(dst, int):
+            return
+        if not magic_apply_pour(p["bottles"], src, dst):
+            emit("magic_error", {"code": "invalid_move"}); return
+        magic_update_hidden(p["hidden"], p["bottles"], src)
+        p["moves"] += 1
+        if magic_is_solved(p["bottles"]):
+            p["finished"] = True
+            if not r.get("winner"):
+                r["winner"] = u
+                r["log"] = f"{u} a gagné ! 🏆"
     magic_duel_send_board(r, u)
     magic_duel_broadcast(r)
 
 def magic_duel_maybe_bot(code):
-    r = MAGIC_ROOMS.get(code)
-    if not r or r.get("botTaskRunning"):
-        return
-    bot_name = next((u for u in r["seatOrder"] if r["players"][u].get("isBot")), None)
-    if not bot_name:
-        return
-    r["botTaskRunning"] = True
+    with _state_lock:
+        r = MAGIC_ROOMS.get(code)
+        if not r or r.get("botTaskRunning"):
+            return
+        bot_name = next((u for u in r["seatOrder"] if r["players"][u].get("isBot")), None)
+        if not bot_name:
+            return
+        r["botTaskRunning"] = True
     socketio.start_background_task(magic_duel_run_bot, code, bot_name)
 
 def magic_duel_run_bot(code, bot_name):
@@ -9044,22 +9376,52 @@ def magic_duel_run_bot(code, bot_name):
         r = MAGIC_ROOMS.get(code)
         if not r or not r["started"] or r.get("winner"):
             break
-        p = r["players"].get(bot_name)
-        if not p or p.get("finished"):
-            break
-        if not magic_apply_pour(p["bottles"], src, dst):
-            continue
-        magic_update_hidden(p["hidden"], p["bottles"], src)
-        p["moves"] += 1
-        if magic_is_solved(p["bottles"]):
-            p["finished"] = True
-            if not r.get("winner"):
-                r["winner"] = bot_name
-                r["log"] = f"{bot_name} a gagné ! 🏆"
+        finished = False
+        with _state_lock:
+            if not r["started"] or r.get("winner"):
+                break
+            p = r["players"].get(bot_name)
+            if not p or p.get("finished"):
+                break
+            if not magic_apply_pour(p["bottles"], src, dst):
+                continue
+            magic_update_hidden(p["hidden"], p["bottles"], src)
+            p["moves"] += 1
+            if magic_is_solved(p["bottles"]):
+                p["finished"] = True
+                if not r.get("winner"):
+                    r["winner"] = bot_name
+                    r["log"] = f"{bot_name} a gagné ! 🏆"
+                    finished = True
         magic_duel_broadcast(r)
+        if finished:
+            break
     r = MAGIC_ROOMS.get(code)
     if r:
         r["botTaskRunning"] = False
+
+
+@socketio.on('disconnect')
+def on_any_disconnect():
+    # Flask-SocketIO only keeps the LAST handler registered for a given event name --
+    # registering a second @socketio.on('disconnect') doesn't add a listener, it
+    # silently replaces the previous one. This file used to have three separate
+    # @socketio.on('disconnect') handlers (online-presence cleanup, auth-session
+    # cleanup, Codenames room cleanup); only the last one defined was ever actually
+    # running, so the other two were dead code. This is the one and only disconnect
+    # handler now -- it calls every cleanup routine explicitly instead of relying on
+    # another decorator to register itself.
+    montenoir_online_disconnect()
+    auth_disconnect_cleanup()
+    codenames_disconnect_cleanup()
+    poker_disconnect_cleanup(request.sid)
+    okey_disconnect_cleanup(request.sid)
+    r101_disconnect_cleanup(request.sid)
+    ludo_disconnect_cleanup(request.sid)
+    tavla_disconnect_cleanup(request.sid)
+    bowling_disconnect_cleanup(request.sid)
+    magic_duel_disconnect_cleanup(request.sid)
+    m_disconnect_cleanup(request.sid)
 
 
 # === CLEAN ROUTES MONTENOIR / METROPOLY ===
