@@ -759,54 +759,7 @@ def tarot_pdf(request_id):
     .page{{border:2px solid #d4af37;border-radius:24px;padding:35px;background:#0b0b0b;}}
     h1{{text-align:center;text-shadow:0 0 12px #d4af37;}}
     .box{{border:1px solid #d4af37;border-radius:16px;padding:18px;margin:15px 0;color:#f8e7a0;}}
-    
-.topLeftFixed{
-display:flex!important;
-flex-direction:column!important;
-align-items:flex-start!important;
-gap:6px!important;
-}
-.topLeftFixed button{
-width:190px!important;
-}
-.compactMenuWrap{
-width:190px!important;
-}
-
-.footer{margin-top:25px;text-align:center}
-.footerLine{width:220px;height:2px;margin:0 auto 12px auto;background:linear-gradient(90deg,transparent,#d4af37,transparent);box-shadow:0 0 12px #d4af37}
-.footerText{color:#d4af37;font-size:15px;letter-spacing:4px;font-weight:bold;text-shadow:0 0 10px rgba(212,175,55,.7)}
-
-
-.bigLogo,.mainTitle,.mainVip,.logoMark,.title,.vip{display:none!important}
-
-
-/* realism patch */
-.playerCard .colorDot{
-  width:18px!important;
-  height:18px!important;
-  border:2px solid rgba(255,255,255,.75)!important;
-}
-.playerCard{
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.52))!important;
-}
-.ownedLabel{
-  display:inline-block;
-  width:38px;
-  height:7px;
-  border-radius:6px;
-  margin-left:8px;
-  vertical-align:middle;
-}
-
-
-/* V2 controls dice chat fix */
-.dice{width:110px!important;height:110px!important;perspective:900px!important;filter:drop-shadow(0 22px 18px #000) drop-shadow(0 0 12px rgba(255,255,255,.35))!important}
-.face{width:110px!important;height:110px!important;border-radius:10px!important;background:linear-gradient(145deg,#fff,#e7e7e7 52%,#8c8c8c)!important;border:3px solid #fff!important}
-.front{transform:translateZ(55px)!important}.back{transform:rotateY(180deg) translateZ(55px)!important}.right{transform:rotateY(90deg) translateZ(55px)!important}.leftf{transform:rotateY(-90deg) translateZ(55px)!important}.topf{transform:rotateX(90deg) translateZ(55px)!important}.bottomf{transform:rotateX(-90deg) translateZ(55px)!important}.pip{width:17px!important;height:17px!important}
-.chatLog{position:fixed;left:18px;bottom:78px;z-index:170;min-width:260px;max-width:420px;padding:13px 16px;border:1px solid #d4af37;border-radius:14px;background:#000d;color:#fff;font-weight:900;box-shadow:0 0 20px #000;opacity:0;transform:translateY(10px);transition:.25s}.chatLog.show{opacity:1;transform:translateY(0)}
-.modeSaved{position:fixed;right:330px;top:76px;z-index:120;color:#ffd989;background:#000c;border:1px solid #d4af37;border-radius:12px;padding:8px 12px;font-weight:900;display:none}
-</style></head><body>
+    </style></head><body>
     <div class='page'>
     <h1>🔮 {title}</h1>
     <div class='box'><b>Kullanıcı:</b> {username}<br><b>Tarih:</b> {created}</div>
@@ -841,7 +794,7 @@ def tarot_submit_request(data):
         return
     price = int(TAROT_PRICES[service])
     chips = int(users[key].get("chips", 1000))
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         if chips < price:
             emit("tarot_result", {"ok": False, "msg": "Yeterli jeton yok."})
             return
@@ -889,7 +842,7 @@ def tarot_lucky_wheel(data):
         emit("tarot_wheel_result", {"ok": False, "msg": "Giriş gerekli."})
         return
     today = time.strftime("%Y-%m-%d")
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         wheel_log = users[key].setdefault("wheelLog", {})
         used = int(wheel_log.get(today, 0))
         limit = int(settings.get("wheelDailyLimit", 1))
@@ -902,7 +855,7 @@ def tarot_lucky_wheel(data):
     weights = [int(v) for v in rw.values()]
     reward = random.choices(rewards, weights=weights, k=1)[0]
     users[key]["chips"] = int(users[key].get("chips", 1000)) + reward
-    if is_owner_name(key):
+    if is_owner_username(key):
         users[key]["chips"] = max(users[key]["chips"], 999999)
     users[key]["lastWheelDate"] = today
     save_users(users)
@@ -1088,7 +1041,7 @@ def save_site_settings(settings):
 
 @socketio.on("owner_get_panel")
 def owner_get_panel(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_panel_data", {"ok": False, "msg": "Bu panel sadece Yohanna Owner içindir."})
         return
     users = load_users()
@@ -1115,7 +1068,7 @@ def owner_get_panel(data):
 
 @socketio.on("owner_manage_user")
 def owner_manage_user(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     users = load_users()
@@ -1134,7 +1087,7 @@ def owner_manage_user(data):
     elif action == "unfreeze":
         users[key]["isFrozen"] = False
     elif action == "delete":
-        if is_owner_name(key):
+        if is_owner_username(key):
             emit("owner_action_result", {"ok": False, "msg": "Owner hesabı silinemez."})
             return
         users.pop(key, None)
@@ -1155,7 +1108,7 @@ def owner_manage_user(data):
 
 @socketio.on("owner_set_membership")
 def owner_set_membership(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     users = load_users()
@@ -1184,7 +1137,7 @@ def owner_set_membership(data):
 
 @socketio.on("owner_update_request")
 def owner_update_request(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     reqs = load_tarot_requests()
@@ -1200,7 +1153,7 @@ def owner_update_request(data):
 
 @socketio.on("owner_update_settings")
 def owner_update_settings(data):
-    if not is_owner_name(data.get("owner", "")):
+    if not is_owner_username(data.get("owner", "")):
         emit("owner_action_result", {"ok": False, "msg": "Bu işlemi sadece Yohanna yapabilir."})
         return
     settings = load_site_settings()
@@ -5299,9 +5252,9 @@ def api_open_chest():
                "gold": [("chips", 500), ("frame", "gold"), ("badge", "🥇 Altın Şans")],
                "diamond": [("chips", 1500), ("frame", "diamond"), ("badge", "💎 Elmas Şans"), ("color", "rainbow")]}
     price = prices.get(chest, 100)
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < price:
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < price:
         return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         users[key]["chips"] = int(users[key].get("chips", 0)) - price
     kind, value = random.choice(rewards.get(chest, rewards["bronze"]))
     if kind == "chips":
@@ -5333,9 +5286,9 @@ def api_buy_cosmetic():
              "baroque-frame": ("ownedFrames", "baroque", 7500), "rainbow-name": ("ownedNameColors", "rainbow", 3000),
              "animated-profile": ("ownedBadges", "✨ Animasyonlu Profil", 10000)}
     group, value, price = items.get(item, items["gold-frame"])
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < price:
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < price:
         return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key):
+    if not is_owner_username(key):
         users[key]["chips"] = int(users[key].get("chips", 0)) - price
     users[key].setdefault(group, [])
     if value not in users[key][group]: users[key][group].append(value)
@@ -5391,8 +5344,8 @@ def api_join_tournament():
     if not key: return {"ok": False, "msg": "Giriş gerekli."}
     tournament = data.get("tournament", "weekly-codenames")
     if tournament in users[key].get("tournaments", []): return {"ok": False, "msg": "Zaten kayıtlısın."}
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < 100: return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 100
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < 100: return {"ok": False, "msg": "Yeterli jeton yok."}
+    if not is_owner_username(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 100
     users[key].setdefault("tournaments", []).append(tournament)
     monte_add_xp(users, key, 50)
     save_users(users)
@@ -5403,8 +5356,8 @@ def api_premium_tarot():
     data = request.get_json(force=True, silent=True) or {}
     users, key = monte_find_or_create_user(data.get("u", ""))
     if not key: return {"ok": False, "msg": "Giriş gerekli."}
-    if not is_owner_name(key) and int(users[key].get("chips", 0)) < 1500: return {"ok": False, "msg": "Yeterli jeton yok."}
-    if not is_owner_name(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 1500
+    if not is_owner_username(key) and int(users[key].get("chips", 0)) < 1500: return {"ok": False, "msg": "Yeterli jeton yok."}
+    if not is_owner_username(key): users[key]["chips"] = int(users[key].get("chips", 0)) - 1500
     q = (data.get("question") or "").strip()
     birth = (data.get("birthDate") or "").strip()
     photo = (data.get("photoNote") or "").strip()
