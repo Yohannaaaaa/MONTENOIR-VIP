@@ -453,8 +453,11 @@ const magicCanvas = document.getElementById('magicCanvas');
 const mRenderer = new THREE.WebGLRenderer({ canvas: magicCanvas, antialias: true });
 mRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 mRenderer.outputColorSpace = THREE.SRGBColorSpace;
-mRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-mRenderer.toneMappingExposure = 1.18;
+// ACESFilmic is a cinematic/film grade -- it intentionally rolls off and desaturates
+// bright colors for a "realistic" look, which read as dull/matte for a candy-colored
+// puzzle game. Linear keeps colors punchy and literal instead of grading them.
+mRenderer.toneMapping = THREE.LinearToneMapping;
+mRenderer.toneMappingExposure = 1.05;
 mRenderer.shadowMap.enabled = true;
 mRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -562,15 +565,14 @@ function buildBottles3D(numBottles, cap) {
 
     const layers = [];
     for (let s = 0; s < cap; s++) {
-      // Physical material with clearcoat + a bit of emissive (kept in sync with the base
-      // color in applyLayerValue) so the liquid reads as bold/glossy/saturated under any
-      // lighting instead of a duller, purely lit-from-outside standard material.
+      // Unlit on purpose: a physically-lit material (Standard/Physical) shades each
+      // color darker wherever it faces away from the lights, which reads as "matte"/
+      // dull no matter how saturated the underlying hex is. MeshBasicMaterial ignores
+      // scene lighting entirely and just shows the literal color -- guaranteed vivid,
+      // flat, candy-bright liquid regardless of light setup or tone mapping.
       const mesh = new THREE.Mesh(
         new THREE.CylinderGeometry(BOTTLE_RADIUS * 0.88, BOTTLE_RADIUS * 0.88, layerH, 20),
-        new THREE.MeshPhysicalMaterial({
-          color: 0x888888, roughness: 0.12, metalness: 0, clearcoat: 0.7, clearcoatRoughness: 0.12,
-          transparent: true, opacity: 0.97, emissive: 0x000000, emissiveIntensity: 0.32,
-        })
+        new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.98 })
       );
       mesh.position.y = s * layerH + layerH / 2;
       mesh.scale.y = 0.001;
@@ -608,11 +610,8 @@ function applyLayerValue(bottleObj, s, val, animate) {
   const targetScale = visible ? 1 : 0.001;
   if (val === null) {
     mesh.material.color.set(0x555560);
-    mesh.material.emissive.set(0x000000);
   } else if (val !== undefined) {
-    const c = MAGIC_COLORS[val % MAGIC_COLORS.length];
-    mesh.material.color.set(c);
-    mesh.material.emissive.set(c);
+    mesh.material.color.set(MAGIC_COLORS[val % MAGIC_COLORS.length]);
   }
   mesh.userData.qSprite.visible = val === null;
   if (animate) {

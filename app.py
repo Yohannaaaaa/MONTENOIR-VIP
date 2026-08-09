@@ -8960,7 +8960,7 @@ def magic_generate(level, seed=None):
     params = magic_level_params(level)
     nc, ne, cap = params["numColors"], params["numEmpty"], MAGIC_CAPACITY
     bottles = [[i] * cap for i in range(nc)] + [[] for _ in range(ne)]
-    scramble_steps = 30 + level * 4
+    scramble_steps = 45 + level * 6
     for _ in range(scramble_steps):
         srcs = [i for i in range(len(bottles)) if bottles[i]]
         if not srcs:
@@ -8981,7 +8981,11 @@ def magic_generate(level, seed=None):
             continue
         dst = rnd.choice(dsts)
         space = cap - len(bottles[dst])
-        n = rnd.randint(1, min(max_n, space))
+        upper = min(max_n, space)
+        # Biased toward moving just 1 unit at a time (not a uniform 1..upper draw) so
+        # scrambling tends to leave many thin, alternating stripes per bottle instead of
+        # a few big same-color blocks getting shuffled around whole.
+        n = 1 if (upper > 1 and rnd.random() < 0.65) else rnd.randint(1, upper)
         for _ in range(n):
             bottles[dst].append(bottles[src].pop())
     hidden = [0] * len(bottles)
