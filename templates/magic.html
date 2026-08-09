@@ -573,7 +573,12 @@ function buildBottles3D(numBottles, cap) {
       layers.push(mesh);
     }
 
-    const hit = new THREE.Mesh(new THREE.CylinderGeometry(BOTTLE_RADIUS * 1.3, BOTTLE_RADIUS * 1.3, LIQUID_TOTAL_H + NECK_H + CORK_H, 12), new THREE.MeshBasicMaterial({ visible: false }));
+    // Sized off the gap between bottles (not the visible glass) so there's no dead
+    // zone between two bottles where a tap picks nothing -- on a phone, a bottle-width
+    // hit target (BOTTLE_RADIUS*1.3) left most of the row untappable, especially at
+    // higher levels where more bottles are packed into the same canvas width.
+    const HIT_RADIUS = BOTTLE_GAP * 0.48;
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(HIT_RADIUS, HIT_RADIUS, LIQUID_TOTAL_H + NECK_H + CORK_H, 12), new THREE.MeshBasicMaterial({ visible: false }));
     hit.position.y = (LIQUID_TOTAL_H + NECK_H + CORK_H) / 2;
     hit.userData.bottleIdx = idx;
     root.add(hit);
