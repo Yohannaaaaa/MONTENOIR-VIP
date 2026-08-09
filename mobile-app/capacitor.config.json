@@ -1,0 +1,12 @@
+{
+  "appId": "vip.montenoir.app",
+  "appName": "Montenoir VIP",
+  "webDir": "www",
+  "server": {
+    "url": "https://montenoirvip.onrender.com",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
