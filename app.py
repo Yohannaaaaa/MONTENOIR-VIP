@@ -8931,12 +8931,20 @@ def bowling_run_bots(code):
 
 
 # ===== MAGIC (Water Sort puzzle) =====
-MAGIC_CAPACITY = 4
+# 5 (not 4) so bottles read as "busy"/multi-striped from early levels without needing
+# more bottles to hold the complexity -- difficulty now leans more on stripes-per-bottle
+# than on bottle count (see magic_level_params below).
+MAGIC_CAPACITY = 5
 MAGIC_SOLO = {}    # sid -> solo session state
 MAGIC_ROOMS = {}   # code -> duel room state
 
 def magic_level_params(level):
-    num_colors = min(3 + (level - 1) // 3, 10)
+    # Bottle count used to grow every 3 levels and cap at 16 colors (18 bottles at high
+    # levels) -- too many bottles crowded onto one row. Grow it every 5 levels instead,
+    # capped lower at 12, so the board stays a reasonable size; the extra capacity above
+    # (4 -> 5) keeps each bottle looking busy/multi-colored even while there are fewer
+    # of them.
+    num_colors = min(3 + (level - 1) // 5, 12)
     return {"numColors": num_colors, "numEmpty": 2}
 
 def magic_generate(level, seed=None):
@@ -8952,7 +8960,7 @@ def magic_generate(level, seed=None):
     params = magic_level_params(level)
     nc, ne, cap = params["numColors"], params["numEmpty"], MAGIC_CAPACITY
     bottles = [[i] * cap for i in range(nc)] + [[] for _ in range(ne)]
-    scramble_steps = 30 + level * 4
+    scramble_steps = 70 + level * 9
     for _ in range(scramble_steps):
         srcs = [i for i in range(len(bottles)) if bottles[i]]
         if not srcs:
@@ -8973,7 +8981,11 @@ def magic_generate(level, seed=None):
             continue
         dst = rnd.choice(dsts)
         space = cap - len(bottles[dst])
-        n = rnd.randint(1, min(max_n, space))
+        upper = min(max_n, space)
+        # Biased toward moving just 1 unit at a time (not a uniform 1..upper draw) so
+        # scrambling tends to leave many thin, alternating stripes per bottle instead of
+        # a few big same-color blocks getting shuffled around whole.
+        n = 1 if (upper > 1 and rnd.random() < 0.85) else rnd.randint(1, upper)
         for _ in range(n):
             bottles[dst].append(bottles[src].pop())
     hidden = [0] * len(bottles)
