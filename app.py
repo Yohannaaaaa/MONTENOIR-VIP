@@ -5184,8 +5184,40 @@ def owner_ok(key):
     if secret: return str(key)==secret
     return str(key).strip().lower() in ["yohanna","yohannaa","yohannaaaaa"]
 
+# Canonical, server-trusted prices -- the client's hidden `price` field is only used for
+# display; keyed by the exact `service` string the price buttons on /tarot send.
+TAROT_PRICE_MAP = {
+    "Tek Soru Bakımı": 300,
+    "3 Soru Bakımı": 700,
+    "Aşk Açılımı": 1000,
+    "Genel Bakım": 1500,
+    "Aşk ve İlişki": 800,
+    "Öz Güven ve Çekim Gücü": 800,
+    "Şans ve Bolluk": 800,
+    "Kariyer ve Başarı": 800,
+    "Negatif Enerjiden Arınma": 800,
+    "Kişisel Niyet Ritüeli": 1500,
+}
+TAROT_DEFAULT_PRICE = 300  # free-form "Sorunu Yaz" question with no service selected
+
 @app.route("/api/tarot/request", methods=["POST"])
 def api_tarot_request():
+    username = request.form.get("username", "").strip()
+    if not username:
+        return {"ok": False, "msg": "Önce giriş yap, kullanıcı bulunamadı."}
+    service = request.form.get("service", "").strip()
+    price = TAROT_PRICE_MAP.get(service, TAROT_DEFAULT_PRICE)
+
+    with users_txn() as users:
+        key = find_user_key(users, username)
+        if not key:
+            return {"ok": False, "msg": "Kullanıcı bulunamadı, önce giriş yap."}
+        if not is_owner_username(key):
+            chips = int(users[key].get("chips", 0))
+            if chips < price:
+                return {"ok": False, "msg": f"Yetersiz jeton. Bu hizmet {price} jeton, bakiyen {chips} jeton."}
+            users[key]["chips"] = chips - price
+
     rid=str(uuid.uuid4())[:8]
     file_url=""; file_name=""
     f=request.files.get("file")
@@ -5200,15 +5232,16 @@ def api_tarot_request():
         file_url="/static/uploads/"+saved
     item={
       "id":rid, "createdAt":time.strftime("%Y-%m-%d %H:%M:%S"), "status":"Yeni talep",
-      "category":request.form.get("category",""), "service":request.form.get("service",""),
-      "duration":request.form.get("duration",""), "price":request.form.get("price",""),
+      "category":request.form.get("category",""), "service":service,
+      "duration":request.form.get("duration",""), "price":f"{price} jeton",
       "name":request.form.get("name",""), "motherName":request.form.get("motherName",""),
       "birthDate":request.form.get("birthDate",""), "email":request.form.get("email",""),
-      "question":request.form.get("question",""), "fileUrl":file_url, "fileName":file_name
+      "question":request.form.get("question",""), "fileUrl":file_url, "fileName":file_name,
+      "username":username
     }
     save_tarot_request(item)
     send_tarot_notification_email(item)
-    return {"ok":True,"msg":"Talep owner paneline gönderildi.","id":rid}
+    return {"ok":True,"msg":"Jeton düşüldü ve talep owner paneline gönderildi.","id":rid,"price":price}
 
 @app.route("/api/owner/requests")
 def api_owner_requests():
@@ -5491,10 +5524,10 @@ textarea{min-height:100px;grid-column:1/-1}
 <h2><span data-i18n='tarot_menu_readings'>🔮 Tarot Bakımları Hizmet</span></h2>
 <table>
 <tr><th data-i18n='tarot_th_service'>Hizmet</th><th data-i18n='tarot_th_duration'>Süre</th><th data-i18n='tarot_th_price'>Fiyat</th><th></th></tr>
-<tr><td>Tek Soru Bakımı</td><td>5 dk</td><td>🪙 300 jeton</td><td><button onclick="fillService('Tarot Bakımı','Tek Soru Bakımı','5 dk','300 jeton')">Randevu / Jeton Yükle</button></td></tr>
-<tr><td>3 Soru Bakımı</td><td>10 dk</td><td>🪙 700 jeton</td><td><button onclick="fillService('Tarot Bakımı','3 Soru Bakımı','10 dk','700 jeton')">Randevu / Jeton Yükle</button></td></tr>
-<tr><td>Aşk Açılımı</td><td>20 dk</td><td>🪙 1000 jeton</td><td><button onclick="fillService('Tarot Bakımı','Aşk Açılımı','20 dk','1000 jeton')">Randevu / Jeton Yükle</button></td></tr>
-<tr><td>Genel Bakım</td><td>30 dk</td><td>🪙 1500 jeton</td><td><button onclick="fillService('Tarot Bakımı','Genel Bakım','30 dk','1500 jeton')">Randevu / Jeton Yükle</button></td></tr>
+<tr><td>Tek Soru Bakımı</td><td>5 dk</td><td>🪙 300 jeton</td><td><button onclick="selectAndSend('Tarot Bakımı','Tek Soru Bakımı','5 dk','300 jeton')">🪙 300 — Seç &amp; Gönder</button></td></tr>
+<tr><td>3 Soru Bakımı</td><td>10 dk</td><td>🪙 700 jeton</td><td><button onclick="selectAndSend('Tarot Bakımı','3 Soru Bakımı','10 dk','700 jeton')">🪙 700 — Seç &amp; Gönder</button></td></tr>
+<tr><td>Aşk Açılımı</td><td>20 dk</td><td>🪙 1000 jeton</td><td><button onclick="selectAndSend('Tarot Bakımı','Aşk Açılımı','20 dk','1000 jeton')">🪙 1000 — Seç &amp; Gönder</button></td></tr>
+<tr><td>Genel Bakım</td><td>30 dk</td><td>🪙 1500 jeton</td><td><button onclick="selectAndSend('Tarot Bakımı','Genel Bakım','30 dk','1500 jeton')">🪙 1500 — Seç &amp; Gönder</button></td></tr>
 </table>
 </div>
 
@@ -5502,12 +5535,12 @@ textarea{min-height:100px;grid-column:1/-1}
 <h2><span data-i18n='tarot_menu_rituals'>✨ Ritüeller</span></h2>
 <table>
 <tr><th data-i18n='tarot_th_ritual'>Ritüel</th><th data-i18n='tarot_th_price'>Fiyat</th><th></th></tr>
-<tr><td>❤️ Aşk ve İlişki</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Aşk ve İlişki','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
-<tr><td>💖 Öz Güven ve Çekim Gücü</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Öz Güven ve Çekim Gücü','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
-<tr><td>🍀 Şans ve Bolluk</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Şans ve Bolluk','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
-<tr><td>💼 Kariyer ve Başarı</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Kariyer ve Başarı','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
-<tr><td>🕊️ Negatif Enerjiden Arınma</td><td>🪙 800 jeton</td><td><button onclick="fillService('Ritüel','Negatif Enerjiden Arınma','','800 jeton')">Talep / Jeton Yükle</button></td></tr>
-<tr><td>🌙 Kişisel Niyet Ritüeli</td><td>🪙 1500 jeton</td><td><button onclick="fillService('Ritüel','Kişisel Niyet Ritüeli','','1500 jeton')">Talep / Jeton Yükle</button></td></tr>
+<tr><td>❤️ Aşk ve İlişki</td><td>🪙 800 jeton</td><td><button onclick="selectAndSend('Ritüel','Aşk ve İlişki','','800 jeton')">🪙 800 — Seç &amp; Gönder</button></td></tr>
+<tr><td>💖 Öz Güven ve Çekim Gücü</td><td>🪙 800 jeton</td><td><button onclick="selectAndSend('Ritüel','Öz Güven ve Çekim Gücü','','800 jeton')">🪙 800 — Seç &amp; Gönder</button></td></tr>
+<tr><td>🍀 Şans ve Bolluk</td><td>🪙 800 jeton</td><td><button onclick="selectAndSend('Ritüel','Şans ve Bolluk','','800 jeton')">🪙 800 — Seç &amp; Gönder</button></td></tr>
+<tr><td>💼 Kariyer ve Başarı</td><td>🪙 800 jeton</td><td><button onclick="selectAndSend('Ritüel','Kariyer ve Başarı','','800 jeton')">🪙 800 — Seç &amp; Gönder</button></td></tr>
+<tr><td>🕊️ Negatif Enerjiden Arınma</td><td>🪙 800 jeton</td><td><button onclick="selectAndSend('Ritüel','Negatif Enerjiden Arınma','','800 jeton')">🪙 800 — Seç &amp; Gönder</button></td></tr>
+<tr><td>🌙 Kişisel Niyet Ritüeli</td><td>🪙 1500 jeton</td><td><button onclick="selectAndSend('Ritüel','Kişisel Niyet Ritüeli','','1500 jeton')">🪙 1500 — Seç &amp; Gönder</button></td></tr>
 </table>
 </div>
 
@@ -5532,6 +5565,7 @@ textarea{min-height:100px;grid-column:1/-1}
 <div class='panel formPanel'>
 <h2><span data-i18n='tarot_form_title'>✍️ Sorunu Yaz</span></h2>
 <form id='tarotForm' enctype='multipart/form-data'>
+<input type='hidden' name='username' id='tarotUsername'>
 <input type='hidden' name='category' id='category' value='Serbest Soru'>
 <input type='hidden' name='service' id='service' value='Sorunu Yaz'>
 <input type='hidden' name='price' id='price'>
@@ -5549,7 +5583,7 @@ textarea{min-height:100px;grid-column:1/-1}
 <input name='appointmentDate' type='datetime-local' title='Randevu tarihi'>
 <textarea name='question' placeholder='Sorunu yaz' data-i18n-placeholder='tarot_field_question' required></textarea>
 <input class='full' name='file' type='file' accept='.pdf,.jpg,.jpeg,.png'>
-<button class='full'><span data-i18n='tarot_submit'>🪙 Jeton Yükle / Talep Gönder</span></button>
+<button class='full' id='tarotSubmitBtn'><span data-i18n='tarot_submit'>🪙 300 jeton — Talep Gönder</span></button>
 </div>
 <div id='formStatus' class='status'></div>
 </form>
@@ -5559,15 +5593,34 @@ textarea{min-height:100px;grid-column:1/-1}
 
 </div></div>
 <script>
+function getSavedUser(){return localStorage.getItem("montenoirUser") || localStorage.getItem("codenamesAccount") || localStorage.getItem("loggedUser") || ""}
+tarotUsername.value=getSavedUser();
+
 function openPanel(id){
  document.querySelectorAll('.panel:not(.formPanel)').forEach(p=>p.classList.remove('show'));
  document.getElementById(id).classList.add('show');
  document.getElementById(id).scrollIntoView({behavior:'smooth',block:'center'});
 }
-function fillService(c,s,d,p){
+function submitTarotForm(){
+ if(!tarotUsername.value){
+   formStatus.textContent='Önce giriş yap (kullanıcı bulunamadı).';
+   return;
+ }
+ const fd=new FormData(tarotForm);
+ formStatus.textContent='Gönderiliyor...';
+ fetch('/api/tarot/request',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+   formStatus.textContent=d.msg||JSON.stringify(d);
+   if(d.ok) tarotForm.reset();
+ }).catch(()=>formStatus.textContent='Gönderim hatası.');
+}
+function selectAndSend(c,s,d,p){
  category.value=c;service.value=s;duration.value=d;price.value=p;
- tarotForm.scrollIntoView({behavior:'smooth'});
- formStatus.textContent='Seçilen hizmet: '+c+' / '+s+' / '+p;
+ if(tarotForm.reportValidity()){
+   submitTarotForm();
+ } else {
+   tarotForm.scrollIntoView({behavior:'smooth'});
+   formStatus.textContent='Önce isim, e-posta ve sorunu yaz, sonra hizmeti seç: '+c+' / '+s+' / '+p;
+ }
 }
 function instantTarot(){
  const cards=['Aşıklar','Ay','Güneş','Kule','Yıldız','İmparatoriçe'];
@@ -5576,12 +5629,7 @@ function instantTarot(){
 }
 tarotForm.addEventListener('submit',e=>{
  e.preventDefault();
- const fd=new FormData(tarotForm);
- formStatus.textContent='Gönderiliyor...';
- fetch('/api/tarot/request',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
-   formStatus.textContent=d.msg||JSON.stringify(d);
-   if(d.ok) tarotForm.reset();
- }).catch(()=>formStatus.textContent='Gönderim hatası.');
+ submitTarotForm();
 });
 </script>
 </body></html>""" + Londres_I18N_SCRIPT
