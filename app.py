@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading, uuid
 from contextlib import contextmanager
 try:
     import psycopg2
@@ -434,6 +434,46 @@ def send_reset_email(to_email, reset_link):
         server.sendmail(smtp_from, to_email, message.encode("utf-8"))
     return True
 
+TAROT_NOTIFY_EMAIL = "montenoirvip@gmail.com"
+
+def send_tarot_notification_email(item):
+    """Best-effort notification of a new tarot/ritual request to the owner's inbox.
+    Never raises -- a missing/broken SMTP setup must not block the request itself from
+    being saved (it's still visible in the owner panel either way)."""
+    subject = f"Montenoir VIP - Yeni Tarot/Ritüel Talebi #{item.get('id', '-')}"
+    body = (
+        f"Hizmet: {item.get('service') or item.get('category') or '-'}\n"
+        f"Süre: {item.get('duration') or '-'}\n"
+        f"Fiyat: {item.get('price') or '-'}\n"
+        f"Ad: {item.get('name') or '-'}\n"
+        f"Anne adı: {item.get('motherName') or '-'}\n"
+        f"Doğum tarihi: {item.get('birthDate') or '-'}\n"
+        f"E-posta: {item.get('email') or '-'}\n"
+        f"Soru: {item.get('question') or '-'}\n"
+        f"Dosya: {item.get('fileName') or '-'}\n"
+        f"Tarih: {item.get('createdAt') or '-'}\n"
+        f"\nOwner panel: /owner-panel"
+    )
+    smtp_host = os.environ.get("SMTP_HOST", "")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_password = os.environ.get("SMTP_PASSWORD", "")
+    smtp_from = os.environ.get("SMTP_FROM", smtp_user)
+    if not smtp_host or not smtp_user or not smtp_password:
+        print("TAROT REQUEST (SMTP not configured, not emailed):\n" + body, flush=True)
+        return False
+    message = f"Subject: {subject}\n\n{body}"
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls(context=context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, TAROT_NOTIFY_EMAIL, message.encode("utf-8"))
+        return True
+    except Exception as e:
+        print("tarot notify email error:", e, flush=True)
+        return False
+
 def save_player_to_user(player):
     # Only chips/VIP status legitimately change through gameplay. Avatar/avatarData/
     # nameColor/avatarFrame are cosmetic profile fields owned by the dedicated profile
@@ -862,6 +902,8 @@ def tarot_submit_request(data):
     }
     reqs.insert(0, req)
     save_tarot_requests(reqs)
+    if req["status"] == "Bekliyor":
+        send_tarot_notification_email(req)
     emit("tarot_result", {"ok": True, "msg": f"{service_label} talebin alındı. {price} jeton düşüldü.", "request": req, "profile": profile})
 
 @socketio.on("tarot_get_requests")
@@ -5555,6 +5597,8 @@ def save_tarot_request(item):
         except Exception as e:
             print("tarot db save error",e,flush=True)
     items=load_tarot_requests(); items.insert(0,item)
+    data_dir=os.path.dirname(TAROT_REQUESTS_FILE)
+    if data_dir and not os.path.exists(data_dir): os.makedirs(data_dir,exist_ok=True)
     with open(TAROT_REQUESTS_FILE,"w",encoding="utf-8") as f: json.dump(items,f,ensure_ascii=False,indent=2)
 
 def owner_ok(key):
@@ -5585,6 +5629,7 @@ def api_tarot_request():
       "question":request.form.get("question",""), "fileUrl":file_url, "fileName":file_name
     }
     save_tarot_request(item)
+    send_tarot_notification_email(item)
     return {"ok":True,"msg":"Talep owner paneline gönderildi.","id":rid}
 
 @app.route("/api/owner/requests")
@@ -9853,7 +9898,7 @@ def profile_page():
     """)
 
 if __name__ == "__main__":
-    import os, uuid, uuid, uuid, sys, traceback
+    import sys, traceback
     try:
         if "init_db" in globals():
             init_db()
