@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading, uuid
 from contextlib import contextmanager
 try:
     import psycopg2
@@ -434,6 +434,46 @@ def send_reset_email(to_email, reset_link):
         server.sendmail(smtp_from, to_email, message.encode("utf-8"))
     return True
 
+TAROT_NOTIFY_EMAIL = "montenoirvip@gmail.com"
+
+def send_tarot_notification_email(item):
+    """Best-effort notification of a new tarot/ritual request to the owner's inbox.
+    Never raises -- a missing/broken SMTP setup must not block the request itself from
+    being saved (it's still visible in the owner panel either way)."""
+    subject = f"Montenoir VIP - Yeni Tarot/Ritüel Talebi #{item.get('id', '-')}"
+    body = (
+        f"Hizmet: {item.get('service') or item.get('category') or '-'}\n"
+        f"Süre: {item.get('duration') or '-'}\n"
+        f"Fiyat: {item.get('price') or '-'}\n"
+        f"Ad: {item.get('name') or '-'}\n"
+        f"Anne adı: {item.get('motherName') or '-'}\n"
+        f"Doğum tarihi: {item.get('birthDate') or '-'}\n"
+        f"E-posta: {item.get('email') or '-'}\n"
+        f"Soru: {item.get('question') or '-'}\n"
+        f"Dosya: {item.get('fileName') or '-'}\n"
+        f"Tarih: {item.get('createdAt') or '-'}\n"
+        f"\nOwner panel: /owner-panel"
+    )
+    smtp_host = os.environ.get("SMTP_HOST", "")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_password = os.environ.get("SMTP_PASSWORD", "")
+    smtp_from = os.environ.get("SMTP_FROM", smtp_user)
+    if not smtp_host or not smtp_user or not smtp_password:
+        print("TAROT REQUEST (SMTP not configured, not emailed):\n" + body, flush=True)
+        return False
+    message = f"Subject: {subject}\n\n{body}"
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls(context=context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, TAROT_NOTIFY_EMAIL, message.encode("utf-8"))
+        return True
+    except Exception as e:
+        print("tarot notify email error:", e, flush=True)
+        return False
+
 def save_player_to_user(player):
     # Only chips/VIP status legitimately change through gameplay. Avatar/avatarData/
     # nameColor/avatarFrame are cosmetic profile fields owned by the dedicated profile
@@ -727,335 +767,6 @@ def settle_bets(code, winner_team):
 
 
 # =========================
-# TAROT & RITUEL MODULE
-# =========================
-TAROT_REQUESTS_FILE = os.path.join(os.environ.get("DATA_DIR", "."), "tarot_requests.json")
-
-TAROT_PRICES = {
-    "tek_soru": 300,
-    "uc_soru": 700,
-    "ask_acilimi": 1000,
-    "genel_bakim": 1500,
-    "rituel_ask_iliski": 800,
-    "rituel_ozguven_cekim": 800,
-    "rituel_sans_bolluk": 800,
-    "rituel_kariyer_basari": 800,
-    "rituel_negatif_enerji": 800,
-    "rituel_kisisel_niyet": 1500,
-    "ai_otomatik_bakim": 100
-}
-
-TAROT_LABELS = {
-    "tek_soru": "Tek Soru Bakımı",
-    "uc_soru": "3 Soru Bakımı",
-    "ask_acilimi": "Aşk Açılımı",
-    "genel_bakim": "Genel Bakım",
-    "rituel_ask_iliski": "Aşk ve İlişki Ritüeli",
-    "rituel_ozguven_cekim": "Öz Güven ve Çekim Gücü Ritüeli",
-    "rituel_sans_bolluk": "✈️ Aéroport International ve Bolluk Ritüeli",
-    "rituel_kariyer_basari": "Kariyer ve Başarı Ritüeli",
-    "rituel_negatif_enerji": "Negatif Enerjiden Arınma Ritüeli",
-    "rituel_kisisel_niyet": "Kişisel Niyet Ritüeli",
-    "ai_otomatik_bakim": "Otomatik Yapay Zekâ Bakımı"
-}
-
-TAROT_PACKAGES = [
-    {"chips": 200, "price": "4,99 £"},
-    {"chips": 500, "price": "9,99 £"},
-    {"chips": 1200, "price": "19,99 £"},
-    {"chips": 3000, "price": "39,99 £"},
-    {"chips": 8000, "price": "89,99 £"}
-]
-
-def load_tarot_requests():
-    try:
-        with open(TAROT_REQUESTS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
-
-def save_tarot_requests(items):
-    data_dir = os.path.dirname(TAROT_REQUESTS_FILE)
-    if data_dir and not os.path.exists(data_dir):
-        os.makedirs(data_dir, exist_ok=True)
-    with open(TAROT_REQUESTS_FILE, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
-
-@app.route("/tarot_old_disabled")
-def tarot_world():
-    return render_template_string(TAROT_HTML + Londres_I18N_SCRIPT)
-
-@app.route("/tarot_pdf/<request_id>")
-def tarot_pdf(request_id):
-    reqs = load_tarot_requests()
-    req = next((x for x in reqs if str(x.get("id")) == str(request_id)), None)
-    if not req:
-        return "Demande introuvable", 404
-    title = req.get("serviceLabel", "Tarot & Ritüel")
-    username = req.get("username", "-")
-    created = req.get("createdAtText", "-")
-    result = req.get("result") or "Ritüel talebin alındı. Bakımcı tarafından yorum hazırlandığında sonuç güncellenecek."
-    html = f"""
-    <html><head><meta charset='UTF-8'>
-    <style>
-    body{{font-family:Arial;background:#050505;color:#d4af37;padding:45px;}}
-    .page{{border:2px solid #d4af37;border-radius:24px;padding:35px;background:#0b0b0b;}}
-    h1{{text-align:center;text-shadow:0 0 12px #d4af37;}}
-    .box{{border:1px solid #d4af37;border-radius:16px;padding:18px;margin:15px 0;color:#f8e7a0;}}
-    </style></head><body>
-    <div class='page'>
-    <h1>🔮 {title}</h1>
-    <div class='box'><b>Kullanıcı:</b> {username}<br><b>Tarih:</b> {created}</div>
-    <div class='box'><b>Ritüel / Bakım Sonucu:</b><br><br>{result}</div>
-    <p style='text-align:center'>Codenames VIP · Tarot & Ritüel Dünyası</p>
-    <script>window.print()</script>
-    </div></body></html>
-    """
-    return html
-
-@socketio.on("tarot_get_profile")
-def tarot_get_profile(data):
-    account = ensure_user_account(data.get("account"))
-    if not account:
-        emit("tarot_profile", {"ok": False, "msg": "Giriş gerekli."})
-        return
-    users = load_users()
-    key = find_user_key(users, account)
-    emit("tarot_profile", {"ok": True, "profile": private_profile(key, users[key]), "prices": TAROT_PRICES, "packages": TAROT_PACKAGES})
-
-@socketio.on("tarot_submit_request")
-def tarot_submit_request(data):
-    account = ensure_user_account(data.get("account"))
-    service = data.get("service", "")
-    if service not in TAROT_PRICES:
-        emit("tarot_result", {"ok": False, "msg": "Hizmet bulunamadı."})
-        return
-    with users_txn() as users:
-        key = find_user_key(users, account)
-        if not key:
-            emit("tarot_result", {"ok": False, "msg": "Kullanıcı bulunamadı."})
-            return
-        price = int(TAROT_PRICES[service])
-        chips = int(users[key].get("chips", 1000))
-        if not is_owner_username(key):
-            if chips < price:
-                emit("tarot_result", {"ok": False, "msg": "Yeterli jeton yok."})
-                return
-            users[key]["chips"] = chips - price
-        else:
-            users[key]["chips"] = max(chips, 999999)
-        profile = private_profile(key, users[key])
-    reqs = load_tarot_requests()
-    rid = str(int(time.time() * 1000))[-6:]
-    service_label = TAROT_LABELS.get(service, service)
-    created_text = time.strftime("%d/%m/%Y %H:%M")
-    ai_result = ""
-    if service == "ai_otomatik_bakim":
-        cards = random.sample(["Ay", "Güneş", "Yıldız", "Aşıklar", "Kule", "İmparatoriçe", "Azize", "Dünya", "Güç"], 3)
-        ai_result = "Çekilen kartlar: " + ", ".join(cards) + ". Bu otomatik yorum, enerjinin şu anda dönüşüm ve karar kapısında olduğunu gösteriyor."
-    req = {
-        "id": rid, "service": service, "serviceLabel": service_label, "price": price,
-        "username": key, "name": data.get("name", ""), "motherName": data.get("motherName", ""),
-        "birthDate": data.get("birthDate", ""), "question": data.get("question", ""),
-        "photoNote": data.get("photoNote", ""), "status": "Bekliyor" if service != "ai_otomatik_bakim" else "Tamamlandı",
-        "result": ai_result, "createdAt": int(time.time()), "createdAtText": created_text
-    }
-    reqs.insert(0, req)
-    save_tarot_requests(reqs)
-    emit("tarot_result", {"ok": True, "msg": f"{service_label} talebin alındı. {price} jeton düşüldü.", "request": req, "profile": profile})
-
-@socketio.on("tarot_get_requests")
-def tarot_get_requests(data):
-    account = (data.get("account") or "").strip().lower()
-    if account not in ["yohanna", "svetlana", "svetlana karaman", "admin"]:
-        emit("tarot_requests", {"ok": False, "msg": "Admin yetkisi gerekli.", "requests": []})
-        return
-    emit("tarot_requests", {"ok": True, "requests": load_tarot_requests()[:100]})
-
-@socketio.on("tarot_lucky_wheel")
-def tarot_lucky_wheel(data):
-    settings = load_site_settings() if "load_site_settings" in globals() else {"wheel": True, "wheelDailyLimit": 1, "wheelRewards": {"10":25, "20":20, "30":18, "50":15, "100":10, "200":8, "300":4}}
-    if not settings.get("wheel", True):
-        emit("tarot_wheel_result", {"ok": False, "msg": "Şans çarkı şu anda kapalı."})
-        return
-    account = ensure_user_account(data.get("account"))
-    with users_txn() as users:
-        key = find_user_key(users, account)
-        if not key:
-            emit("tarot_wheel_result", {"ok": False, "msg": "Giriş gerekli."})
-            return
-        today = time.strftime("%Y-%m-%d")
-        if not is_owner_username(key):
-            wheel_log = users[key].setdefault("wheelLog", {})
-            used = int(wheel_log.get(today, 0))
-            limit = int(settings.get("wheelDailyLimit", 1))
-            if used >= limit:
-                emit("tarot_wheel_result", {"ok": False, "msg": f"Şans çarkını günde sadece {limit} kez çevirebilirsin."})
-                return
-            wheel_log[today] = used + 1
-        rw = settings.get("wheelRewards", {"10":25, "20":20, "30":18, "50":15, "100":10, "200":8, "300":4})
-        rewards = [int(k) for k in rw.keys()]
-        weights = [int(v) for v in rw.values()]
-        reward = random.choices(rewards, weights=weights, k=1)[0]
-        users[key]["chips"] = int(users[key].get("chips", 1000)) + reward
-        if is_owner_username(key):
-            users[key]["chips"] = max(users[key]["chips"], 999999)
-        users[key]["lastWheelDate"] = today
-        profile = private_profile(key, users[key])
-    emit("tarot_wheel_result", {"ok": True, "reward": reward, "profile": profile})
-
-
-TAROT_HTML = r"""
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Tarot & Ritüel</title>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Cinzel:wght@400;700;900&display=swap');
-body{margin:0;min-height:100vh;font-family:'Cinzel',Georgia,serif;color:#d4af37;background:radial-gradient(circle at top,#2a1a05 0%,#050505 48%,#000 100%);overflow-x:hidden;}
-.tarotCardsBg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.18;background:radial-gradient(circle at 20% 30%,rgba(212,175,55,.35),transparent 13%),radial-gradient(circle at 80% 20%,rgba(212,175,55,.25),transparent 12%),radial-gradient(circle at 40% 80%,rgba(212,175,55,.22),transparent 15%),repeating-linear-gradient(45deg,rgba(212,175,55,.06) 0 1px,transparent 1px 48px);}
-.tarotCardsBg:after{content:"☾  THE MOON   ✦   THE STAR   ✦   THE LOVERS   ✦   THE HIGH PRIESTESS   ☽";position:absolute;top:34%;left:-12%;width:130%;font-size:74px;font-weight:900;letter-spacing:18px;color:#d4af37;opacity:.18;transform:rotate(-8deg);font-family:'UnifrakturCook',Georgia,serif;}
-.tarotCardsBg:before{content:"🂠  🂡  🂢  🂣  🂤";position:absolute;bottom:12%;left:5%;font-size:150px;letter-spacing:40px;color:#d4af37;opacity:.08;filter:blur(.4px);}
-.stars{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(#d4af37 1px,transparent 1px);background-size:55px 55px;opacity:.18;animation:stars 25s linear infinite;}@keyframes stars{from{background-position:0 0}to{background-position:400px 700px}}
-.fog{position:fixed;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 35%);filter:blur(35px);opacity:.35;animation:fog 12s ease-in-out infinite alternate;}@keyframes fog{from{transform:translateX(-6%)}to{transform:translateX(6%)}}
-.wrap{position:relative;z-index:2;max-width:1200px;margin:auto;padding:28px;text-align:center}
-h1{font-family:'UnifrakturCook',Georgia,serif;font-size:58px;text-align:left;text-shadow:0 0 18px #d4af37,0 0 50px #8a6a00;margin:20px 0 5px;letter-spacing:4px}.sub{text-align:left;color:#f4df94;letter-spacing:3px}.topbar{display:flex;justify-content:flex-start;gap:10px;flex-wrap:wrap;margin:20px 0}
-.btn,.service{font-family:'Cinzel',Georgia,serif;background:linear-gradient(145deg,#000,#160f02,#000);color:#d4af37;border:1px solid #d4af37;border-radius:18px;padding:13px 18px;font-weight:900;cursor:pointer;box-shadow:0 0 12px rgba(212,175,55,.55),inset 0 0 14px rgba(212,175,55,.12);}
-.btn:hover,.service:hover{transform:scale(1.04);box-shadow:0 0 25px #d4af37}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:20px}
-.panel{background:rgba(0,0,0,.72);border:1px solid rgba(212,175,55,.75);border-radius:24px;padding:20px;text-align:left;box-shadow:0 0 25px rgba(212,175,55,.25);}
-.panel h2{text-align:center;color:#ffd978;font-family:'UnifrakturCook',Georgia,serif;font-size:32px}.service{width:100%;margin:6px 0;text-align:left}input,textarea,select{width:95%;padding:12px;border-radius:12px;border:1px solid #d4af37;background:#070707;color:#f8e7a0;margin:6px 0;}textarea{height:90px}.resultBox{white-space:pre-wrap;color:#f8e7a0;line-height:1.5}.adminItem{border:1px solid #d4af37;border-radius:14px;padding:12px;margin:8px 0;background:rgba(255,255,255,.04)}.candle{font-size:36px;animation:candle 1.4s ease-in-out infinite alternate}@keyframes candle{from{filter:drop-shadow(0 0 4px #d4af37)}to{filter:drop-shadow(0 0 20px #ffcc55)}}
-.profileLine{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}.profileLine img{width:58px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #d4af37;box-shadow:0 0 14px #d4af37}.levelBadge{display:inline-block;border:1px solid #d4af37;border-radius:999px;padding:6px 12px;margin-left:6px;background:rgba(212,175,55,.12);box-shadow:0 0 12px rgba(212,175,55,.45)}.chatBox{height:170px;overflow:auto;background:#050505;border:1px solid #d4af37;border-radius:14px;padding:10px;color:#f8e7a0;margin-bottom:8px}.payBox{border:1px dashed #d4af37;border-radius:14px;padding:10px;margin:8px 0;background:rgba(212,175,55,.05)}
-.ownerName{color:#d4af37!important;font-weight:900;text-shadow:0 0 9px #d4af37,0 0 25px #000,0 0 42px #ffd700;letter-spacing:2px;border:2px double #d4af37;border-radius:999px;padding:4px 10px;background:#000;box-shadow:0 0 18px #d4af37}.ownerBadge{display:inline-block;margin-left:8px;padding:4px 10px;border-radius:999px;border:1px solid #d4af37;background:#000;color:#d4af37;box-shadow:0 0 14px #d4af37}
-.wheelWrap{text-align:center}.wheelPointer{font-size:34px;color:#ffd700;text-shadow:0 0 12px #d4af37;margin-bottom:-12px}.wheel{width:280px;height:280px;border-radius:50%;margin:15px auto;border:7px solid #d4af37;background:conic-gradient(#2a1b00 0deg 45deg,#000 45deg 90deg,#3b2600 90deg 135deg,#050505 135deg 180deg,#2a1b00 180deg 225deg,#000 225deg 270deg,#3b2600 270deg 315deg,#050505 315deg 360deg);box-shadow:0 0 24px #d4af37,inset 0 0 30px rgba(212,175,55,.25);display:flex;align-items:center;justify-content:center;position:relative;transition:transform 4s cubic-bezier(.12,.74,.12,1);overflow:hidden}.wheel span{position:absolute;left:50%;top:50%;transform-origin:0 0;color:#ffd700;font-weight:900;text-shadow:0 0 8px #d4af37}.wheel:after{content:"🔮";font-size:42px;z-index:2;background:#000;border:2px solid #d4af37;border-radius:50%;padding:18px;box-shadow:0 0 18px #d4af37}
-
-/* === BIG WHEEL REWARD MESSAGE === */
-#wheelRewardOverlay{
-    display:none;
-    position:fixed;
-    inset:0;
-    z-index:99999999;
-    background:rgba(0,0,0,.72);
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-}
-#wheelRewardText{
-    padding:36px 52px;
-    border:3px double #d4af37;
-    border-radius:34px;
-    background:radial-gradient(circle at top,#3a2700,#000 70%);
-    color:#ffd700;
-    font-family:'UnifrakturCook',Georgia,serif;
-    font-size:62px;
-    font-weight:900;
-    text-shadow:0 0 12px #ffd700,0 0 34px #d4af37,0 0 60px #000;
-    box-shadow:0 0 28px #d4af37,0 0 80px rgba(212,175,55,.75), inset 0 0 30px rgba(212,175,55,.25);
-    animation:rewardPop .7s ease-out;
-}
-@keyframes rewardPop{
-    0%{transform:scale(.35);opacity:0}
-    70%{transform:scale(1.08);opacity:1}
-    100%{transform:scale(1);opacity:1}
-}
-@media(max-width:700px){
-    #wheelRewardText{font-size:38px;padding:28px 28px}
-}
-</style></head>
-<body>
-<div id="wheelRewardOverlay">
-  <div id="wheelRewardText"></div>
-</div>
-<div class="tarotCardsBg"></div><div class="stars"></div><div class="fog"></div><div class="wrap">
-<h1>🔮 Tarot & Rituel</h1><div class="sub">Siyah kadife · Altın sır · Mum ışığı</div><div class="candle">🕯️ 🕯️ 🕯️</div>
-<div class="topbar"><button data-base-label='Satın Al' class="btn" onclick="location.href='/'">♠ Codenames'e Dön</button><button class="btn" onclick="location.href='/'">👤 Üye Ol / Giriş</button><button class="btn" onclick="loadProfile()">🏆 Profil / Yenile</button><button class="btn" onclick="spinWheel()">🎡 Şans Çarkı</button><button class="btn" id="tarotOwnerBtn" style="display:none" onclick="loadAdminRequests()">👑 Admin Talep Paneli</button></div>
-<div class="panel" style="text-align:center"><div class="profileLine"><img id="avatarImg" src=""><div><b>👤 <span id="userName">-</span><span id="ownerBadge"></span></b><br>🪙 <span id="chips">-</span> jeton <span id="levelBadge" class="levelBadge">-</span></div></div><p style="font-size:12px;color:#f4df94">Codenames hesabın otomatik kullanılır. Tarot tarafında yeniden giriş yok.</p></div>
-<div class="panel wheelWrap"><h2>🎡 Şans Çarkı</h2><div class="wheelPointer">▼</div><div id="luckyWheel" class="wheel"><span style="transform:rotate(10deg) translate(45px,-112px)">50</span><span style="transform:rotate(55deg) translate(45px,-112px)">100</span><span style="transform:rotate(100deg) translate(45px,-112px)">200</span><span style="transform:rotate(145deg) translate(45px,-112px)">30</span><span style="transform:rotate(190deg) translate(45px,-112px)">10</span><span style="transform:rotate(235deg) translate(45px,-112px)">20</span><span style="transform:rotate(280deg) translate(45px,-112px)">300</span></div><button class="btn" onclick="spinWheel()">Günde 1 Kez Çevir</button><div id="wheelInfo" style="color:#f8e7a0;margin-top:8px;">Ödüller: 10, 20, 30, 50, 100, 200, 300 jeton</div></div>
-<div class="grid"><div class="panel"><h2>🔮 Tarot Açılımları</h2><button class="service" onclick="selectService('genel_bakim')">Genel Bakım · 30 dk · 1500 🪙</button><button class="service" onclick="selectService('ask_acilimi')">Aşk Açılımı · 20 dk · 1000 🪙</button><button class="service" onclick="selectService('tek_soru')">Tek Soru · 5 dk · 300 🪙</button><button class="service" onclick="selectService('uc_soru')">3 Soru · 10 dk · 700 🪙</button><button class="service" onclick="selectService('ai_otomatik_bakim')">Otomatik AI Bakımı · 100 🪙</button></div>
-<div class="panel"><h2>🕯️ Ritüeller</h2><button class="service" onclick="selectService('rituel_ask_iliski')">Aşk ve İlişki · 800 🪙</button><button class="service" onclick="selectService('rituel_ozguven_cekim')">Öz Güven ve Çekim Gücü · 800 🪙</button><button class="service" onclick="selectService('rituel_sans_bolluk')">Şans ve Bolluk · 800 🪙</button><button class="service" onclick="selectService('rituel_kariyer_basari')">Kariyer ve Başarı · 800 🪙</button><button class="service" onclick="selectService('rituel_negatif_enerji')">Negatif Enerjiden Arınma · 800 🪙</button><button class="service" onclick="selectService('rituel_kisisel_niyet')">Kişisel Niyet · 1500 🪙</button></div>
-<div class="panel"><h2>🪙 Jeton Bakiyesi</h2><p>Jeton satın alma artık sadece Londres Kasası üzerinden yapılır.</p><button class="btn" onclick="location.href='/kasa'">🪙 <span data-i18n="cashier">Londres KASASI</span></button></div></div>
-<div class="panel"><h2>📩 Talep Formu</h2><b>Seçilen hizmet:</b> <span id="selectedLabel">Henüz seçilmedi</span><input id="clientName" placeholder="İsmin"><input id="motherName" placeholder="Anne adı"><input id="birthDate" placeholder="Doğum tarihi"><textarea id="question" placeholder="Sorunu / niyetini yaz"></textarea><input id="photoNote" placeholder="Fotoğraf / özel bilgi notu"><button class="btn" onclick="submitTarot()">Jetonla Satın Al ve Gönder</button></div>
-<div class="grid"><div class="panel"><h2>✨ Sonuç</h2><div id="resultBox" class="resultBox">Henüz sonuç yok.</div><div id="pdfBox"></div></div><div class="panel"><h2>💬 Canlı Sohbet</h2><div id="tarotChatBox" class="chatBox"></div><input id="tarotChatInput" placeholder="Bakımcıya mesaj yaz"><button class="btn" onclick="sendTarotChat()">Gönder</button></div></div>
-<div class="panel" id="tarotAdminPanel" style="display:none"><h2>👑 Admin Talep Paneli</h2><div id="adminRequests">Yohanna / admin hesabıyla talepleri görebilirsin.</div></div>
-</div>
-<script>
-const socket=io();let account=localStorage.getItem('codenamesAccount')||localStorage.getItem('loggedUser')||'';let selectedService='';
-function defaultAvatarData(avatar){const isMan=avatar==='man.png';const bg=isMan?'#111111':'#ff4fd8';const emoji=isMan?'👤':'👩';const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="${bg}" stroke="#d4af37" stroke-width="6"/><text x="60" y="78" font-size="58" text-anchor="middle">${emoji}</text></svg>`;return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);}
-function isOwner(){return (account||'').toLowerCase()==='yohanna'}
-function levelName(chips){chips=parseInt(chips||0);if(chips>=15000)return'💎 Elmas';if(chips>=5000)return'🥇 Altın';if(chips>=1000)return'🥈 Gümüş';return'🥉 Bronz';}
-function saveSharedProfile(p){localStorage.setItem('codenamesAccount',p.username);localStorage.setItem('loggedUser',p.username);localStorage.setItem('loggedIn','true');localStorage.setItem('codenamesProfile',JSON.stringify(p));localStorage.setItem('codenamesChips_'+p.username,String(p.chips||1000));}
-function renderProfile(p){account=p.username;const owner=(p.username||'').toLowerCase()==='yohanna';userName.innerHTML=owner?'👑 '+p.username:p.username;userName.className=owner?'ownerName':'';ownerBadge.innerHTML='';chips.innerHTML=owner?'∞':p.chips;levelBadge.innerHTML=owner?'Owner hesabı':(p.membershipLabel||levelName(p.chips));avatarImg.src=p.avatarData||defaultAvatarData(p.avatar||'woman.png');tarotOwnerBtn.style.display=owner?'inline-block':'none';tarotAdminPanel.style.display=owner?'block':'none';saveSharedProfile(p);}
-function loadProfile(){account=localStorage.getItem('codenamesAccount')||localStorage.getItem('loggedUser')||account||'';if(!account){alert('Önce Codenames tarafında giriş yap.');location.href='/';return}socket.emit('tarot_get_profile',{account});}
-function selectService(s){selectedService=s;const labels={genel_bakim:'Genel Bakım · 1500 jeton',ask_acilimi:'Aşk Açılımı · 1000 jeton',tek_soru:'Tek Soru · 300 jeton',uc_soru:'3 Soru · 700 jeton',ai_otomatik_bakim:'Otomatik AI Bakımı · 100 jeton',rituel_ask_iliski:'Aşk ve İlişki Ritüeli · 800 jeton',rituel_ozguven_cekim:'Öz Güven ve Çekim Gücü Ritüeli · 800 jeton',rituel_sans_bolluk:'Şans ve Bolluk Ritüeli · 800 jeton',rituel_kariyer_basari:'Kariyer ve Başarı Ritüeli · 800 jeton',rituel_negatif_enerji:'Negatif Enerjiden Arınma Ritüeli · 800 jeton',rituel_kisisel_niyet:'Kişisel Niyet Ritüeli · 1500 jeton'};selectedLabel.innerHTML=labels[s]||s;}
-function submitTarot(){if(!account){alert('Giriş gerekli.');return}if(!selectedService){alert('Önce hizmet seç.');return}socket.emit('tarot_submit_request',{account,service:selectedService,name:clientName.value,motherName:motherName.value,birthDate:birthDate.value,question:question.value,photoNote:photoNote.value});}
-function spinWheel(){if(!account){alert('Giriş gerekli.');return}const w=document.getElementById('luckyWheel');if(w){w.style.transform='rotate('+(1440+Math.floor(Math.random()*720))+'deg)';}setTimeout(()=>socket.emit('tarot_lucky_wheel',{account}),900);}
-function loadAdminRequests(){socket.emit('tarot_get_requests',{account});}
-function sendTarotChat(){let msg=tarotChatInput.value.trim();if(!msg)return;socket.emit('tarot_chat',{account,msg});tarotChatInput.value='';}
-socket.on('tarot_profile',d=>{if(!d.ok){alert(d.msg);location.href='/';return}renderProfile(d.profile);});
-socket.on('tarot_result',d=>{if(!d.ok){alert(d.msg);return}renderProfile(d.profile);resultBox.innerHTML=d.msg+"\n\nTalep #"+d.request.id+"\nDurum: "+d.request.status+"\n\n"+(d.request.result||"Bakımcı yorumu bekleniyor.");pdfBox.innerHTML='<br><button class="btn" onclick="window.open(\'/tarot_pdf/'+d.request.id+'\',\'_blank\')">📄 PDF Ritüelini İndir</button>';});
-
-function showWheelReward(amount){
-    const overlay=document.getElementById('wheelRewardOverlay');
-    const box=document.getElementById('wheelRewardText');
-    if(!overlay||!box)return;
-    box.innerHTML='🎉 '+amount+' JETON ÇIKTI! 🎉<br><span style="font-family:Cinzel,Georgia,serif;font-size:28px;">Jeton hesabına eklendi</span>';
-    overlay.style.display='flex';
-    setTimeout(()=>{overlay.style.display='none';},2600);
-}
-socket.on('tarot_wheel_result',d=>{if(!d.ok){alert(d.msg);return}renderProfile(d.profile);wheelInfo.innerHTML='Bugünkü ödülün: +'+d.reward+' jeton · Jeton hesabına eklendi';showWheelReward(d.reward);});
-socket.on('tarot_requests',d=>{if(!d.ok){adminRequests.innerHTML=d.msg;return}adminRequests.innerHTML=d.requests.map(r=>`<div class="adminItem"><b>Yeni talep #${r.id}</b><br>${r.serviceLabel}<br>Kullanıcı: ${r.username}<br>Soru: ${r.question||'-'}<br>Durum: ${r.status}</div>`).join('')||'Talep yok.';});
-socket.on('tarot_chat_update',d=>{tarotChatBox.innerHTML+='<b>'+d.name+':</b> '+d.msg+'<br>';tarotChatBox.scrollTop=tarotChatBox.scrollHeight;});
-loadProfile();
-setTimeout(refreshOwnerButton,300);setInterval(refreshOwnerButton,2000);
-
-/* === HARD BUTTON CLICK FIX === */
-function hardBindButtons(){
-    const bind = (id, fn) => {
-        const el = document.getElementById(id);
-        if(!el) return;
-        el.onclick = function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            try{ fn(); }catch(err){ console.error('Button error '+id, err); alert('Buton hatası: '+id+' / '+err.message); }
-            return false;
-        };
-    };
-    bind('menuToggleBtn', ( )=>{ 
-        const m=document.getElementById('mainCompactMenu');
-        if(m)m.classList.toggle('show');
-    });
-    bind('btnTimerTop', ()=>{ if(typeof startTimer==='function') startTimer(); });
-    bind('btnNewGameTop', ()=>{ if(typeof newGame==='function') newGame(); });
-    bind('btnLobbyTop', ()=>{ if(typeof goLobby==='function') goLobby(); });
-
-    bind('menuAuthBtn', ()=>{ if(typeof openAuth==='function') openAuth(); closeMainMenu(); });
-    bind('menuProfileBtn', ()=>{ if(typeof openProfile==='function') openProfile(); closeMainMenu(); });
-    bind('menuRankingBtn', ()=>{ if(typeof openRanking==='function') openRanking(); closeMainMenu(); });
-    bind('menuSettingsBtn', ()=>{ if(typeof openSettings==='function') openSettings(); closeMainMenu(); });
-    bind('menuWordsBtn', ()=>{ if(typeof openWords==='function') openWords(); closeMainMenu(); });
-    bind('menuBetBtn', ()=>{ if(typeof openBet==='function') openBet(); closeMainMenu(); });
-    bind('ownerPanelBtn', ()=>{ if(typeof openOwnerPanel==='function') openOwnerPanel(); closeMainMenu(); });
-}
-document.addEventListener('DOMContentLoaded', hardBindButtons);
-setTimeout(hardBindButtons,500);
-setTimeout(hardBindButtons,1500);
-
-</script></body></html>
-"""
-
-
-
-@socketio.on("tarot_chat")
-def tarot_chat(data):
-    account = (data.get("account") or "Kullanıcı").strip()
-    msg = (data.get("msg") or "").strip()
-    if not msg:
-        return
-    emit("tarot_chat_update", {"name": account, "msg": msg}, broadcast=True)
-
-
-# =========================
 # OWNER PANEL FULL - ONLY YOHANNA
 # =========================
 SITE_SETTINGS_FILE = os.path.join(os.environ.get("DATA_DIR", "."), "site_settings.json")
@@ -1185,7 +896,11 @@ def owner_update_request(data):
             r["status"] = data.get("status", r.get("status", "Bekliyor"))
             if data.get("result") is not None:
                 r["result"] = data.get("result")
-            save_tarot_requests(reqs)
+            # Upsert just this one request instead of rewriting the whole list -- when
+            # DATABASE_URL is set, load_tarot_requests() reads from the DB, so writing
+            # only to the flat file here would silently lose the status/result update
+            # on the next DB-backed read.
+            save_tarot_request(r)
             emit("owner_action_result", {"ok": True, "msg": "Talep güncellendi."})
             return
     emit("owner_action_result", {"ok": False, "msg": "Talep bulunamadı."})
@@ -5413,105 +5128,6 @@ def premium_page():
 
 
 
-@app.route("/tarot_old_disabled")
-def tarot_page_new_bg():
-    return """
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tarot & Ritüel - Londres VIP</title>
-<style>
-*{box-sizing:border-box}
-html,body{
-  margin:0;
-  min-height:100%;
-  background:#050505;
-  color:#f6d777;
-  font-family:Arial,Helvetica,sans-serif;
-}
-.tarot-page{
-  min-height:100vh;
-  width:100%;
-  background:
-    linear-gradient(180deg,rgba(0,0,0,.10),rgba(0,0,0,.62)),
-    url('/static/tarot_home.png') center top / cover no-repeat fixed;
-  position:relative;
-  padding:28px;
-}
-.back{
-  position:fixed;
-  top:18px;
-  left:18px;
-  z-index:5;
-  text-decoration:none;
-  color:#d4af37;
-  border:1px solid rgba(212,175,55,.65);
-  background:rgba(0,0,0,.55);
-  border-radius:14px;
-  padding:12px 18px;
-  font-weight:900;
-  box-shadow:0 0 18px rgba(212,175,55,.25);
-}
-.tarot-actions{
-  position:absolute;
-  left:50%;
-  bottom:52px;
-  transform:translateX(-50%);
-  display:grid;
-  grid-template-columns:repeat(4, minmax(150px, 1fr));
-  gap:16px;
-  width:min(900px,92vw);
-}
-.tarot-card{
-  min-height:98px;
-  border:1px solid rgba(212,175,55,.52);
-  border-radius:16px;
-  background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.50));
-  color:#fff;
-  text-decoration:none;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  text-align:center;
-  box-shadow:0 0 20px rgba(0,0,0,.5), inset 0 0 18px rgba(212,175,55,.05);
-}
-.tarot-card b{
-  color:#d4af37;
-  font-size:18px;
-}
-.tarot-card span{
-  font-size:28px;
-}
-.tarot-card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 0 28px rgba(212,175,55,.42);
-}
-@media(max-width:760px){
-  .tarot-actions{grid-template-columns:1fr 1fr;bottom:30px}
-  .tarot-page{background-position:center top}
-}
-</style>
-</head>
-<body>
-<div class="tarot-page">
-  <a class="back" href="/">🚪 LOCA</a>
-
-  <div class="tarot-actions">
-    <a class="tarot-card" href="/coming-soon/Gunluk-Tarot"><span>🃏</span><b>Günlük Tarot</b></a>
-    <a class="tarot-card" href="/coming-soon/Ritueller"><span>🕯️</span><b>Ritüeller</b></a>
-    <a class="tarot-card" href="/coming-soon/Ask-Fali"><span>❤️</span><b>Aşk Falı</b></a>
-    <a class="tarot-card" href="/coming-soon/Dogum-Haritasi"><span>🌙</span><b>Doğum Haritası</b></a>
-  </div>
-</div>
-</body>
-</html>
-"""
-
-
 # ===== TAROT REQUESTS + OWNER PANEL =====
 TAROT_REQUESTS_FILE = os.path.join(os.environ.get("DATA_DIR","."), "tarot_requests.json")
 ALLOWED_TAROT_EXT = {"pdf","jpg","jpeg","png"}
@@ -5554,7 +5170,13 @@ def save_tarot_request(item):
             conn.commit(); cur.close(); conn.close(); return
         except Exception as e:
             print("tarot db save error",e,flush=True)
-    items=load_tarot_requests(); items.insert(0,item)
+    # File-fallback upsert: replace any existing entry with this id instead of just
+    # inserting, or an update (owner_update_request changing status/result) would leave
+    # a stale duplicate behind instead of replacing it.
+    items=[x for x in load_tarot_requests() if str(x.get("id"))!=str(item.get("id"))]
+    items.insert(0,item)
+    data_dir=os.path.dirname(TAROT_REQUESTS_FILE)
+    if data_dir and not os.path.exists(data_dir): os.makedirs(data_dir,exist_ok=True)
     with open(TAROT_REQUESTS_FILE,"w",encoding="utf-8") as f: json.dump(items,f,ensure_ascii=False,indent=2)
 
 def owner_ok(key):
@@ -5585,6 +5207,7 @@ def api_tarot_request():
       "question":request.form.get("question",""), "fileUrl":file_url, "fileName":file_name
     }
     save_tarot_request(item)
+    send_tarot_notification_email(item)
     return {"ok":True,"msg":"Talep owner paneline gönderildi.","id":rid}
 
 @app.route("/api/owner/requests")
@@ -9853,7 +9476,7 @@ def profile_page():
     """)
 
 if __name__ == "__main__":
-    import os, uuid, uuid, uuid, sys, traceback
+    import sys, traceback
     try:
         if "init_db" in globals():
             init_db()
