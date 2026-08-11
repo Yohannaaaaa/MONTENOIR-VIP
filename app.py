@@ -2,7 +2,7 @@ import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
-import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading, uuid
+import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading, uuid, socket
 import email.utils
 from email.message import EmailMessage
 from contextlib import contextmanager
@@ -417,6 +417,25 @@ def private_profile(username, data):
     p["email"] = data.get("email", "")
     return p
 
+_smtp_ipv4_lock = threading.Lock()
+
+@contextmanager
+def _force_ipv4_dns():
+    """Render's containers advertise an IPv6 route with no real egress, so outbound SMTP
+    connections that resolve to an AAAA record (e.g. smtp.gmail.com) fail immediately with
+    "[Errno 101] Network is unreachable" even though IPv4 works fine. Force getaddrinfo to
+    IPv4-only for the duration of the connection. Locked since this patches the process-wide
+    socket.getaddrinfo."""
+    with _smtp_ipv4_lock:
+        original = socket.getaddrinfo
+        def ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+            return original(host, port, socket.AF_INET, type, proto, flags)
+        socket.getaddrinfo = ipv4_only
+        try:
+            yield
+        finally:
+            socket.getaddrinfo = original
+
 def send_reset_email(to_email, reset_link):
     smtp_host = os.environ.get("SMTP_HOST", "")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
@@ -430,10 +449,11 @@ def send_reset_email(to_email, reset_link):
 
     message = f"Subject: Montenoir VIP - Réinitialisation du mot de passe\n\nClique sur ce lien pour renouveler ton mot de passe :\n{reset_link}\n\nSi tu n'as rien demandé, ignore ce message."
     context = ssl.create_default_context()
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls(context=context)
-        server.login(smtp_user, smtp_password)
-        server.sendmail(smtp_from, to_email, message.encode("utf-8"))
+    with _force_ipv4_dns():
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            server.starttls(context=context)
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, to_email, message.encode("utf-8"))
     return True
 
 TAROT_NOTIFY_EMAIL = "montenoirvip@gmail.com"
@@ -476,10 +496,11 @@ def send_tarot_notification_email(item):
     msg.set_content(body)
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-            server.starttls(context=context)
-            server.login(smtp_user, smtp_password)
-            server.send_message(msg, from_addr=smtp_from, to_addrs=[TAROT_NOTIFY_EMAIL])
+        with _force_ipv4_dns():
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                server.starttls(context=context)
+                server.login(smtp_user, smtp_password)
+                server.send_message(msg, from_addr=smtp_from, to_addrs=[TAROT_NOTIFY_EMAIL])
         return True
     except Exception as e:
         print("tarot notify email error:", e, flush=True)
