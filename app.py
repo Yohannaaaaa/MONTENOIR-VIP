@@ -3,6 +3,8 @@ from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
 from flask_socketio import SocketIO, emit, join_room
 import random, string, os, json, hashlib, time, smtplib, ssl, itertools, base64, threading, uuid
+import email.utils
+from email.message import EmailMessage
 from contextlib import contextmanager
 try:
     import psycopg2
@@ -462,13 +464,22 @@ def send_tarot_notification_email(item):
     if not smtp_host or not smtp_user or not smtp_password:
         print("TAROT REQUEST (SMTP not configured, not emailed):\n" + body, flush=True)
         return False
-    message = f"Subject: {subject}\n\n{body}"
+    # A raw "Subject:\n\nbody" message has no From/To/Date/Message-ID headers -- Gmail and
+    # most spam filters weight that heavily, so a send that "succeeds" (no SMTP error) can
+    # still vanish into spam or get silently dropped. Build a proper RFC 5322 message instead.
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = smtp_from
+    msg["To"] = TAROT_NOTIFY_EMAIL
+    msg["Date"] = email.utils.formatdate(localtime=True)
+    msg["Message-ID"] = email.utils.make_msgid()
+    msg.set_content(body)
     try:
         context = ssl.create_default_context()
         with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
             server.starttls(context=context)
             server.login(smtp_user, smtp_password)
-            server.sendmail(smtp_from, TAROT_NOTIFY_EMAIL, message.encode("utf-8"))
+            server.send_message(msg, from_addr=smtp_from, to_addrs=[TAROT_NOTIFY_EMAIL])
         return True
     except Exception as e:
         print("tarot notify email error:", e, flush=True)
