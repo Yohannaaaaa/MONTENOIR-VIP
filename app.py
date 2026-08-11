@@ -5350,6 +5350,19 @@ textarea{min-height:100px;grid-column:1/-1}
 .trustBox{border:1px solid rgba(0,255,102,.35);background:rgba(0,0,0,.55);border-radius:14px;padding:14px;color:#d8ffd8}
 .trustBox b{color:#00ff66}
 
+.tarotCardWrap{perspective:1200px;display:flex;justify-content:center;margin:20px 0}
+.tarotCard{width:150px;height:230px;position:relative;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.2,.8,.2,1)}
+.tarotCard.flipped{transform:rotateY(180deg)}
+.cardFace{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;border:2px solid #d4af37;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:12px;text-align:center}
+.cardBack{background:linear-gradient(135deg,#1a0f00,#3a230a);font-size:52px;color:#d4af37;box-shadow:0 0 20px rgba(212,175,55,.35);background-image:radial-gradient(circle at 50% 50%,rgba(212,175,55,.18),transparent 60%),linear-gradient(135deg,#1a0f00,#3a230a)}
+.cardFront{background:linear-gradient(160deg,#0d0d0d,#241505);transform:rotateY(180deg);color:#fff;box-shadow:0 0 24px rgba(212,175,55,.5);justify-content:space-between;padding:14px 10px}
+.cardFront::before{content:'';position:absolute;inset:6px;border:1px solid rgba(212,175,55,.55);border-radius:8px;pointer-events:none}
+.cardFront .cardNumeral{font-size:13px;letter-spacing:3px;color:#d4af37;font-weight:700}
+.cardFront .cardSymbol{font-size:44px;margin:4px 0}
+.cardFront .cardArt{width:100%;flex:1;object-fit:cover;border-radius:6px;margin:4px 0;box-shadow:0 0 8px rgba(0,0,0,.6)}
+.cardFront .cardName{color:#0d0700;background:linear-gradient(180deg,#ffe39b,#b87912);padding:4px 12px;border-radius:6px;font-weight:900;font-size:13px;letter-spacing:.5px;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.cardMeaning{max-width:420px;margin:14px auto 0;text-align:center;line-height:1.5}
+
 /* REAL 3D CUBE DICE */
 .diceBox{
   position:absolute;
@@ -5581,8 +5594,16 @@ textarea{min-height:100px;grid-column:1/-1}
 <div id='instantAi' class='panel'>
 <h2><span data-i18n='tarot_menu_instant'>🤖 Anında Tarot Yorumu</span></h2>
 <p><span data-i18n='tarot_instant_desc'>Rastgele Kart Açılımı</span> — 🪙 100</p>
-<button onclick='instantTarot()'><span data-i18n='tarot_instant_btn'>🤖 AI yorum al</span></button>
-<div id='aiResult' class='status'></div>
+<div class='tarotCardWrap'>
+<div class='tarotCard' id='tarotCard'>
+<div class='cardFace cardBack'>🔮</div>
+<div class='cardFace cardFront' id='cardFront'></div>
+</div>
+</div>
+<div style='text-align:center'>
+<button onclick='instantTarot()'><span data-i18n='tarot_instant_btn'>🃏 Kartı Aç</span></button>
+</div>
+<div id='aiResult' class='status cardMeaning'></div>
 </div>
 
 <div id='coinPacks' class='panel'>
@@ -5656,10 +5677,64 @@ function selectAndSend(c,s,d,p){
    formStatus.textContent='Önce isim, e-posta ve sorunu yaz, sonra hizmeti seç: '+c+' / '+s+' / '+p;
  }
 }
+const TAROT_DECK=[
+ {num:'0',name:'Deli',symbol:'🃏',meaning:'Yeni başlangıçlar, cesaret ve bilinmeyene adım atma zamanı.'},
+ {num:'I',name:'Büyücü',symbol:'🪄',meaning:'Elindeki güçleri fark et, iradenle istediğini yaratabilirsin.'},
+ {num:'II',name:'Azize',symbol:'🌙',meaning:'İçsel bilgeliğine güven, sezgilerin sana doğru yolu gösteriyor.'},
+ {num:'III',name:'İmparatoriçe',symbol:'👑',meaning:'Bolluk, bereket ve yaratıcılık enerjisi çevreni sarıyor.'},
+ {num:'IV',name:'İmparator',symbol:'⚔️',meaning:'Disiplin ve yapı kurma zamanı, kontrolü eline al.'},
+ {num:'V',name:'Aziz',symbol:'📿',meaning:'Gelenek, rehberlik ve manevi öğretilerden güç al.'},
+ {num:'VI',name:'Aşıklar',symbol:'❤️',meaning:'Önemli bir seçim ya da ilişki senin için dönüm noktası olacak.'},
+ {num:'VII',name:'Savaş Arabası',symbol:'🏇',meaning:'Kararlılıkla ilerle, zafer disiplinli irade ile gelir.'},
+ {num:'VIII',name:'Güç',symbol:'🦁',meaning:'İç gücün ve sabrınla zorlukların üstesinden geliyorsun.'},
+ {num:'IX',name:'Ermiş',symbol:'🕯️',meaning:'Yalnız kalıp içine dönme, cevaplar sessizlikte saklı.'},
+ {num:'X',name:'Kader Çarkı',symbol:'☸️',meaning:'Değişim kapıda, akışa güven, döngü senin lehine dönüyor.'},
+ {num:'XI',name:'Adalet',symbol:'⚖️',meaning:'Denge ve doğruluk zamanı, yaptıkların karşılığını buluyor.'},
+ {num:'XII',name:'Asılan Adam',symbol:'🙃',meaning:'Bakış açını değiştir, teslimiyet yeni bir anlayış getirir.'},
+ {num:'XIII',name:'Ölüm',symbol:'🦋',meaning:'Bir dönem kapanıyor, dönüşüm ve yeniden doğuş yakında.'},
+ {num:'XIV',name:'Denge',symbol:'🌊',meaning:'Uyum ve ölçülülük ara, aşırılıklardan kaçın.'},
+ {num:'XV',name:'Şeytan',symbol:'⛓️',meaning:'Bağımlılıklar ya da korkular seni tutsak ediyor olabilir, farkındalık özgürleştirir.'},
+ {num:'XVI',name:'Kule',symbol:'🌩️',meaning:'Ani bir değişim ya da sarsıntı, aslında seni gerçeğe uyandırıyor.'},
+ {num:'XVII',name:'Yıldız',symbol:'⭐',meaning:'Umut ve şifa zamanı, evren senin için bir yol açıyor.'},
+ {num:'XVIII',name:'Ay',symbol:'🌕',meaning:'Belirsizlik ve gizli duygular var, sezgilerine kulak ver.'},
+ {num:'XIX',name:'Güneş',symbol:'☀️',meaning:'Mutluluk, başarı ve netlik yakında hayatına giriyor.'},
+ {num:'XX',name:'Mahkeme',symbol:'📯',meaning:'Bir uyanış ve hesaplaşma zamanı, geçmişle barış yap.'},
+ {num:'XXI',name:'Dünya',symbol:'🌍',meaning:'Bir döngü tamamlanıyor, tatmin ve bütünlük hissi kapıda.'}
+];
 function instantTarot(){
- const cards=['Aşıklar','Ay','Güneş','Kule','Yıldız','İmparatoriçe'];
- const c=cards[Math.floor(Math.random()*cards.length)];
- aiResult.textContent='Seçilen kart: '+c+' — Kısa yorum: Enerjin dönüşüm ve sezgi alanında yoğunlaşıyor.';
+ const idx=Math.floor(Math.random()*TAROT_DECK.length);
+ const card=TAROT_DECK[idx];
+ const cardEl=document.getElementById('tarotCard');
+ const frontEl=document.getElementById('cardFront');
+ cardEl.classList.remove('flipped');
+ aiResult.textContent='';
+ frontEl.innerHTML='';
+ const numEl=document.createElement('div');
+ numEl.className='cardNumeral';
+ numEl.textContent=card.num;
+ const symEl=document.createElement('div');
+ symEl.className='cardSymbol';
+ symEl.style.display='none';
+ symEl.textContent=card.symbol;
+ // Try the real illustrated card art first; if it 404s (not uploaded yet), fall back to the
+ // emoji symbol so the reading still works before real card images are in place.
+ const imgEl=document.createElement('img');
+ imgEl.className='cardArt';
+ imgEl.onerror=function(){ imgEl.style.display='none'; symEl.style.display='block'; };
+ imgEl.src='/static/tarot_cards/'+idx+'.jpg';
+ const nameEl=document.createElement('div');
+ nameEl.className='cardName';
+ nameEl.textContent=card.name;
+ frontEl.appendChild(numEl);
+ frontEl.appendChild(imgEl);
+ frontEl.appendChild(symEl);
+ frontEl.appendChild(nameEl);
+ // Force a reflow so re-drawing after a previous flip resets to face-down before animating again.
+ void cardEl.offsetWidth;
+ setTimeout(()=>{
+   cardEl.classList.add('flipped');
+   aiResult.textContent=card.name+' — '+card.meaning;
+ },60);
 }
 tarotForm.addEventListener('submit',e=>{
  e.preventDefault();
