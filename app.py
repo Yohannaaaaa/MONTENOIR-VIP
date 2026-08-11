@@ -465,7 +465,7 @@ def send_tarot_notification_email(item):
     message = f"Subject: {subject}\n\n{body}"
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
             server.starttls(context=context)
             server.login(smtp_user, smtp_password)
             server.sendmail(smtp_from, TAROT_NOTIFY_EMAIL, message.encode("utf-8"))
@@ -5240,7 +5240,9 @@ def api_tarot_request():
       "username":username
     }
     save_tarot_request(item)
-    send_tarot_notification_email(item)
+    # Fire-and-forget: the request is already saved and visible in the owner panel either
+    # way, so a slow/unreachable SMTP server must never delay this response back to the user.
+    threading.Thread(target=send_tarot_notification_email, args=(item,), daemon=True).start()
     return {"ok":True,"msg":"Jeton düşüldü ve talep owner paneline gönderildi.","id":rid,"price":price}
 
 @app.route("/api/owner/requests")
