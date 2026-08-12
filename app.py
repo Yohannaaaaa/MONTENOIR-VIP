@@ -5227,10 +5227,6 @@ def api_premium_tarot():
 
 
 
-@app.route("/premium_old_disabled_259292")
-
-
-
 # ===== TAROT REQUESTS + OWNER PANEL =====
 TAROT_REQUESTS_FILE = os.path.join(os.environ.get("DATA_DIR","."), "tarot_requests.json")
 ALLOWED_TAROT_EXT = {"pdf","jpg","jpeg","png"}
@@ -6268,7 +6264,7 @@ def api_daily_reward():
 @app.route("/premium")
 def premium_page():
     stripe_ready_js = "true" if stripe_configured() else "false"
-    return """<html><head><meta charset='utf-8'><style>
+    html = """<html><head><meta charset='utf-8'><style>
 body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900px;margin:0 auto}
 #globalLocaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}
 #globalLocaBtn:hover{background:rgba(212,175,55,.1)}
@@ -6322,7 +6318,7 @@ body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900p
 </div>
 <script src='/static/js/site_lang.js'></script>
 <script>
-const STRIPE_READY = """ + stripe_ready_js + """;
+const STRIPE_READY = __STRIPE_READY__;
 const premiumUser = localStorage.getItem('montenoirUser') || localStorage.getItem('loggedUser') || '';
 const msgEl = document.getElementById('premiumMsg');
 buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
@@ -6356,6 +6352,7 @@ if (params.get('success') && params.get('session_id')) {
 }
 </script>
     </body></html>"""
+    return html.replace("__STRIPE_READY__", stripe_ready_js)
 
 @app.route("/kasa")
 def kasa_page():
