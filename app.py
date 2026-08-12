@@ -5785,6 +5785,20 @@ textarea{min-height:100px;grid-column:1/-1}
 <button onclick='instantTarot()'><span data-i18n='tarot_instant_btn'>🃏 Kartı Aç</span></button>
 </div>
 <div id='aiResult' class='status cardMeaning'></div>
+
+<!-- Spread Selection Buttons -->
+<div style='margin-top:30px;border-top:2px solid #d4af37;padding-top:20px;'>
+<h3 style='text-align:center;color:#d4af37;margin-bottom:15px;'>🎴 Açılım Seçin (200 💰 Jeton)</h3>
+<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;'>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("3-card")'>🎴 3-Kart<br><small>Geçmiş-Şimdiki-Gelecek</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("7-card")'>🎴 7-Kart<br><small>Detaylı Yorum</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("yes-no")'>✨ Evet/Hayır<br><small>Hızlı Cevap</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("love")'>💕 Aşk<br><small>İlişki</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("work")'>💼 İş<br><small>Kariyer</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("general")'>🌟 Genel<br><small>Yaşam Rehberi</small></button>
+</div>
+<div id='spreadResult' class='status cardMeaning' style='margin-top:20px;'></div>
+</div>
 </div>
 
 <div id='coinPacks' class='panel'>
@@ -5921,6 +5935,53 @@ tarotForm.addEventListener('submit',e=>{
  e.preventDefault();
  submitTarotForm();
 });
+
+// Spread Reading Function
+function getSpreadReading(type){
+ const username=getSavedUser();
+ const spreadResult=document.getElementById('spreadResult');
+
+ if(!username){
+   spreadResult.textContent='❌ Önce giriş yap!';
+   spreadResult.className='status cardMeaning error';
+   return;
+ }
+
+ spreadResult.textContent='⏳ Kartlar çekiliyor...';
+ spreadResult.className='status cardMeaning';
+
+ fetch('/api/tarot/reading/'+type,{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({username:username,question:''})
+ }).then(r=>{
+   if(r.status===402) return r.json().then(d=>{throw new Error(d.msg)});
+   if(!r.ok) throw new Error('Okuma başarısız');
+   return r.json();
+ }).then(d=>{
+   let html='<strong>✨ '+d.name+'</strong><br>';
+   if(d.remaining_chips!==undefined) html+='💰 Kalan: '+d.remaining_chips+' jeton<br><br>';
+
+   if(d.type==='yes-no'){
+     html+='<div style="font-size:2em;margin:20px 0;font-weight:bold;">'+d.answer+'</div>';
+     if(d.card) html+='<strong>'+d.card.name+'</strong> ('+d.card.position+')<br>'+d.card.intro;
+   } else {
+     html+='<div style="margin-top:15px;">';
+     if(d.spread){
+       d.spread.forEach(item=>{
+         html+='<div style="margin:15px 0;padding:10px;border-left:3px solid #d4af37;"><strong>'+item.position+':</strong> '+item.card.name+' ('+item.card.position+')<br><small>'+item.card.intro+'</small></div>';
+       });
+     }
+     html+='</div>';
+   }
+
+   spreadResult.innerHTML=html;
+   spreadResult.className='status cardMeaning';
+ }).catch(e=>{
+   spreadResult.textContent='❌ '+e.message;
+   spreadResult.className='status cardMeaning error';
+ });
+}
 </script>
 </body></html>""" + Londres_I18N_SCRIPT
 
