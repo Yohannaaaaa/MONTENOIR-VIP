@@ -6286,7 +6286,7 @@ body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900p
 .msg.success{background:rgba(76,175,80,.2);color:#4caf50}
 .msg.error{background:rgba(244,67,54,.2);color:#f44336}
     </style></head><body>
-<a class='locaBtn' id='globalLocaBtn' href='/'>🚪 LOCA</a>
+<a class='locaBtn' id="globalLocaBtn" href='/'>🚪 LOCA</a>
 <div class='lang-selector' id='langSelector'></div>
 <h1>💎 <span data-common-i18n='premium_title'>Premium Membership</span></h1>
 <p style='color:#8a7550' data-common-i18n='premium_subtitle'>Join Montenoir VIP and unlock exclusive features!</p>
