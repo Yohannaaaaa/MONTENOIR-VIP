@@ -368,6 +368,7 @@
             const username = document.getElementById('usernameInput').value;
             const resultContainer = document.getElementById('resultContainer');
             const resultContent = document.getElementById('resultContent');
+            const lang = typeof getSiteLang === 'function' ? getSiteLang() : 'tr';
 
             resultContent.innerHTML = '<div class="loading"><div class="spinner"></div><p>Kartlar şuffle ediliyor...</p></div>';
             resultContainer.classList.add('show');
@@ -377,7 +378,7 @@
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question, username })
+                    body: JSON.stringify({ question, username, lang })
                 });
 
                 if (response.status === 402) {
