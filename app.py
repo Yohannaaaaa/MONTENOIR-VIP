@@ -6024,12 +6024,17 @@ function getSpreadReading(type){
 
    if(d.type==='yes-no'){
      html+='<div style="font-size:2em;margin:20px 0;font-weight:bold;">'+d.answer+'</div>';
-     if(d.card) html+='<strong>'+d.card.name+'</strong> ('+d.card.position+')<br>'+d.card.intro;
+     if(d.card) {
+       html+='<div style="text-align:center;margin:20px 0;"><img src="/static/tarot_cards/'+d.card.image+'" style="max-width:200px;height:auto;border-radius:8px;box-shadow:0 0 15px rgba(212,175,55,0.5);"></div>';
+       html+='<strong>'+d.card.name+'</strong> ('+d.card.position+')<br>'+d.card.intro;
+     }
    } else {
      html+='<div style="margin-top:15px;">';
      if(d.spread){
        d.spread.forEach(item=>{
-         html+='<div style="margin:15px 0;padding:10px;border-left:3px solid #d4af37;"><strong>'+item.position+':</strong> '+item.card.name+' ('+item.card.position+')<br><small>'+item.card.intro+'</small></div>';
+         let cardImg='<img src="/static/tarot_cards/'+item.card.image+'" style="max-width:150px;height:auto;border-radius:6px;box-shadow:0 0 10px rgba(212,175,55,0.4);margin:10px 0;">';
+         html+='<div style="margin:20px 0;padding:15px;border-left:3px solid #d4af37;background:rgba(212,175,55,0.05);"><strong style="color:#d4af37;">'+item.position+'</strong><br>';
+         html+=cardImg+'<br><strong>'+item.card.name+'</strong> ('+item.card.position+')<br><small>'+item.card.intro+'</small></div>';
        });
      }
      html+='</div>';
