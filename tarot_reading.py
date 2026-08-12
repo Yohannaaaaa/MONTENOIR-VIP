@@ -4,6 +4,8 @@ import json
 import random
 from pathlib import Path
 
+SPREAD_COST = 200  # Jeton maliyeti
+
 def load_tarot_cards():
     """Load all tarot cards from JSON"""
     try:
@@ -42,16 +44,16 @@ def format_card_interpretation(card, position='Düz'):
 def three_card_spread(question=''):
     """3-Card Spread: Past, Present, Future"""
     cards = select_random_cards(3)
-
     interpretations = [
-        format_card_interpretation(cards[0], random.choice(['Düz', 'Ters'])),
-        format_card_interpretation(cards[1], random.choice(['Düz', 'Ters'])),
-        format_card_interpretation(cards[2], random.choice(['Düz', 'Ters']))
+        format_card_interpretation(cards[i], random.choice(['Düz', 'Ters']))
+        for i in range(3)
     ]
 
     return {
         'type': '3-card',
+        'name': '3-Kart Açılımı',
         'question': question,
+        'cost': SPREAD_COST,
         'spread': [
             {'position': 'Geçmiş', 'card': interpretations[0]},
             {'position': 'Şimdiki', 'card': interpretations[1]},
@@ -60,9 +62,8 @@ def three_card_spread(question=''):
     }
 
 def seven_card_spread(question=''):
-    """7-Card Spread: Situation, Challenge, Support, Near Future, Long Future, Advice, Outcome"""
+    """7-Card Spread: Situation, Challenge, Support, etc"""
     cards = select_random_cards(7)
-
     positions = ['Durum', 'Zorluk', 'Destek', 'Yakın Gelecek', 'Uzak Gelecek', 'Tavsiye', 'Sonuç']
     interpretations = [
         format_card_interpretation(cards[i], random.choice(['Düz', 'Ters']))
@@ -71,7 +72,9 @@ def seven_card_spread(question=''):
 
     return {
         'type': '7-card',
+        'name': '7-Kart Açılımı',
         'question': question,
+        'cost': SPREAD_COST,
         'spread': [
             {'position': positions[i], 'card': interpretations[i]}
             for i in range(7)
@@ -84,10 +87,7 @@ def yes_no_spread(question=''):
     position = random.choice(['Düz', 'Ters'])
     interpretation = format_card_interpretation(cards[0], position)
 
-    # Determine yes/no based on card
     is_upright = position == 'Düz'
-
-    # Some cards are inherently positive/negative
     positive_cards = ['JOKER', 'BÜYÜCÜ', 'AŞ', 'IMPARATOR', 'AŞIKLAR', 'SAVAŞ ARABASI',
                       'GÜÇ', 'KADER ÇARKI', 'ADALET', 'YILDIZ', 'GÜNEŞ', 'DÜNYA']
     negative_cards = ['ÖLÜM', 'İBLİS', 'KULE', 'AY', 'YARGI']
@@ -105,12 +105,73 @@ def yes_no_spread(question=''):
 
     return {
         'type': 'yes-no',
+        'name': 'Evet/Hayır Okuyuşu',
         'question': question,
+        'cost': SPREAD_COST,
         'answer': answer,
         'card': interpretation
     }
 
+def love_spread(question=''):
+    """Love/Relationship 5-Card Spread"""
+    cards = select_random_cards(5)
+    positions = ['Mevcut Durum', 'Partneriniz', 'Sizin Hisleriniz', 'İlişkinin Yönü', 'Tavsiye']
+    interpretations = [
+        format_card_interpretation(cards[i], random.choice(['Düz', 'Ters']))
+        for i in range(5)
+    ]
+
+    return {
+        'type': 'love',
+        'name': '💕 Aşk Açılımı',
+        'question': question,
+        'cost': SPREAD_COST,
+        'spread': [
+            {'position': positions[i], 'card': interpretations[i]}
+            for i in range(5)
+        ]
+    }
+
+def work_spread(question=''):
+    """Career/Work 5-Card Spread"""
+    cards = select_random_cards(5)
+    positions = ['Mevcut Kariyer', 'Zorluklar', 'Fırsatlar', 'Yakın Gelecek', 'Tavsiye']
+    interpretations = [
+        format_card_interpretation(cards[i], random.choice(['Düz', 'Ters']))
+        for i in range(5)
+    ]
+
+    return {
+        'type': 'work',
+        'name': '💼 İş Açılımı',
+        'question': question,
+        'cost': SPREAD_COST,
+        'spread': [
+            {'position': positions[i], 'card': interpretations[i]}
+            for i in range(5)
+        ]
+    }
+
+def general_spread(question=''):
+    """General 6-Card Spread"""
+    cards = select_random_cards(6)
+    positions = ['Geçmiş', 'Şimdiki', 'Yakın Gelecek', 'Tavsiye', 'Dış Etkenler', 'Sonuç']
+    interpretations = [
+        format_card_interpretation(cards[i], random.choice(['Düz', 'Ters']))
+        for i in range(6)
+    ]
+
+    return {
+        'type': 'general',
+        'name': '✨ Genel Okuyuş',
+        'question': question,
+        'cost': SPREAD_COST,
+        'spread': [
+            {'position': positions[i], 'card': interpretations[i]}
+            for i in range(6)
+        ]
+    }
+
 if __name__ == '__main__':
-    print("3-Kart Spread Test:")
-    result = three_card_spread("Benim gelecek nasıl olacak?")
-    print(json.dumps(result, ensure_ascii=False, indent=2)[:500])
+    print("Test Okuyuşları:")
+    print(json.dumps(three_card_spread("Test?"), ensure_ascii=False, indent=2)[:300])

@@ -5321,9 +5321,33 @@ def load_tarot_cards_db():
 
 # Import tarot reading functions
 try:
-    from tarot_reading import three_card_spread, seven_card_spread, yes_no_spread
+    from tarot_reading import (three_card_spread, seven_card_spread, yes_no_spread,
+                               love_spread, work_spread, general_spread, SPREAD_COST)
 except ImportError:
     print("Warning: tarot_reading module not found", flush=True)
+    SPREAD_COST = 200
+
+def get_user_chips(username):
+    """Get user's current chip balance"""
+    try:
+        with users_txn() as users:
+            key = monte_find_or_create_user(users, username)
+            return users[key].get('chips', 0)
+    except:
+        return 0
+
+def deduct_user_chips(username, amount):
+    """Deduct chips from user balance"""
+    try:
+        with users_txn() as users:
+            key = monte_find_or_create_user(users, username)
+            current = users[key].get('chips', 0)
+            if current < amount:
+                return False
+            users[key]['chips'] = current - amount
+            return True
+    except:
+        return False
 
 @app.route("/api/tarot-cards")
 def api_tarot_cards():
@@ -5336,7 +5360,20 @@ def api_tarot_3card():
     """3-card tarot spread: Past, Present, Future"""
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
     result = three_card_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
     return jsonify(result)
 
 @app.route("/api/tarot/reading/7-card", methods=["POST"])
@@ -5344,7 +5381,20 @@ def api_tarot_7card():
     """7-card tarot spread"""
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
     result = seven_card_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
     return jsonify(result)
 
 @app.route("/api/tarot/reading/yes-no", methods=["POST"])
@@ -5352,7 +5402,83 @@ def api_tarot_yesno():
     """Yes/No tarot spread"""
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
     result = yes_no_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/love", methods=["POST"])
+def api_tarot_love():
+    """Love/Relationship tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = love_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/work", methods=["POST"])
+def api_tarot_work():
+    """Work/Career tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = work_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/general", methods=["POST"])
+def api_tarot_general():
+    """General tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = general_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
     return jsonify(result)
 
 @app.route("/tarot-cards")

@@ -69,26 +69,34 @@
 
         .buttons {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 10px;
         }
 
         @media (max-width: 768px) {
             .buttons {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
         button {
-            padding: 15px;
+            padding: 15px 10px;
             border: 2px solid #d4af37;
             border-radius: 8px;
             background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.05));
             color: #d4af37;
-            font-size: 1.1em;
+            font-size: 0.95em;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
+            line-height: 1.4;
+        }
+
+        button small {
+            display: block;
+            font-size: 0.85em;
+            color: #ec4899;
+            margin-top: 5px;
         }
 
         button:hover {
@@ -309,14 +317,18 @@
         </header>
 
         <div class="input-group">
+            <input type="text" id="usernameInput" placeholder="Kullanıcı adı (jeton düşüşü için)" />
             <input type="text" id="questionInput" placeholder="Sorunuzu yazın... (opsiyonel)" />
         </div>
 
         <div class="controls">
             <div class="buttons">
-                <button onclick="getReading('3-card')">🎴 3 Kart (Geçmiş-Şimdiki-Gelecek)</button>
-                <button onclick="getReading('7-card')">🎴 7 Kart (Detaylı Yorum)</button>
-                <button onclick="getReading('yes-no')">✨ Evet/Hayır (Hızlı Cevap)</button>
+                <button onclick="getReading('3-card')">🎴 3 Kart<br><small>200 💰</small></button>
+                <button onclick="getReading('7-card')">🎴 7 Kart<br><small>200 💰</small></button>
+                <button onclick="getReading('yes-no')">✨ Evet/Hayır<br><small>200 💰</small></button>
+                <button onclick="getReading('love')">💕 Aşk<br><small>200 💰</small></button>
+                <button onclick="getReading('work')">💼 İş<br><small>200 💰</small></button>
+                <button onclick="getReading('general')">🌟 Genel<br><small>200 💰</small></button>
             </div>
         </div>
 
@@ -353,6 +365,7 @@
 
         async function getReading(type) {
             const question = document.getElementById('questionInput').value;
+            const username = document.getElementById('usernameInput').value;
             const resultContainer = document.getElementById('resultContainer');
             const resultContent = document.getElementById('resultContent');
 
@@ -364,8 +377,14 @@
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question })
+                    body: JSON.stringify({ question, username })
                 });
+
+                if (response.status === 402) {
+                    const data = await response.json();
+                    resultContent.innerHTML = `<div class="error">💰 ${data.msg}</div>`;
+                    return;
+                }
 
                 if (!response.ok) throw new Error('Okuma başarısız');
                 const data = await response.json();
@@ -376,10 +395,57 @@
                     display3CardReading(data);
                 } else if (type === '7-card') {
                     display7CardReading(data);
+                } else if (type === 'love' || type === 'work' || type === 'general') {
+                    displayMultiCardReading(data);
                 }
             } catch (error) {
                 resultContent.innerHTML = `<div class="error">❌ Hata: ${error.message}</div>`;
             }
+        }
+
+        function displayMultiCardReading(data) {
+            const resultContent = document.getElementById('resultContent');
+            let html = `
+                <div class="question">"${data.question || 'Sorunuz'}"</div>
+                <div class="spread-type">${data.name}</div>
+            `;
+
+            if (data.remaining_chips !== undefined) {
+                html += `<div style="text-align: center; color: #d4af37; margin-bottom: 15px;">💰 Kalan Jeton: ${data.remaining_chips}</div>`;
+            }
+
+            html += '<div class="cards-grid">';
+
+            data.spread.forEach((item, idx) => {
+                const card = item.card;
+                const imageSrc = TAROT_IMAGES[card.image?.replace('.webp', '')] || '/static/tarot_cards/00_joker.webp';
+                html += `
+                    <div class="card">
+                        <div class="card-header">
+                            <img src="${imageSrc}" alt="${card.name}" class="card-image">
+                            <div class="card-title">
+                                <div style="font-size: 0.8em; color: #8b5cf6;">📍 ${item.position}</div>
+                                <h3>${card.name}</h3>
+                                <div class="card-position">${card.position}</div>
+                                <div class="card-number">#${card.number}</div>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="section">
+                                <div class="section-title">📝 Anlam</div>
+                                <div class="section-content">${card.intro}</div>
+                            </div>
+                            <div class="section">
+                                <div class="section-title">💡 Bilgelik</div>
+                                <div class="section-content">${card.hidden || card.weekly}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            resultContent.innerHTML = html;
         }
 
         function displayYesNoReading(data) {
@@ -389,8 +455,14 @@
 
             let html = `
                 <div class="question">"${data.question || 'Sorunuz'}"</div>
-                <div class="spread-type">Evet/Hayır Okuyuşu</div>
+                <div class="spread-type">${data.name}</div>
+            `;
 
+            if (data.remaining_chips !== undefined) {
+                html += `<div style="text-align: center; color: #d4af37; margin-bottom: 15px;">💰 Kalan Jeton: ${data.remaining_chips}</div>`;
+            }
+
+            html += `
                 <div class="yes-no-result">${data.answer}</div>
 
                 <div class="card">
@@ -415,9 +487,14 @@
             const resultContent = document.getElementById('resultContent');
             let html = `
                 <div class="question">"${data.question || 'Sorunuz'}"</div>
-                <div class="spread-type">3-Kart Okuyuşu: Geçmiş • Şimdiki • Gelecek</div>
-                <div class="cards-grid">
+                <div class="spread-type">${data.name}</div>
             `;
+
+            if (data.remaining_chips !== undefined) {
+                html += `<div style="text-align: center; color: #d4af37; margin-bottom: 15px;">💰 Kalan Jeton: ${data.remaining_chips}</div>`;
+            }
+
+            html += '<div class="cards-grid">';
 
             data.spread.forEach((item, idx) => {
                 const card = item.card;
@@ -455,9 +532,14 @@
             const resultContent = document.getElementById('resultContent');
             let html = `
                 <div class="question">"${data.question || 'Sorunuz'}"</div>
-                <div class="spread-type">7-Kart Okuyuşu (Detaylı)</div>
-                <div class="cards-grid">
+                <div class="spread-type">${data.name}</div>
             `;
+
+            if (data.remaining_chips !== undefined) {
+                html += `<div style="text-align: center; color: #d4af37; margin-bottom: 15px;">💰 Kalan Jeton: ${data.remaining_chips}</div>`;
+            }
+
+            html += '<div class="cards-grid">';
 
             data.spread.forEach((item, idx) => {
                 const card = item.card;
