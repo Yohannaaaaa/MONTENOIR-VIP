@@ -5425,6 +5425,129 @@ def _select_cards(count=3):
     cards = _load_tarot_deck()
     return _random.sample(cards, min(count, len(cards)))
 
+CARD_NAMES_TRANSLATIONS = {
+    'fr': {
+        'JOKER (Deli)': 'LE FOU',
+        'BÜYÜCÜ': 'LE MAGICIEN',
+        'AZİZE': 'LA PRÊTRESSE',
+        'İMPARATORİÇE': 'L\'IMPÉRATRICE',
+        'İMPARATOR': 'L\'EMPEREUR',
+        'AZİZ': 'LE PAPE',
+        'AŞIKLAR': 'LES AMOUREUX',
+        'SAVAŞ ARABASI': 'LE CHAR',
+        'GÜÇ': 'LA FORCE',
+        'ERMİŞ': 'L\'ERMITE',
+        'KADER ÇARKI': 'LA ROUE DE LA FORTUNE',
+        'ADALET': 'LA JUSTICE',
+        'ASILAN ADAM': 'LE PENDU',
+        'ÖLÜM': 'LA MORT',
+        'DENGE': 'LA TEMPÉRANCE',
+        'ŞEYTAN': 'LE DIABLE',
+        'KULE': 'LA TOUR',
+        'YILDIZ': 'L\'ÉTOILE',
+        'AY': 'LA LUNE',
+        'GÜNEŞ': 'LE SOLEIL',
+        'MAHKEME (Yargı)': 'LE JUGEMENT',
+        'DÜNYA': 'LE MONDE',
+        'Düz': 'Droit',
+        'Ters': 'Inversé',
+        'i̇lişki': 'Relation',
+        'kariyer': 'Carrière',
+        'para': 'Finances',
+        'sağlık': 'Santé',
+        'aile': 'Famille',
+    },
+    'en': {
+        'JOKER (Deli)': 'THE FOOL',
+        'BÜYÜCÜ': 'THE MAGICIAN',
+        'AZİZE': 'THE HIGH PRIESTESS',
+        'İMPARATORİÇE': 'THE EMPRESS',
+        'İMPARATOR': 'THE EMPEROR',
+        'AZİZ': 'THE HIEROPHANT',
+        'AŞIKLAR': 'THE LOVERS',
+        'SAVAŞ ARABASI': 'THE CHARIOT',
+        'GÜÇ': 'STRENGTH',
+        'ERMİŞ': 'THE HERMIT',
+        'KADER ÇARKI': 'WHEEL OF FORTUNE',
+        'ADALET': 'JUSTICE',
+        'ASILAN ADAM': 'THE HANGED MAN',
+        'ÖLÜM': 'DEATH',
+        'DENGE': 'TEMPERANCE',
+        'ŞEYTAN': 'THE DEVIL',
+        'KULE': 'THE TOWER',
+        'YILDIZ': 'THE STAR',
+        'AY': 'THE MOON',
+        'GÜNEŞ': 'THE SUN',
+        'MAHKEME (Yargı)': 'JUDGEMENT',
+        'DÜNYA': 'THE WORLD',
+        'Düz': 'Upright',
+        'Ters': 'Reversed',
+        'i̇lişki': 'Relationship',
+        'kariyer': 'Career',
+        'para': 'Money',
+        'sağlık': 'Health',
+        'aile': 'Family',
+    },
+    'es': {
+        'JOKER (Deli)': 'EL LOCO',
+        'BÜYÜCÜ': 'EL MAGO',
+        'AZİZE': 'LA SACERDOTISA',
+        'İMPARATORİÇE': 'LA EMPERATRIZ',
+        'İMPARATOR': 'EL EMPERADOR',
+        'AZİZ': 'EL HIEROFANTE',
+        'AŞIKLAR': 'LOS AMANTES',
+        'SAVAŞ ARABASI': 'EL CARRO',
+        'GÜÇ': 'LA FUERZA',
+        'ERMİŞ': 'EL ERMITAÑO',
+        'KADER ÇARKI': 'LA RUEDA DE LA FORTUNA',
+        'ADALET': 'LA JUSTICIA',
+        'ASILAN ADAM': 'EL COLGADO',
+        'ÖLÜM': 'LA MUERTE',
+        'DENGE': 'LA TEMPLANZA',
+        'ŞEYTAN': 'EL DIABLO',
+        'KULE': 'LA TORRE',
+        'YILDIZ': 'LA ESTRELLA',
+        'AY': 'LA LUNA',
+        'GÜNEŞ': 'EL SOL',
+        'MAHKEME (Yargı)': 'EL JUICIO',
+        'DÜNYA': 'EL MUNDO',
+        'Düz': 'Derecho',
+        'Ters': 'Invertido',
+        'i̇lişki': 'Relación',
+        'kariyer': 'Carrera',
+        'para': 'Dinero',
+        'sağlık': 'Salud',
+        'aile': 'Familia',
+    },
+}
+
+def _translate_card_name(name, lang='tr'):
+    """Translate card name to target language"""
+    if lang not in CARD_NAMES_TRANSLATIONS:
+        return name
+    translations = CARD_NAMES_TRANSLATIONS[lang]
+    return translations.get(name, name)
+
+def _translate_card_content(content, lang='tr'):
+    """Translate card content field names (life_areas keys)"""
+    if lang == 'tr' or lang not in CARD_NAMES_TRANSLATIONS:
+        return content
+
+    if not isinstance(content, dict):
+        return content
+
+    translations = CARD_NAMES_TRANSLATIONS[lang]
+    translated = {}
+
+    for key, value in content.items():
+        translated_key = translations.get(key, key)
+        if isinstance(value, dict):
+            translated[translated_key] = _translate_card_content(value, lang)
+        else:
+            translated[translated_key] = value
+
+    return translated
+
 TAROT_TRANSLATIONS = {
     'tr': {
         '3-card_name': '3-Kart Açılımı',
@@ -5641,10 +5764,29 @@ def _get_tarot_text(key, lang='tr'):
 
 def _format_card(card, pos='Düz', lang='tr'):
     upright_label = _get_tarot_text('upright', lang)
-    if pos not in card.get('positions', {}):
-        pos = upright_label if pos == 'Düz' else _get_tarot_text('reversed', lang)
-    p = card['positions'].get(pos if pos in card.get('positions', {}) else 'Düz', {})
-    return {'number': card.get('number'), 'name': card.get('name'), 'position': pos,
+    reversed_label = _get_tarot_text('reversed', lang)
+
+    # Map orientation labels between Turkish and display language
+    orientation_map = {
+        'Düz': upright_label,
+        'Ters': reversed_label,
+        upright_label: upright_label,
+        reversed_label: reversed_label
+    }
+
+    # Get the correct position from card (always in Turkish)
+    turkish_pos = 'Düz' if pos in [upright_label, 'Düz'] else 'Ters'
+
+    if turkish_pos not in card.get('positions', {}):
+        turkish_pos = 'Düz'
+
+    p = card['positions'].get(turkish_pos, {})
+
+    # Translate card name and position for display
+    card_name = _translate_card_name(card.get('name', ''), lang)
+    display_pos = orientation_map.get(pos, upright_label)
+
+    return {'number': card.get('number'), 'name': card_name, 'position': display_pos,
             'image': card.get('image'), 'intro': p.get('intro', ''), 'hidden': p.get('hidden', '')}
 
 def three_card_spread(question='', lang='tr'):
