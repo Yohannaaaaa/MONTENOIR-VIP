@@ -936,8 +936,16 @@ def owner_manage_user(data):
             emit("owner_action_result", {"ok": True, "msg": "Hesap silindi."})
             return
         elif action == "reset_avatar":
+            old_avatar = users[key].get("avatarData", "")
+            if old_avatar and old_avatar.startswith("/static/avatars/"):
+                try:
+                    avatar_path = os.path.join(app.root_path, old_avatar.lstrip("/"))
+                    if os.path.exists(avatar_path):
+                        os.remove(avatar_path)
+                except Exception:
+                    pass
             users[key]["avatarData"] = ""
-            users[key]["avatar"] = "woman.png"
+            users[key]["avatar"] = ""
         elif action == "reset_password_link":
             token = str(random.randint(100000, 999999))
             users[key]["resetToken"] = token
@@ -4512,8 +4520,16 @@ def delete_avatar(data):
         if not user_key:
             emit('avatar_upload_result', {'ok': False, 'msg': 'Kullanıcı bulunamadı.'})
             return
+        old_avatar = users[user_key].get('avatarData', '')
+        if old_avatar and old_avatar.startswith('/static/avatars/'):
+            try:
+                avatar_path = os.path.join(app.root_path, old_avatar.lstrip('/'))
+                if os.path.exists(avatar_path):
+                    os.remove(avatar_path)
+            except Exception:
+                pass
         users[user_key]['avatarData'] = ''
-        users[user_key]['avatar'] = 'woman.png'
+        users[user_key]['avatar'] = ''
     emit('avatar_upload_result', {'ok': True, 'profile': private_profile(user_key, users[user_key])})
 @socketio.on('buy_vip_with_chips')
 def buy_vip_with_chips(data):
@@ -6401,8 +6417,13 @@ def api_profile_avatar():
     if len(file_bytes) > 3 * 1024 * 1024:
         return {"ok": False, "msg": "Avatar dosyası çok büyük (maksimum 3MB)."}
 
-    mime = "jpeg" if ext == "jpg" else ext
-    avatar_url = f"data:image/{mime};base64," + base64.b64encode(file_bytes).decode("ascii")
+    avatar_dir = os.path.join(app.root_path, "static", "avatars")
+    os.makedirs(avatar_dir, exist_ok=True)
+    avatar_filename = f"{username.lower()}_{int(time.time())}.{ext}"
+    avatar_path = os.path.join(avatar_dir, avatar_filename)
+    with open(avatar_path, "wb") as fw:
+        fw.write(file_bytes)
+    avatar_url = f"/static/avatars/{avatar_filename}"
 
     with users_txn() as users:
         key = next((k for k in users if k.lower() == username.lower()), None)
@@ -6424,8 +6445,16 @@ def api_profile_avatar_delete():
         key = next((k for k in users if k.lower() == username.lower()), None)
         if not key:
             return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+        old_avatar = users[key].get("avatarData", "")
+        if old_avatar and old_avatar.startswith("/static/avatars/"):
+            try:
+                avatar_path = os.path.join(app.root_path, old_avatar.lstrip("/"))
+                if os.path.exists(avatar_path):
+                    os.remove(avatar_path)
+            except Exception:
+                pass
         users[key]["avatarData"] = ""
-        users[key]["avatar"] = "woman.png"
+        users[key]["avatar"] = ""
     return {"ok": True, "msg": "Avatar silindi."}
 
 @app.route("/api/vip/daily-bonus", methods=["POST"])
