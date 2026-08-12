@@ -5319,16 +5319,51 @@ def load_tarot_cards_db():
         print(f"Error loading tarot cards: {e}", flush=True)
         return []
 
+# Import tarot reading functions
+try:
+    from tarot_reading import three_card_spread, seven_card_spread, yes_no_spread
+except ImportError:
+    print("Warning: tarot_reading module not found", flush=True)
+
 @app.route("/api/tarot-cards")
 def api_tarot_cards():
     """API endpoint for all tarot cards with interpretations"""
     cards = load_tarot_cards_db()
     return jsonify(cards)
 
+@app.route("/api/tarot/reading/3-card", methods=["POST"])
+def api_tarot_3card():
+    """3-card tarot spread: Past, Present, Future"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    result = three_card_spread(question)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/7-card", methods=["POST"])
+def api_tarot_7card():
+    """7-card tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    result = seven_card_spread(question)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/yes-no", methods=["POST"])
+def api_tarot_yesno():
+    """Yes/No tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    result = yes_no_spread(question)
+    return jsonify(result)
+
 @app.route("/tarot-cards")
 def tarot_cards_page():
     """Display all tarot cards with interpretations"""
     return render_template('tarot_cards.html')
+
+@app.route("/tarot-reading")
+def tarot_reading_page():
+    """Interactive tarot reading with AI"""
+    return render_template('tarot_reading.html')
 
 @app.route("/tarot")
 def tarot_page():
