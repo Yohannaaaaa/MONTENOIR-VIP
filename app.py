@@ -5310,6 +5310,26 @@ fetch('/api/owner/requests?key='+encodeURIComponent(key)).then(r=>r.json()).then
 });
 </script></body></html>"""
 
+def load_tarot_cards_db():
+    """Load parsed tarot cards from JSON"""
+    try:
+        with open('/home/user/MONTENOIR-VIP/static/tarot_cards/cards.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading tarot cards: {e}", flush=True)
+        return []
+
+@app.route("/api/tarot-cards")
+def api_tarot_cards():
+    """API endpoint for all tarot cards with interpretations"""
+    cards = load_tarot_cards_db()
+    return jsonify(cards)
+
+@app.route("/tarot-cards")
+def tarot_cards_page():
+    """Display all tarot cards with interpretations"""
+    return render_template('tarot_cards.html')
+
 @app.route("/tarot")
 def tarot_page():
     return """<!doctype html>

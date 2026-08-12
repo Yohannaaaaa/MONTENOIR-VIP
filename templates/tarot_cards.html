@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarot Kartları Referansı - MONTENOIR VIP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #ec4899;
+            --dark-bg: #0f172a;
+            --dark-card: #1e293b;
+            --dark-text: #e2e8f0;
+            --light-bg: #f8fafc;
+            --light-card: #ffffff;
+            --light-text: #1e293b;
+            --border: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light-bg);
+            color: var(--light-text);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body.dark {
+            background: var(--dark-bg);
+            color: var(--dark-text);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            padding: 10px 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--light-card);
+            color: var(--light-text);
+            font-size: 1em;
+        }
+
+        body.dark .search-box {
+            background: var(--dark-card);
+            color: var(--dark-text);
+            border-color: #475569;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .card-container {
+            background: var(--light-card);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+
+        body.dark .card-container {
+            background: var(--dark-card);
+            border-color: #475569;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        body.dark .card-header {
+            border-bottom-color: #475569;
+        }
+
+        .card-name {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .card-number {
+            font-size: 0.9em;
+            color: #94a3b8;
+            background: var(--light-bg);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        body.dark .card-number {
+            background: #1e293b;
+            color: #cbd5e1;
+        }
+
+        .position-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .position-tab {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid var(--border);
+            background: var(--light-bg);
+            color: var(--light-text);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        body.dark .position-tab {
+            background: #1e293b;
+            border-color: #475569;
+            color: var(--dark-text);
+        }
+
+        .position-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .position-tab:hover {
+            border-color: var(--primary);
+        }
+
+        .text-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .text-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .intro-text {
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: var(--light-text);
+            font-style: italic;
+        }
+
+        body.dark .intro-text {
+            color: var(--dark-text);
+        }
+
+        .section-title {
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 12px;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-content {
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #64748b;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        body.dark .section-content {
+            color: #cbd5e1;
+        }
+
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #94a3b8;
+        }
+
+        .stats {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #64748b;
+        }
+
+        body.dark .stats {
+            color: #cbd5e1;
+        }
+
+        .stats strong {
+            color: var(--primary);
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-image {
+                height: 300px;
+            }
+
+            .header-controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 Tarot Kartları Referansı</h1>
+            <p>Tüm 78 kartın detaylı açılımları - Düz ve Ters pozisyonları</p>
+
+            <div class="header-controls">
+                <input
+                    type="text"
+                    class="search-box"
+                    id="searchInput"
+                    placeholder="Kart adı ile ara... (örn: Joker, Değnek)"
+                >
+
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="all">Tümü</button>
+                    <button class="filter-btn" data-filter="major">Majör Arkana</button>
+                    <button class="filter-btn" data-filter="minor">Minör Arkana</button>
+                </div>
+
+                <button class="theme-toggle" id="themeToggle">🌙 Gece Modu</button>
+            </div>
+        </header>
+
+        <div class="stats">
+            <span><strong id="cardCount">78</strong> kartı gösteriliyor</span>
+        </div>
+
+        <div class="cards-grid" id="cardsContainer"></div>
+    </div>
+
+    <script>
+        // Kart verileri
+        const MAJOR_ARCANA = {
+            '0': 'Joker', '1': 'Sihirbaz', '2': 'Bakireyiz', '3': 'İmparatoriçe',
+            '4': 'İmparator', '5': 'Başrahip', '6': 'Aşıklar', '7': 'Savaş Arabası',
+            '8': 'Güç', '9': 'Münzevi', '10': 'Kader Çarkı', '11': 'Adalet',
+            '12': 'Asılı Adam', '13': 'Ölüm', '14': 'İtidal', '15': 'İblis',
+            '16': 'Kule', '17': 'Yıldız', '18': 'Ay', '19': 'Güneş',
+            '20': 'Yargi', '21': 'Dünya'
+        };
+
+        let allCards = [];
+        let filteredCards = [];
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        // Tema değiştirme
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            themeToggle.textContent = isDark ? '☀️ Gün Modu' : '🌙 Gece Modu';
+            localStorage.setItem('tarotTheme', isDark ? 'dark' : 'light');
+        });
+
+        // Tema yükle
+        if (localStorage.getItem('tarotTheme') === 'dark') {
+            document.body.classList.add('dark');
+            themeToggle.textContent = '☀️ Gün Modu';
+        }
+
+        // Filtreler
+        document.querySelectorAll('[data-filter]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                applyFilters();
+            });
+        });
+
+        // Arama
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            currentSearch = e.target.value.toLowerCase();
+            applyFilters();
+        });
+
+        function isMajorArcana(cardNumber) {
+            try {
+                const num = parseInt(cardNumber);
+                return num >= 0 && num <= 21;
+            } catch {
+                return false;
+            }
+        }
+
+        function applyFilters() {
+            filteredCards = allCards.filter(card => {
+                const matchesType = currentFilter === 'all' ||
+                                   (currentFilter === 'major' && isMajorArcana(card.number)) ||
+                                   (currentFilter === 'minor' && !isMajorArcana(card.number));
+
+                const matchesSearch = card.name.toLowerCase().includes(currentSearch) ||
+                                     card.number.toString().includes(currentSearch);
+
+                return matchesType && matchesSearch;
+            });
+
+            renderCards();
+            updateStats();
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = '';
+
+            if (filteredCards.length === 0) {
+                container.innerHTML = '<div class="no-results">Kart bulunamadı.</div>';
+                return;
+            }
+
+            // Kartları gruplama (Her kart için Düz ve Ters bir kart olarak göster)
+            const cardsByName = {};
+            filteredCards.forEach(card => {
+                if (!cardsByName[card.name]) {
+                    cardsByName[card.name] = {};
+                }
+                cardsByName[card.name][card.position] = card;
+            });
+
+            Object.keys(cardsByName).forEach(name => {
+                const cardPair = cardsByName[name];
+                const duzCard = cardPair['Düz'] || cardPair['Ters'];
+
+                if (!duzCard) return;
+
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card-container';
+
+                const cardImage = duzCard.image ? `/static/tarot_cards/${duzCard.image}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="400"%3E%3Crect fill="%238b5cf6" width="300" height="400"/%3E%3Ctext x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24" fill="white" font-family="Arial"%3E%3C/text%3E%3C/svg%3E';
+
+                let positionTabs = '';
+                let sections = '';
+
+                Object.keys(cardPair).forEach(position => {
+                    const card = cardPair[position];
+                    positionTabs += `<button class="position-tab ${position === 'Düz' ? 'active' : ''}" data-position="${position}">${position}</button>`;
+
+                    const sectionContent = card.sections ? Object.entries(card.sections)
+                        .map(([key, value]) => {
+                            if (!value) return '';
+                            const titles = {
+                                'intro': '',
+                                'life_areas': 'HAYAT ALANLARI',
+                                'symbols': 'SEMBOLLER',
+                                'questions': 'SORULAR',
+                                'weekly': 'HAFTALIK MESAJ',
+                                'hidden': 'GİZLİ MESAJ'
+                            };
+                            return `
+                                ${key !== 'intro' ? `<div class="section-title">${titles[key]}</div>` : ''}
+                                <div class="section-content">${value}</div>
+                            `;
+                        }).join('')
+                        : '';
+
+                    sections += `
+                        <div class="text-section ${position === 'Düz' ? 'active' : ''}" data-position="${position}">
+                            ${card.sections?.intro ? `<div class="intro-text">"${card.sections.intro}"</div>` : ''}
+                            ${sectionContent}
+                        </div>
+                    `;
+                });
+
+                cardEl.innerHTML = `
+                    <img src="${cardImage}" alt="${name}" class="card-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22400%22%3E%3Crect fill=%22%238b5cf6%22 width=%22300%22 height=%22400%22/%3E%3C/svg%3E'">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <div class="card-name">${name}</div>
+                            <div class="card-number">#${duzCard.number}</div>
+                        </div>
+                        <div class="position-tabs">
+                            ${positionTabs}
+                        </div>
+                        ${sections}
+                    </div>
+                `;
+
+                // Position tab event listeners
+                cardEl.querySelectorAll('.position-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        cardEl.querySelectorAll('.position-tab').forEach(t => t.classList.remove('active'));
+                        cardEl.querySelectorAll('.text-section').forEach(s => s.classList.remove('active'));
+                        tab.classList.add('active');
+                        cardEl.querySelector(`[data-position="${tab.dataset.position}"]`).classList.add('active');
+                    });
+                });
+
+                container.appendChild(cardEl);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('cardCount').textContent = filteredCards.length;
+        }
+
+        // Başlangıç
+        async function init() {
+            // Kartları fetch et (sunucu tarafından sağlanacak)
+            try {
+                const response = await fetch('/api/tarot-cards');
+                if (!response.ok) {
+                    // API yoksa local veri kullan (demo için)
+                    loadDemoCards();
+                } else {
+                    allCards = await response.json();
+                    applyFilters();
+                }
+            } catch {
+                loadDemoCards();
+            }
+        }
+
+        function loadDemoCards() {
+            // Demo verisi - gerçek veri API'den gelecek
+            console.log('Demo modu: Kartlar API\'den yüklemeye çalışılacak...');
+            // Sayfa yüklense de API'nin sorumluluğudur
+        }
+
+        init();
+    </script>
+</body>
+</html>
