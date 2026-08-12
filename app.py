@@ -6270,7 +6270,95 @@ def api_daily_reward():
 
 @app.route("/premium")
 def premium_page_dup2():
-    return """<html><head><meta charset='utf-8'><style>body{background:#050505;color:#fff;font-family:Arial;padding:30px}.locaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer;}.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9);}</style></head><body><a class='locaBtn' href='/'>🚪 LOCA</a><div class='lang-selector' id='langSelector'></div><h1 data-common-i18n='premium_title'>💎 Premium Üyelik</h1><p data-common-i18n='premium_desc'>Premium üyelik sistemi yakında aktif olacak.</p><script src='/static/js/site_lang.js'></script><script>buildLangSelector(document.getElementById('langSelector'), applyCommonI18n); applyCommonI18n();</script></body></html>"""
+    stripe_ready_js = "true" if stripe_configured() else "false"
+    return """<html><head><meta charset='utf-8'><style>
+body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900px;margin:0 auto}
+#globalLocaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}
+#globalLocaBtn:hover{background:rgba(212,175,55,.1)}
+.lang-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.lang-btn{width:28px;height:28px;border-radius:50%;border:2px solid #d4af37;background:#1a1a1a;color:#d4af37;font-size:13px;cursor:pointer}
+.lang-btn.selected{background:#d4af37;box-shadow:0 0 10px rgba(212,175,55,.9)}
+.vip-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:30px 0}
+.vip-card{border:2px solid #d4af37;border-radius:16px;padding:24px;background:rgba(0,0,0,.6);text-align:center}
+.vip-card.premium-plus{border-width:3px;box-shadow:0 0 20px rgba(212,175,55,.3)}
+.vip-title{font-size:24px;font-weight:bold;margin:12px 0;color:#d4af37}
+.vip-price{font-size:32px;font-weight:bold;color:#f5e6d3;margin:12px 0}
+.vip-price-small{font-size:14px;color:#8a7550}
+.vip-features{text-align:left;margin:16px 0;font-size:14px;line-height:1.8;color:#e0e0e0}
+.vip-features li{margin-bottom:8px}
+.vip-btn{width:100%;padding:12px;margin-top:16px;font-size:14px;font-weight:bold;border:none;border-radius:8px;cursor:pointer;background:#d4af37;color:#050505}
+.vip-btn:hover{background:#e8c547}
+.vip-btn:disabled{background:#666;cursor:not-allowed;color:#999}
+.msg{margin:16px 0;padding:12px;border-radius:8px;text-align:center;font-size:14px}
+.msg.success{background:rgba(76,175,80,.2);color:#4caf50}
+.msg.error{background:rgba(244,67,54,.2);color:#f44336}
+    </style></head><body>
+<a class='locaBtn' id='globalLocaBtn' href='/'>🚪 LOCA</a>
+<div class='lang-selector' id='langSelector'></div>
+<h1>💎 Premium Üyelik</h1>
+<p style='color:#8a7550'>Montenoir VIP üyeliğine katıl ve özel özellikleri açıkla!</p>
+<div class='msg' id='premiumMsg' style='display:none'></div>
+<div class='vip-container'>
+  <div class='vip-card'>
+    <div class='vip-title'>👑 Premium</div>
+    <div class='vip-price'>49.99<div class='vip-price-small'>EUR / ay</div></div>
+    <ul class='vip-features'>
+      <li>✨ XP Boost +10%</li>
+      <li>👑 Premium Badge</li>
+      <li>🎭 VIP Oda</li>
+    </ul>
+    <button class='vip-btn' onclick=\"buyVip('vip-premium')\">Satın Al</button>
+  </div>
+  <div class='vip-card premium-plus'>
+    <div class='vip-title'>💎 Premium+</div>
+    <div class='vip-price'>89.99<div class='vip-price-small'>EUR / ay</div></div>
+    <ul class='vip-features'>
+      <li>💰 Günlük Bonus +250 Jeton</li>
+      <li>🔮 Tarot -50% Maliyet</li>
+      <li>🎭 VIP Oda</li>
+      <li>🎰 Slot Bonusu</li>
+      <li>💎 Premium+ Badge</li>
+      <li>✨ XP Boost +25%</li>
+    </ul>
+    <button class='vip-btn' onclick=\"buyVip('vip-premium-plus')\">Satın Al</button>
+  </div>
+</div>
+<script src='/static/js/site_lang.js'></script>
+<script>
+const STRIPE_READY = """ + stripe_ready_js + """;
+const premiumUser = localStorage.getItem('montenoirUser') || localStorage.getItem('loggedUser') || '';
+const msgEl = document.getElementById('premiumMsg');
+buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
+applyCommonI18n();
+function buyVip(packId) {
+  if (!premiumUser) { alert('Önce giriş yap.'); window.location.href = '/login'; return; }
+  if (!STRIPE_READY) { msgEl.style.display='block'; msgEl.className='msg error'; msgEl.textContent='Ödeme şu anda kullanılamıyor.'; return; }
+  const btn = event.target;
+  btn.disabled = true;
+  fetch('/api/vip/checkout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username: premiumUser, pack_id: packId})
+  }).then(r => r.json()).then(d => {
+    if (d.ok && d.url) { window.location.href = d.url; }
+    else { btn.disabled = false; msgEl.style.display='block'; msgEl.className='msg error'; msgEl.textContent='Hata: ' + (d.error || 'Bilinmeyen'); }
+  }).catch(e => { btn.disabled = false; msgEl.style.display='block'; msgEl.className='msg error'; msgEl.textContent='Ağ hatası.'; });
+}
+const params = new URLSearchParams(window.location.search);
+if (params.get('success') && params.get('session_id')) {
+  msgEl.style.display='block'; msgEl.className='msg success'; msgEl.textContent='Ödeme onaylanıyor...';
+  fetch('/api/vip/confirm?session_id=' + encodeURIComponent(params.get('session_id'))).then(r => r.json()).then(d => {
+    if (d.ok && d.label) { msgEl.textContent='✅ '+d.label+' üyeliğine hoş geldin!'; setTimeout(() => { window.location.href='/'; }, 2000); }
+    else if (d.ok) { msgEl.textContent='✅ Ödeme zaten onaylandı.'; }
+    else { msgEl.className='msg error'; msgEl.textContent='Ödeme onaylanamadı.'; }
+  });
+  window.history.replaceState({}, '', '/premium');
+} else if (params.get('canceled')) {
+  msgEl.style.display='block'; msgEl.className='msg error'; msgEl.textContent='Ödeme iptal edildi.';
+  window.history.replaceState({}, '', '/premium');
+}
+</script>
+    </body></html>"""
 
 @app.route("/kasa")
 def kasa_page():
@@ -6469,6 +6557,92 @@ def webhook_stripe():
             except Exception as e:
                 print("Stripe webhook credit error:", e, flush=True)
     return jsonify({"received": True})
+
+def credit_vip_for_stripe_session(session_id):
+    """VIP üyeliği Stripe oturumuyla kredilendir. İdempotent."""
+    if session_id in load_processed_stripe_sessions():
+        return None
+    session = stripe.checkout.Session.retrieve(session_id)
+    if session.get("payment_status") != "paid":
+        return None
+    metadata = session.get("metadata") or {}
+    username = metadata.get("username")
+    pack_id = metadata.get("pack_id")
+    if not username or pack_id not in VIP_PACKAGES:
+        return None
+    pkg = VIP_PACKAGES[pack_id]
+    with users_txn() as users:
+        key = find_user_key(users, username)
+        if not key:
+            return None
+        until = int(time.time()) + int(pkg['days']) * 86400
+        users[key]['vip'] = True
+        users[key]['vipLevel'] = pkg['label']
+        users[key]['vipUntil'] = until
+        users[key]['membershipLevel'] = 'premium' if pack_id == 'vip-premium' else 'premium-plus'
+        users[key]['membershipUntil'] = until
+        if pack_id == 'vip-premium':
+            users[key]['avatarFrame'] = 'frame-gold'
+            users[key]['nameColor'] = 'name-green'
+        elif pack_id == 'vip-premium-plus':
+            users[key]['avatarFrame'] = 'frame-vip'
+            users[key]['nameColor'] = 'name-rainbow'
+    mark_stripe_session_processed(session_id)
+    return {"username": username, "pack_id": pack_id, "label": pkg['label']}
+
+@app.route("/api/vip/checkout", methods=["POST"])
+def api_vip_checkout():
+    if not stripe_configured():
+        return jsonify({"ok": False, "error": "stripe_not_configured"}), 503
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    if not username:
+        return jsonify({"ok": False, "error": "no_user"}), 400
+    users = load_users()
+    if not find_user_key(users, username):
+        return jsonify({"ok": False, "error": "user_not_found"}), 404
+    pack_id = (data.get("pack_id") or "").strip()
+    if pack_id not in VIP_PACKAGES:
+        return jsonify({"ok": False, "error": "invalid_package"}), 400
+    pkg = VIP_PACKAGES[pack_id]
+    eur_to_gbp = 0.85
+    price_gbp = round(pkg["price"] * eur_to_gbp * 100)
+    base_url = request.url_root.rstrip("/")
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "gbp",
+                    "unit_amount": price_gbp,
+                    "product_data": {"name": f"{pkg['label']} ({pkg['days']} gün)"},
+                },
+                "quantity": 1,
+            }],
+            metadata={"username": username, "pack_id": pack_id},
+            success_url=base_url + "/premium?success=1&session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=base_url + "/premium?canceled=1",
+        )
+    except Exception as e:
+        return jsonify({"ok": False, "error": "stripe_error", "detail": str(e)}), 502
+    return jsonify({"ok": True, "url": session.url})
+
+@app.route("/api/vip/confirm")
+def api_vip_confirm():
+    if not stripe_configured():
+        return jsonify({"ok": False, "error": "stripe_not_configured"}), 503
+    session_id = (request.args.get("session_id") or "").strip()
+    if not session_id:
+        return jsonify({"ok": False, "error": "no_session"}), 400
+    try:
+        result = credit_vip_for_stripe_session(session_id)
+    except Exception as e:
+        return jsonify({"ok": False, "error": "stripe_error", "detail": str(e)}), 502
+    if result:
+        return jsonify({"ok": True, **result})
+    already = session_id in load_processed_stripe_sessions()
+    return jsonify({"ok": already, "alreadyProcessed": already})
 
 @app.route("/turnuvalar")
 def turnuvalar_page():
