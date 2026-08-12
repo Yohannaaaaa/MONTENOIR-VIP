@@ -5895,7 +5895,8 @@ def _format_card(card, pos='Düz', lang='tr'):
                     life_areas = fr_life_areas if fr_life_areas else life_areas
 
                     # Update card name to French
-                    card_name = _translate_card_name(fr_card_name, lang)
+                    card_name = fr_card_name
+                    result['name'] = fr_card_name
 
     # Translate life_areas field keys for display
     if lang == 'fr':

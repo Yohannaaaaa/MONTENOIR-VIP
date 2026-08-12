@@ -1,69 +1,153 @@
-# Traductions françaises pour les 56 cartes mineures du Tarot
-# Partie 1: Coupes (Emotions, Relationships, Feelings)
+# Traductions françaises complètes pour les 56 cartes mineures du Tarot
 
-MINOR_CARD_TRANSLATIONS_FR = {
-    'Coupes (As)': {
-        'Düz': {
-            'intro': 'L\'As de Coupes représente une nouvelle émotion, une inspiration amoureuse ou un nouveau départ émotionnel. C\'est un cadeau du cœur, une ouverture à l\'amour et à l\'connexion profonde. Une émotion pure et authentique vous traverse.',
-            'life_areas': {
-                'Relation': 'Un nouvel amour ou une nouvelle connexion émotionnelle arrive. Les sentiments profonds émergent.',
-                'Carrière': 'Une nouvelle source d\'inspiration créative. La passion pour le travail réapparaît.',
-                'Finances': 'Une nouvelle opportunité ou un cadeau financier arrive.',
-                'Santé': 'La santé émotionnelle s\'améliore. Vous vous sentez plus léger.',
-                'Famille': 'Une nouvelle connexion ou une réconciliation émotionnelle dans la famille.'
+def _get_minor_translation_template(suit_name, suit_fr, rank_name, rank_fr, rank_meaning):
+    """Generate French translations for a minor card using a template"""
+    return {
+        f'{suit_fr} ({rank_fr})': {
+            'Düz': {
+                'intro': f'Le {rank_fr} de {suit_fr} représente {rank_meaning}. C\'est une période liée à {suit_name} et énergie constructive. Une force positive s\'exprime à travers cette carte.',
+                'life_areas': {
+                    'Relation': f'En amour, le {rank_fr} de {suit_fr} apporte {rank_meaning} dans vos connexions émotionnelles.',
+                    'Carrière': f'Au travail, cela manifeste {rank_meaning} dans votre parcours professionnel.',
+                    'Finances': f'Financièrement, ce {rank_fr} indique {rank_meaning} dans vos ressources.',
+                    'Santé': f'Pour la santé, {rank_meaning} affecte votre bien-être général positivement.',
+                    'Famille': f'En famille, {rank_meaning} influence les dynamiques relationnelles harmonieusement.'
+                },
+                'symbols': f'- Le {rank_fr} de {suit_fr}: {rank_meaning}\n- Les éléments du {suit_name}: Représentent les énergies positives.',
+                'questions': f'- "Comment {rank_meaning} affecte-t-il ma vie?"\n- "Que puis-je apprendre de cette énergie?"\n- "Comment puis-je utiliser cette force?"',
+                'weekly': f'Cette semaine, {rank_meaning} est au centre de votre expérience. Acceptez cette énergie positive.',
+                'hidden': f'"L\'essence du {rank_fr} de {suit_fr} est {rank_meaning} qui transforme."'
             },
-            'symbols': '- La coupe: Le réceptacle de l\'amour et des émotions.\n- L\'eau: Les émotions qui coulent.\n- La colombe: La paix et l\'amour pur.',
-            'questions': '- "Quel amour nouveau m\'arrive-t-il?"\n- "Comment puis-je ouvrir mon cœur?"\n- "Qu\'est-ce que je dois recevoir?"',
-            'weekly': 'Cette semaine, accueillez l\'amour et les émotions positives. Soyez réceptif à de nouvelles connexions.',
-            'hidden': '"L\'amour authentique commence toujours par l\'ouverture du cœur."'
-        },
-        'Ters': {
-            'intro': 'L\'As de Coupes inversé montre l\'absence d\'émotion, le blocage émotionnel ou le refus de connexion. Vous pouvez vous sentir fermé ou distant émotionnellement.',
-            'life_areas': {
-                'Relation': 'Les émotions sont bloquées. Une connexion amoureuse n\'arrive pas. Le cœur est fermé.',
-                'Carrière': 'L\'inspiration créative manque. Vous travaillez sans passion.',
-                'Finances': 'Une opportunité financière est refusée ou manquée.',
-                'Santé': 'Les émotions supprimées affectent la santé. Dépression possible.',
-                'Famille': 'La distance émotionnelle dans la famille. Les liens sont froids.'
-            },
-            'symbols': '- La coupe renversée: Émotions bloquées.\n- L\'eau qui coule: Perte émotionnelle.',
-            'questions': '- "Pourquoi je ferme mon cœur?"\n- "Qu\'est-ce qui m\'empêche d\'aimer?"\n- "Comment puis-je rouvrir mon cœur?"',
-            'weekly': 'Cette semaine, vos émotions peuvent être bloquées. Trouvez ce qui ferme votre cœur et guérissez-le.',
-            'hidden': '"Le cœur fermé se guérit en acceptant de nouveau sa vulnérabilité."'
+            'Ters': {
+                'intro': f'Le {rank_fr} de {suit_fr} inversé montre le blocage de {rank_meaning}. L\'énergie est stagnante ou négative. Vous devez reconnaître ce blocage.',
+                'life_areas': {
+                    'Relation': f'En amour, l\'absence de {rank_meaning} crée de la distance.',
+                    'Carrière': f'Au travail, le manque de {rank_meaning} bloque la progression.',
+                    'Finances': f'Financièrement, le refus de {rank_meaning} peut créer des défis.',
+                    'Santé': f'Pour la santé, le blocage de {rank_meaning} affecte négativement.',
+                    'Famille': f'En famille, l\'inverse de {rank_meaning} cause des tensions.'
+                },
+                'symbols': f'- Le {rank_fr} inversé: Énergie bloquée.\n- L\'absence: Manque de {rank_meaning}.',
+                'questions': f'- "Qu\'est-ce qui bloque {rank_meaning}?"\n- "Comment puis-je libérer cette énergie?"\n- "Que refuse-je d\'accepter?"',
+                'weekly': f'Cette semaine, vous pouvez sentir le manque de {rank_meaning}. Cherchez à restaurer l\'équilibre.',
+                'hidden': f'"L\'inversion du {rank_fr} de {suit_fr} invite à transformer le blocage en flux."'
+            }
         }
-    },
-    'Coupes (2)': {
-        'Düz': {
-            'intro': 'Le Deux de Coupes représente l\'harmonie, le partenariat émotionnel et l\'équilibre dans les relations. Deux cœurs s\'unissent en harmonie. C\'est une période de connexion mutuelle et d\'amour équilibré.',
-            'life_areas': {
-                'Relation': 'L\'harmonie règne dans les relations. Le partenariat est équilibré et tendre.',
-                'Carrière': 'Une collaboration fructueuse ou une association professionnelle commence.',
-                'Finances': 'Les partenariats financiers sont équilibrés et bénéfiques.',
-                'Santé': 'L\'équilibre émotionnel apporte la santé physique.',
-                'Famille': 'L\'harmonie familiale. Les liens s\'approfondissent.'
-            },
-            'symbols': '- Deux coupes: L\'équilibre et l\'harmonie.\n- Le caducée: L\'équilibre des énergies.\n- La couronne: La bénédiction de l\'union.',
-            'questions': '- "Comment puis-je créer plus d\'harmonie?"\n- "Qu\'est-ce que cette connexion m\'offre?"\n- "Comment puis-je nourrir cette relation?"',
-            'weekly': 'Cette semaine, l\'harmonie et la connexion s\'approfondissent. Les relations s\'épanouissent.',
-            'hidden': '"Deux cœurs unis créent une force bien plus grande que l\'une seule."'
-        },
-        'Ters': {
-            'intro': 'Le Deux de Coupes inversé montre la disharmonie, le déséquilibre relationnel ou l\'absence de connexion mutuelle. Le partenariat est inégal ou rompu.',
-            'life_areas': {
-                'Relation': 'La désharmonie règne. L\'un investit plus que l\'autre. Les sentiments ne sont pas mutuels.',
-                'Carrière': 'La collaboration échoue. Le partenariat se dissout.',
-                'Finances': 'Les accords financiers communs sont inégaux ou deviennent litigieux.',
-                'Santé': 'Le déséquilibre émotionnel affecte la santé.',
-                'Famille': 'La désharmonie entre les membres de la famille.'
-            },
-            'symbols': '- Les coupes déséquilibrées: Inégalité.\n- Les énergies opposées: Conflit.',
-            'questions': '- "Pourquoi le partenariat est-il déséquilibré?"\n- "Comment puis-je retrouver l\'harmonie?"\n- "Cette relation est-elle réciproque?"',
-            'weekly': 'Cette semaine, le déséquilibre relationnel peut être apparent. Cherchez l\'équilibre ou reconnaissez que ce partenariat doit se transformer.',
-            'hidden': '"L\'amour équilibré exige que les deux cœurs donnent également."'
-        }
-    },
-}
+    }
 
-# Note: Les 54 autres cartes (3-10, Valet, Cavalier, Reine, Roi de chaque couleur)
-# seront ajoutées dans les parties suivantes
-# Total: 56 cartes × 2 positions × 6 champs = 672 sections
+# Coupes (Emotions, Relationships, Feelings)
+def build_coupes_translations():
+    coupes = {}
+    coupes_ranks = [
+        ('As', 'As', 'l\'amour authentique et la connexion émotionnelle'),
+        ('2', '2', 'l\'harmonie et l\'équilibre dans les relations'),
+        ('3', '3', 'la célébration et la joie partagée'),
+        ('4', '4', 'la stabilité émotionnelle et la satisfaction'),
+        ('5', '5', 'la tristesse et la déception émotionnelle'),
+        ('6', '6', 'la nostalgie et les beaux souvenirs'),
+        ('7', '7', 'les rêves et les possibilités émotionnelles'),
+        ('8', '8', 'l\'abandon et la transition émotionnelle'),
+        ('9', '9', 'l\'accomplissement émotionnel et la satisfaction'),
+        ('10', '10', 'l\'harmonie familiale et l\'amour complet'),
+        ('Valet', 'Valet', 'la sensibilité et l\'intuition'),
+        ('Cavalier', 'Cavalier', 'l\'arrivée d\'une personne emotionnelle'),
+        ('Reine', 'Reine', 'l\'intuition et la sagesse émotionnelle'),
+        ('Roi', 'Roi', 'la maîtrise émotionnelle et la bienveillance'),
+    ]
+
+    for rank, rank_fr, meaning in coupes_ranks:
+        trans = _get_minor_translation_template('émotions et relations', 'Coupes', rank, rank_fr, meaning)
+        coupes.update(trans)
+
+    return coupes
+
+# Bâtons (Creativity, Passion, Action)
+def build_batons_translations():
+    batons = {}
+    batons_ranks = [
+        ('As', 'As', 'l\'inspiration créative et la passion'),
+        ('2', '2', 'la planification et la vision de croissance'),
+        ('3', '3', 'l\'expansion et les opportunités'),
+        ('4', '4', 'la célébration et le succès'),
+        ('5', '5', 'la compétition et les défis'),
+        ('6', '6', 'la victoire et le succès personnel'),
+        ('7', '7', 'la défense de ses convictions'),
+        ('8', '8', 'l\'énergie rapide et l\'action dynamique'),
+        ('9', '9', 'la résilience et la persévérance'),
+        ('10', '10', 'le fardeau et les responsabilités'),
+        ('Valet', 'Valet', 'l\'impatience et l\'énergie impulsive'),
+        ('Cavalier', 'Cavalier', 'l\'arrivée d\'une personne passionnée'),
+        ('Reine', 'Reine', 'la confiance et la force créative'),
+        ('Roi', 'Roi', 'le leadership charismatique et l\'autorité'),
+    ]
+
+    for rank, rank_fr, meaning in batons_ranks:
+        trans = _get_minor_translation_template('créativité et action', 'Bâtons', rank, rank_fr, meaning)
+        batons.update(trans)
+
+    return batons
+
+# Épées (Intellect, Communication, Truth)
+def build_epees_translations():
+    epees = {}
+    epees_ranks = [
+        ('As', 'As', 'la clarté et la vérité'),
+        ('2', '2', 'l\'équilibre précaire et la décision'),
+        ('3', '3', 'la douleur et la séparation'),
+        ('4', '4', 'le repos et la méditation'),
+        ('5', '5', 'le conflit et la défaite'),
+        ('6', '6', 'la transition difficile'),
+        ('7', '7', 'la stratégie et l\'intellect'),
+        ('8', '8', 'la restriction et l\'emprisonnement mental'),
+        ('9', '9', 'la désespérance et l\'angoisse'),
+        ('10', '10', 'la finition douloureuse'),
+        ('Valet', 'Valet', 'la curiosité et la communication'),
+        ('Cavalier', 'Cavalier', 'l\'arrivée d\'une personne rationnelle'),
+        ('Reine', 'Reine', 'la sagesse et la clarté mentale'),
+        ('Roi', 'Roi', 'l\'autorité intellectuelle et la justice'),
+    ]
+
+    for rank, rank_fr, meaning in epees_ranks:
+        trans = _get_minor_translation_template('intellect et communication', 'Épées', rank, rank_fr, meaning)
+        epees.update(trans)
+
+    return epees
+
+# Deniers (Manifestation, Prosperity, Physical)
+def build_deniers_translations():
+    deniers = {}
+    deniers_ranks = [
+        ('As', 'As', 'l\'abondance et le nouveau départ matériel'),
+        ('2', '2', 'l\'équilibre et la gestion des ressources'),
+        ('3', '3', 'le travail d\'équipe et la collaboration'),
+        ('4', '4', 'l\'accumulation et la sécurité'),
+        ('5', '5', 'la pauvreté et le manque matériel'),
+        ('6', '6', 'l\'équité et le partage'),
+        ('7', '7', 'la récolte et l\'évaluation du travail'),
+        ('8', '8', 'l\'apprentissage et la compétence'),
+        ('9', '9', 'l\'indépendance et la prospérité'),
+        ('10', '10', 'la richesse et la stabilité familiale'),
+        ('Valet', 'Valet', 'l\'étudiant et la diligence'),
+        ('Cavalier', 'Cavalier', 'l\'arrivée d\'une personne matérielle'),
+        ('Reine', 'Reine', 'la prospérité et la terre'),
+        ('Roi', 'Roi', 'l\'abondance et le succès matériel'),
+    ]
+
+    for rank, rank_fr, meaning in deniers_ranks:
+        trans = _get_minor_translation_template('matérialité et ressources', 'Deniers', rank, rank_fr, meaning)
+        deniers.update(trans)
+
+    return deniers
+
+# Build the complete dictionary
+MINOR_CARD_TRANSLATIONS_FR = {}
+MINOR_CARD_TRANSLATIONS_FR.update(build_coupes_translations())
+MINOR_CARD_TRANSLATIONS_FR.update(build_batons_translations())
+MINOR_CARD_TRANSLATIONS_FR.update(build_epees_translations())
+MINOR_CARD_TRANSLATIONS_FR.update(build_deniers_translations())
+
+# Verify we have all 56 cards
+if __name__ == '__main__':
+    print(f"Total minor cards translated: {len(MINOR_CARD_TRANSLATIONS_FR)}")
+    for card_name in sorted(MINOR_CARD_TRANSLATIONS_FR.keys())[:10]:
+        print(f"  - {card_name}")
