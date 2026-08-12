@@ -6288,32 +6288,32 @@ body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900p
     </style></head><body>
 <a class='locaBtn' id='globalLocaBtn' href='/'>🚪 LOCA</a>
 <div class='lang-selector' id='langSelector'></div>
-<h1>💎 Premium Üyelik</h1>
-<p style='color:#8a7550'>Montenoir VIP üyeliğine katıl ve özel özellikleri açıkla!</p>
+<h1>💎 <span data-common-i18n='premium_title'>Premium Membership</span></h1>
+<p style='color:#8a7550' data-common-i18n='premium_subtitle'>Join Montenoir VIP and unlock exclusive features!</p>
 <div class='msg' id='premiumMsg' style='display:none'></div>
 <div class='vip-container'>
   <div class='vip-card'>
     <div class='vip-title'>👑 Premium</div>
-    <div class='vip-price'>49.99<div class='vip-price-small'>EUR / ay</div></div>
+    <div class='vip-price'>49.99<div class='vip-price-small' data-common-i18n='premium_per_month'>EUR / month</div></div>
     <ul class='vip-features'>
-      <li>✨ XP Boost +10%</li>
-      <li>👑 Premium Badge</li>
-      <li>🎭 VIP Oda</li>
+      <li data-common-i18n='premium_feat_xp'>✨ XP Boost +10%</li>
+      <li data-common-i18n='premium_feat_badge'>👑 Premium Badge</li>
+      <li data-common-i18n='premium_feat_vip_room'>🎭 VIP Room</li>
     </ul>
-    <button class='vip-btn' onclick=\"buyVip('vip-premium')\">Satın Al</button>
+    <button class='vip-btn' onclick=\"buyVip('vip-premium')\" data-common-i18n='premium_btn_buy'>Buy Now</button>
   </div>
   <div class='vip-card premium-plus'>
     <div class='vip-title'>💎 Premium+</div>
-    <div class='vip-price'>89.99<div class='vip-price-small'>EUR / ay</div></div>
+    <div class='vip-price'>89.99<div class='vip-price-small' data-common-i18n='premium_per_month'>EUR / month</div></div>
     <ul class='vip-features'>
-      <li>💰 Günlük Bonus +250 Jeton</li>
-      <li>🔮 Tarot -50% Maliyet</li>
-      <li>🎭 VIP Oda</li>
-      <li>🎰 Slot Bonusu</li>
-      <li>💎 Premium+ Badge</li>
-      <li>✨ XP Boost +25%</li>
+      <li data-common-i18n='premium_plus_bonus'>💰 Daily Bonus +250 Tokens</li>
+      <li data-common-i18n='premium_plus_tarot'>🔮 Tarot -50% Cost</li>
+      <li data-common-i18n='premium_feat_vip_room'>🎭 VIP Room</li>
+      <li data-common-i18n='premium_plus_slot'>🎰 Slot Bonus</li>
+      <li data-common-i18n='premium_plus_badge'>💎 Premium+ Badge</li>
+      <li data-common-i18n='premium_plus_xp'>✨ XP Boost +25%</li>
     </ul>
-    <button class='vip-btn' onclick=\"buyVip('vip-premium-plus')\">Satın Al</button>
+    <button class='vip-btn' onclick=\"buyVip('vip-premium-plus')\" data-common-i18n='premium_btn_buy'>Buy Now</button>
   </div>
 </div>
 <script src='/static/js/site_lang.js'></script>
