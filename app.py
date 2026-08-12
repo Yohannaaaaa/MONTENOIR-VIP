@@ -375,6 +375,7 @@ def public_profile(username, data):
         "vip": data.get("vip", False),
         "vipLevel": data.get("vipLevel", ""),
         "vipUntil": data.get("vipUntil", 0),
+        "vipBadge": get_vip_badge(data),
         "membershipLevel": data.get("membershipLevel", ""),
         "membershipLabel": data.get("membershipLabel", ""),
         "membershipUntil": data.get("membershipUntil", 0),
@@ -631,7 +632,7 @@ def get_vip_level(user):
 def get_daily_bonus(user):
     """Get daily bonus jeton amount based on VIP level"""
     level = get_vip_level(user)
-    return {'premium': 100, 'premium-plus': 250}.get(level, 0)
+    return {'premium-plus': 250}.get(level, 0)
 
 def get_xp_boost(user):
     """Get XP multiplier based on VIP level"""
@@ -641,7 +642,6 @@ def get_xp_boost(user):
 def get_tarot_cost(user):
     """Get tarot reading cost with VIP discount"""
     level = get_vip_level(user)
-    if level == 'premium': return 150
     if level == 'premium-plus': return 100
     return 200
 
@@ -655,6 +655,15 @@ def claim_daily_bonus(user):
     if last_claim >= today: return 0
     user['lastDailyBonus'] = int(time.time())
     return bonus
+
+def get_vip_badge(user):
+    """Get VIP badge for display"""
+    if not is_vip_active(user):
+        return ""
+    level = get_vip_level(user)
+    if level == 'premium-plus': return "💎 Premium+"
+    if level == 'premium': return "👑 Premium"
+    return ""
 
 def monte_calc_level(xp):
     xp = int(xp or 0)
@@ -736,8 +745,8 @@ COSMETIC_PRICES = {
 
 
 VIP_PACKAGES = {
-    "vip-premium": {"label": "Premium 👑", "price": 49.99, "currency": "EUR", "days": 30, "features": "Daily +100 jeton | Tarot -25% | XP +10%"},
-    "vip-premium-plus": {"label": "Premium+ 💎", "price": 89.99, "currency": "EUR", "days": 30, "features": "Daily +250 jeton | Tarot -50% | VIP Oda | XP +25%"}
+    "vip-premium": {"label": "Premium 👑", "price": 49.99, "currency": "EUR", "days": 30, "features": "XP +10% | Badge | VIP Oda"},
+    "vip-premium-plus": {"label": "Premium+ 💎", "price": 89.99, "currency": "EUR", "days": 30, "features": "Daily +250 | Tarot -50% | VIP Oda | Slot | Badge | XP +25%"}
 }
 
 def load_words(category='default'):
@@ -4180,9 +4189,16 @@ def create_room(data):
     if not account:
         emit('error_msg', {'msg':'Oda oluşturmak için önce giriş yapmalısın.'})
         return
+
+    vip_room = False
+    with users_txn() as users:
+        key = find_user_key(users, account)
+        if key and is_vip_active(users[key]):
+            vip_room = True
+
     code = room_code(); password = data.get('password','')
-    rooms[code] = {'players': [], 'game': new_game('default'), 'stats': {'blueWins':0,'redWins':0,'history':[],'wordHistory':[],'betHistory':[],'gameNo':0}, 'locks': {'blue':False,'red':False}, 'password': password, 'adminSid': request.sid, 'bets': {}, 'micStates': {}, 'ready': {}, 'teamChat': {'blue': [], 'red': []}, 'dm': {}, 'category': 'default'}
-    join_room(code); emit('room_created', {'room': code})
+    rooms[code] = {'players': [], 'game': new_game('default'), 'stats': {'blueWins':0,'redWins':0,'history':[],'wordHistory':[],'betHistory':[],'gameNo':0}, 'locks': {'blue':False,'red':False}, 'password': password, 'adminSid': request.sid, 'bets': {}, 'micStates': {}, 'ready': {}, 'teamChat': {'blue': [], 'red': []}, 'dm': {}, 'category': 'default', 'vipRoom': vip_room}
+    join_room(code); emit('room_created', {'room': code, 'vipRoom': vip_room})
 
 @socketio.on('join_room_code')
 def join_room_code(data):
@@ -4193,6 +4209,13 @@ def join_room_code(data):
     code = data['room']; password = data.get('password','')
     if code not in rooms: emit('error_msg', {'msg':'Oda bulunamadı.'}); return
     if rooms[code]['password'] and rooms[code]['password'] != password: emit('error_msg', {'msg':'Oda şifresi yanlış.'}); return
+
+    if rooms[code].get('vipRoom'):
+        with users_txn() as users:
+            key = find_user_key(users, account)
+            if not key or not is_vip_active(users[key]):
+                emit('error_msg', {'msg':'Bu oda sadece Premium üyeler için. 👑'}); return
+
     join_room(code); emit('room_joined', {'room': code}); emit('players_update', {'players': rooms[code]['players'], 'locks': rooms[code]['locks'], 'micStates': rooms[code].get('micStates', {}), 'ready': rooms[code].get('ready', {})})
 
 @socketio.on('sit')
@@ -6185,6 +6208,31 @@ def api_profile_avatar_delete():
         users[key]["avatarData"] = ""
         users[key]["avatar"] = "woman.png"
     return {"ok": True, "msg": "Avatar silindi."}
+
+@app.route("/api/vip/daily-bonus", methods=["POST"])
+def api_daily_bonus_claim():
+    """Claim daily VIP bonus jeton"""
+    data = request.get_json(force=True, silent=True) or {}
+    username = (data.get("username") or "").strip()
+    if not username:
+        return {"ok": False, "msg": "Önce giriş yap."}, 401
+
+    with users_txn() as users:
+        key = monte_find_or_create_user(users, username)
+        if not key:
+            return {"ok": False, "msg": "Kullanıcı bulunamadı."}, 404
+
+        user = users[key]
+        bonus = claim_daily_bonus(user)
+
+        if bonus == 0:
+            vip_level = get_vip_level(user)
+            if not vip_level:
+                return {"ok": False, "msg": "Premium üyelik gerekmektedir."}, 402
+            return {"ok": False, "msg": "Günlük bonusu zaten aldınız. Yarın tekrar deneyebilirsiniz."}, 429
+
+        user['chips'] = int(user.get('chips', 1000)) + bonus
+        return {"ok": True, "msg": f"+{bonus} jeton elde edildi!", "bonus": bonus, "total_chips": user['chips']}
 
 
 @app.route("/api/reward/daily", methods=["POST"])
