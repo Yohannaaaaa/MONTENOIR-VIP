@@ -1065,6 +1065,7 @@ def clean_profile_payload(username, data):
         "avatarFrame": data.get("avatarFrame", "gold"),
         "membershipLabel": data.get("membershipLabel", ""),
         "membershipLevel": data.get("membershipLevel", ""),
+        "vipBadge": get_vip_badge(data),
         "isAdmin": bool(data.get("isAdmin", False)),
         "isOwner": bool(data.get("isOwner", False)) or is_owner_username(username),
     }
