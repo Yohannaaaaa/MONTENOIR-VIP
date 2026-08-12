@@ -5228,9 +5228,6 @@ def api_premium_tarot():
 
 
 @app.route("/premium_old_disabled_259292")
-def premium_page():
-    content = """<div class='grid'><div class='item'><h2>💎 Premium Üyelik</h2><p>Premium üyelik sistemi yakında aktif olacak.</p></div></div>"""
-    return montenoir_page("💎 Premium Üyelik", content)
 
 
 
@@ -6269,7 +6266,7 @@ def api_daily_reward():
 
 
 @app.route("/premium")
-def premium_page_dup2():
+def premium_page():
     stripe_ready_js = "true" if stripe_configured() else "false"
     return """<html><head><meta charset='utf-8'><style>
 body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900px;margin:0 auto}
