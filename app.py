@@ -611,7 +611,50 @@ def monte_ensure_user_defaults(u):
     u.setdefault("avatar", "woman.png")
     u.setdefault("avatarData", "")
     u.setdefault("avatarFrame", "none")
+    u.setdefault("membershipLevel", "")
+    u.setdefault("membershipUntil", 0)
+    u.setdefault("lastDailyBonus", 0)
     return u
+
+def is_vip_active(user):
+    """Check if user has active VIP membership"""
+    return int(user.get('membershipUntil', 0)) > int(time.time())
+
+def get_vip_level(user):
+    """Get current VIP level (premium/premium-plus or empty)"""
+    if is_vip_active(user):
+        level = user.get('membershipLevel', '').lower()
+        if 'premium-plus' in level or 'diamond' in level: return 'premium-plus'
+        if 'premium' in level or 'bronze' in level or 'gold' in level: return 'premium'
+    return ''
+
+def get_daily_bonus(user):
+    """Get daily bonus jeton amount based on VIP level"""
+    level = get_vip_level(user)
+    return {'premium': 100, 'premium-plus': 250}.get(level, 0)
+
+def get_xp_boost(user):
+    """Get XP multiplier based on VIP level"""
+    level = get_vip_level(user)
+    return {'premium': 1.1, 'premium-plus': 1.25}.get(level, 1.0)
+
+def get_tarot_cost(user):
+    """Get tarot reading cost with VIP discount"""
+    level = get_vip_level(user)
+    if level == 'premium': return 150
+    if level == 'premium-plus': return 100
+    return 200
+
+def claim_daily_bonus(user):
+    """Claim daily VIP bonus, return amount (0 if already claimed today)"""
+    if not is_vip_active(user): return 0
+    bonus = get_daily_bonus(user)
+    if bonus == 0: return 0
+    last_claim = int(user.get('lastDailyBonus', 0))
+    today = int(time.time() // 86400) * 86400
+    if last_claim >= today: return 0
+    user['lastDailyBonus'] = int(time.time())
+    return bonus
 
 def monte_calc_level(xp):
     xp = int(xp or 0)
@@ -645,7 +688,9 @@ def monte_add_xp(users, key, amount):
     if not users or not key or key not in users:
         return
     monte_ensure_user_defaults(users[key])
-    users[key]["xp"] = int(users[key].get("xp", 0)) + int(amount)
+    boost = get_xp_boost(users[key])
+    xp_gain = int(int(amount) * boost)
+    users[key]["xp"] = int(users[key].get("xp", 0)) + xp_gain
     lvl, nxt, prog = monte_calc_level(users[key]["xp"])
     users[key]["level"] = lvl
     monte_unlock_achievements(users, key)
@@ -691,9 +736,8 @@ COSMETIC_PRICES = {
 
 
 VIP_PACKAGES = {
-    "vip-bronze": {"label": "VIP Bronze", "price": 3000, "days": 7},
-    "vip-gold": {"label": "VIP Gold", "price": 9000, "days": 30},
-    "vip-diamond": {"label": "VIP Diamond", "price": 25000, "days": 90}
+    "vip-premium": {"label": "Premium 👑", "price": 49.99, "currency": "EUR", "days": 30, "features": "Daily +100 jeton | Tarot -25% | XP +10%"},
+    "vip-premium-plus": {"label": "Premium+ 💎", "price": 89.99, "currency": "EUR", "days": 30, "features": "Daily +250 jeton | Tarot -50% | VIP Oda | XP +25%"}
 }
 
 def load_words(category='default'):
@@ -4482,14 +4526,13 @@ def buy_vip_with_chips(data):
         users[key]['vipLevel'] = pkg['label']
         users[key]['vipUntil'] = until
 
-        if pack == 'vip-bronze':
-            users[key]['avatarFrame'] = users[key].get('avatarFrame', 'frame-gold') or 'frame-gold'
-            users[key]['nameColor'] = users[key].get('nameColor', 'name-green') or 'name-green'
-        elif pack == 'vip-gold':
-            users[key]['avatarFrame'] = 'frame-vip'
+        if pack == 'vip-premium':
+            users[key]['membershipLevel'] = 'premium'
+            users[key]['avatarFrame'] = 'frame-gold'
             users[key]['nameColor'] = 'name-green'
-        elif pack == 'vip-diamond':
-            users[key]['avatarFrame'] = 'frame-legendary'
+        elif pack == 'vip-premium-plus':
+            users[key]['membershipLevel'] = 'premium-plus'
+            users[key]['avatarFrame'] = 'frame-vip'
             users[key]['nameColor'] = 'name-rainbow'
 
         if player:
@@ -5417,6 +5460,21 @@ def deduct_user_chips(username, amount):
     except:
         return False
 
+def deduct_tarot_cost(username):
+    """Deduct tarot reading cost with VIP discount, return (success, cost, remaining_chips, error_msg)"""
+    try:
+        with users_txn() as users:
+            key = monte_find_or_create_user(users, username)
+            user = users[key]
+            cost = get_tarot_cost(user)
+            current = user.get('chips', 0)
+            if current < cost:
+                return (False, cost, current, f"Yeterli jeton yok. Gerekli: {cost}, Mevcut: {current}")
+            user['chips'] = current - cost
+            return (True, cost, current - cost, "")
+    except Exception as e:
+        return (False, 0, 0, str(e))
+
 @app.route("/api/tarot-cards")
 def api_tarot_cards():
     """API endpoint for all tarot cards with interpretations"""
@@ -5429,19 +5487,17 @@ def api_tarot_3card():
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
     username = data.get("username", "")
+    remaining_chips = 0
 
     if username:
-        chips = get_user_chips(username)
-        if chips < SPREAD_COST:
-            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
-
-        if not deduct_user_chips(username, SPREAD_COST):
-            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+        ok, cost, remaining_chips, msg = deduct_tarot_cost(username)
+        if not ok:
+            return {"ok": False, "msg": msg, "cost": cost}, 402
 
     result = three_card_spread(question)
     result['ok'] = True
     if username:
-        result['remaining_chips'] = get_user_chips(username)
+        result['remaining_chips'] = remaining_chips
     return jsonify(result)
 
 @app.route("/api/tarot/reading/7-card", methods=["POST"])
@@ -5450,61 +5506,55 @@ def api_tarot_7card():
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
     username = data.get("username", "")
+    remaining_chips = 0
 
     if username:
-        chips = get_user_chips(username)
-        if chips < SPREAD_COST:
-            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
-
-        if not deduct_user_chips(username, SPREAD_COST):
-            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+        ok, cost, remaining_chips, msg = deduct_tarot_cost(username)
+        if not ok:
+            return {"ok": False, "msg": msg, "cost": cost}, 402
 
     result = seven_card_spread(question)
     result['ok'] = True
     if username:
-        result['remaining_chips'] = get_user_chips(username)
+        result['remaining_chips'] = remaining_chips
     return jsonify(result)
 
 @app.route("/api/tarot/reading/yes-no", methods=["POST"])
 def api_tarot_yesno():
     """Yes/No tarot spread"""
     data = request.get_json(force=True, silent=True) or {}
+    remaining_chips = 0
     question = data.get("question", "")
     username = data.get("username", "")
 
     if username:
-        chips = get_user_chips(username)
-        if chips < SPREAD_COST:
-            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
-
-        if not deduct_user_chips(username, SPREAD_COST):
-            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+        ok, cost, remaining_chips, msg = deduct_tarot_cost(username)
+        if not ok:
+            return {"ok": False, "msg": msg, "cost": cost}, 402
 
     result = yes_no_spread(question)
     result['ok'] = True
     if username:
-        result['remaining_chips'] = get_user_chips(username)
+        result['remaining_chips'] = remaining_chips
     return jsonify(result)
 
 @app.route("/api/tarot/reading/love", methods=["POST"])
 def api_tarot_love():
     """Love/Relationship tarot spread"""
     data = request.get_json(force=True, silent=True) or {}
+    remaining_chips = 0
     question = data.get("question", "")
     username = data.get("username", "")
 
     if username:
-        chips = get_user_chips(username)
-        if chips < SPREAD_COST:
-            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
-
-        if not deduct_user_chips(username, SPREAD_COST):
-            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+        ok, cost, remaining_chips, msg = deduct_tarot_cost(username)
+        if not ok:
+            return {"ok": False, "msg": msg, "cost": cost}, 402
 
     result = love_spread(question)
     result['ok'] = True
     if username:
-        result['remaining_chips'] = get_user_chips(username)
+        result['remaining_chips'] = remaining_chips
     return jsonify(result)
 
 @app.route("/api/tarot/reading/work", methods=["POST"])
