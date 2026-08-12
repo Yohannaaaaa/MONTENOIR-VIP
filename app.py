@@ -6176,8 +6176,13 @@ def api_profile_avatar():
     if len(file_bytes) > 3 * 1024 * 1024:
         return {"ok": False, "msg": "Avatar dosyası çok büyük (maksimum 3MB)."}
 
-    mime = "jpeg" if ext == "jpg" else ext
-    avatar_url = f"data:image/{mime};base64," + base64.b64encode(file_bytes).decode("ascii")
+    avatar_dir = os.path.join(app.root_path, "static", "avatars")
+    os.makedirs(avatar_dir, exist_ok=True)
+    avatar_filename = f"{username.lower()}_{int(time.time())}.{ext}"
+    avatar_path = os.path.join(avatar_dir, avatar_filename)
+    with open(avatar_path, "wb") as fw:
+        fw.write(file_bytes)
+    avatar_url = f"/static/avatars/{avatar_filename}"
 
     with users_txn() as users:
         key = next((k for k in users if k.lower() == username.lower()), None)
