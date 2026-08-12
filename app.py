@@ -5521,6 +5521,22 @@ CARD_NAMES_TRANSLATIONS = {
     },
 }
 
+# French translations for card content - imported from tarot_fr_translations.py
+def _load_french_card_translations():
+    """Load French card content translations from external file"""
+    try:
+        import sys
+        import os
+        # Try to import from the tarot_fr_translations module
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, module_path)
+        from tarot_fr_translations import CARD_CONTENT_TRANSLATIONS_FR
+        return CARD_CONTENT_TRANSLATIONS_FR
+    except:
+        return {}
+
+CARD_CONTENT_TRANSLATIONS_FR = _load_french_card_translations()
+
 def _translate_card_name(name, lang='tr'):
     """Translate card name to target language"""
     if lang not in CARD_NAMES_TRANSLATIONS:
@@ -5786,8 +5802,57 @@ def _format_card(card, pos='Düz', lang='tr'):
     card_name = _translate_card_name(card.get('name', ''), lang)
     display_pos = orientation_map.get(pos, upright_label)
 
-    return {'number': card.get('number'), 'name': card_name, 'position': display_pos,
-            'image': card.get('image'), 'intro': p.get('intro', ''), 'hidden': p.get('hidden', '')}
+    # Prepare card content
+    result = {
+        'number': card.get('number'),
+        'name': card_name,
+        'position': display_pos,
+        'image': card.get('image'),
+        'intro': p.get('intro', ''),
+        'hidden': p.get('hidden', ''),
+        'symbols': p.get('symbols', ''),
+        'questions': p.get('questions', ''),
+        'weekly': p.get('weekly', '')
+    }
+
+    # Handle life_areas translation for French
+    life_areas = p.get('life_areas', {})
+    if lang == 'fr' and CARD_CONTENT_TRANSLATIONS_FR:
+        card_name_tr = card.get('name', '')
+        if card_name_tr in CARD_CONTENT_TRANSLATIONS_FR:
+            fr_card = CARD_CONTENT_TRANSLATIONS_FR[card_name_tr]
+            fr_content = fr_card.get(turkish_pos, {})
+            if fr_content:
+                result['intro'] = fr_content.get('intro', result['intro'])
+                result['symbols'] = fr_content.get('symbols', result['symbols'])
+                result['questions'] = fr_content.get('questions', result['questions'])
+                result['weekly'] = fr_content.get('weekly', result['weekly'])
+                result['hidden'] = fr_content.get('hidden', result['hidden'])
+                # Translate life_areas keys and values
+                fr_life_areas = fr_content.get('life_areas', {})
+                life_areas = fr_life_areas if fr_life_areas else life_areas
+
+    # Translate life_areas field keys for display
+    if lang == 'fr':
+        translated_life_areas = {}
+        for key, value in life_areas.items():
+            if key == 'i̇lişki':
+                translated_life_areas['Relation'] = value
+            elif key == 'kariyer':
+                translated_life_areas['Carrière'] = value
+            elif key == 'para':
+                translated_life_areas['Finances'] = value
+            elif key == 'sağlık':
+                translated_life_areas['Santé'] = value
+            elif key == 'aile':
+                translated_life_areas['Famille'] = value
+            else:
+                translated_life_areas[key] = value
+        result['life_areas'] = translated_life_areas
+    else:
+        result['life_areas'] = life_areas
+
+    return result
 
 def three_card_spread(question='', lang='tr'):
     cards = _select_cards(3)

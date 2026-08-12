@@ -309,11 +309,11 @@
 </head>
 <body>
     <div class="container">
-        <a href="/" class="back-link">← Ana Sayfa</a>
+        <a href="/" class="back-link" id="backLink">← Ana Sayfa</a>
 
         <header>
-            <h1>🎴 AI Tarot Okuyucu</h1>
-            <p>Kartlar sana ne söylemek istiyor?</p>
+            <h1 id="pageTitle">🎴 AI Tarot Okuyucu</h1>
+            <p id="pageSubtitle">Kartlar sana ne söylemek istiyor?</p>
         </header>
 
         <div class="input-group">
@@ -338,6 +338,91 @@
     </div>
 
     <script>
+        // UI Text translations for different languages
+        const UI_TEXTS = {
+            'tr': {
+                'backLink': '← Ana Sayfa',
+                'pageTitle': '🎴 AI Tarot Okuyucu',
+                'pageSubtitle': 'Kartlar sana ne söylemek istiyor?',
+                'usernamePlaceholder': 'Kullanıcı adı (jeton düşüşü için)',
+                'questionPlaceholder': 'Sorunuzu yazın... (opsiyonel)',
+                '3-card': { emoji: '🎴', text: '3 Kart' },
+                '7-card': { emoji: '🎴', text: '7 Kart' },
+                'yes-no': { emoji: '✨', text: 'Evet/Hayır' },
+                'love': { emoji: '💕', text: 'Aşk' },
+                'work': { emoji: '💼', text: 'İş' },
+                'general': { emoji: '🌟', text: 'Genel' },
+            },
+            'fr': {
+                'backLink': '← Accueil',
+                'pageTitle': '🎴 Lecteur de Tarot IA',
+                'pageSubtitle': 'Que veulent te dire les cartes ?',
+                'usernamePlaceholder': 'Nom d\'utilisateur (pour la baisse de jeton)',
+                'questionPlaceholder': 'Écrivez votre question... (optionnel)',
+                '3-card': { emoji: '🎴', text: '3 Cartes' },
+                '7-card': { emoji: '🎴', text: '7 Cartes' },
+                'yes-no': { emoji: '✨', text: 'Oui/Non' },
+                'love': { emoji: '💕', text: 'Amour' },
+                'work': { emoji: '💼', text: 'Carrière' },
+                'general': { emoji: '🌟', text: 'Général' },
+            },
+            'en': {
+                'backLink': '← Home',
+                'pageTitle': '🎴 AI Tarot Reader',
+                'pageSubtitle': 'What do the cards want to tell you?',
+                'usernamePlaceholder': 'Username (for token drops)',
+                'questionPlaceholder': 'Write your question... (optional)',
+                '3-card': { emoji: '🎴', text: '3 Cards' },
+                '7-card': { emoji: '🎴', text: '7 Cards' },
+                'yes-no': { emoji: '✨', text: 'Yes/No' },
+                'love': { emoji: '💕', text: 'Love' },
+                'work': { emoji: '💼', text: 'Career' },
+                'general': { emoji: '🌟', text: 'General' },
+            },
+        };
+
+        function updateUITexts() {
+            const lang = getSiteLang();
+            const texts = UI_TEXTS[lang] || UI_TEXTS['tr'];
+
+            // Update header and navigation
+            const backLink = document.getElementById('backLink');
+            const pageTitle = document.getElementById('pageTitle');
+            const pageSubtitle = document.getElementById('pageSubtitle');
+            const usernameInput = document.getElementById('usernameInput');
+            const questionInput = document.getElementById('questionInput');
+
+            if (backLink) backLink.textContent = texts['backLink'];
+            if (pageTitle) pageTitle.textContent = texts['pageTitle'];
+            if (pageSubtitle) pageSubtitle.textContent = texts['pageSubtitle'];
+            if (usernameInput) usernameInput.placeholder = texts['usernamePlaceholder'];
+            if (questionInput) questionInput.placeholder = texts['questionPlaceholder'];
+
+            // Update buttons
+            const buttons = document.querySelectorAll('.buttons button');
+            const buttonTypes = ['3-card', '7-card', 'yes-no', 'love', 'work', 'general'];
+
+            buttons.forEach((button, index) => {
+                if (index < buttonTypes.length) {
+                    const type = buttonTypes[index];
+                    const { emoji, text } = texts[type];
+                    button.innerHTML = `${emoji} ${text}<br><small>200 💰</small>`;
+                }
+            });
+        }
+
+        // Update UI when page loads
+        document.addEventListener('DOMContentLoaded', updateUITexts);
+
+        // Update UI when language changes (if there's a language switcher)
+        const originalSetSiteLang = window.setSiteLang;
+        if (originalSetSiteLang) {
+            window.setSiteLang = function(lang) {
+                originalSetSiteLang(lang);
+                updateUITexts();
+            };
+        }
+
         const TAROT_IMAGES = {
             '00_joker': '/static/tarot_cards/00_joker.webp',
             '01_sihirbaz': '/static/tarot_cards/01_sihirbaz.webp',
