@@ -6435,14 +6435,14 @@ textarea{min-height:100px;grid-column:1/-1}
 
 <!-- Spread Selection Buttons -->
 <div style='margin-top:30px;border-top:2px solid #d4af37;padding-top:20px;'>
-<h3 style='text-align:center;color:#d4af37;margin-bottom:15px;'>🎴 Açılım Seçin (200 💰 Jeton)</h3>
+<h3 id='spreadSelectTitle' style='text-align:center;color:#d4af37;margin-bottom:15px;'>🎴 Açılım Seçin (200 💰 Jeton)</h3>
 <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;'>
-<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("3-card")'>🎴 3-Kart<br><small>Geçmiş-Şimdiki-Gelecek</small></button>
-<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("7-card")'>🎴 7-Kart<br><small>Detaylı Yorum</small></button>
-<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("yes-no")'>✨ Evet/Hayır<br><small>Hızlı Cevap</small></button>
-<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("love")'>💕 Aşk<br><small>İlişki</small></button>
-<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("work")'>💼 İş<br><small>Kariyer</small></button>
-<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("general")'>🌟 Genel<br><small>Yaşam Rehberi</small></button>
+<button id='btn-3card' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("3-card")'>🎴 3-Kart<br><small>Geçmiş-Şimdiki-Gelecek</small></button>
+<button id='btn-7card' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("7-card")'>🎴 7-Kart<br><small>Detaylı Yorum</small></button>
+<button id='btn-yesno' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("yes-no")'>✨ Evet/Hayır<br><small>Hızlı Cevap</small></button>
+<button id='btn-love' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("love")'>💕 Aşk<br><small>İlişki</small></button>
+<button id='btn-work' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("work")'>💼 İş<br><small>Kariyer</small></button>
+<button id='btn-general' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("general")'>🌟 Genel<br><small>Yaşam Rehberi</small></button>
 </div>
 <div id='spreadResult' class='status cardMeaning' style='margin-top:20px;'></div>
 </div>
@@ -6543,6 +6543,76 @@ const TAROT_DECK=[
  {num:'XX',name:'Mahkeme',symbol:'📯',meaning:'Bir uyanış ve hesaplaşma zamanı, geçmişle barış yap.',image:'20_yargi.webp'},
  {num:'XXI',name:'Dünya',symbol:'🌍',meaning:'Bir döngü tamamlanıyor, tatmin ve bütünlük hissi kapıda.',image:'21_dunya.webp'}
 ];
+
+// Spread Button Translations
+const SPREAD_TRANSLATIONS = {
+  'tr': {
+    'title': '🎴 Açılım Seçin (200 💰 Jeton)',
+    '3-card': { emoji: '🎴', name: '3-Kart', desc: 'Geçmiş-Şimdiki-Gelecek' },
+    '7-card': { emoji: '🎴', name: '7-Kart', desc: 'Detaylı Yorum' },
+    'yes-no': { emoji: '✨', name: 'Evet/Hayır', desc: 'Hızlı Cevap' },
+    'love': { emoji: '💕', name: 'Aşk', desc: 'İlişki' },
+    'work': { emoji: '💼', name: 'İş', desc: 'Kariyer' },
+    'general': { emoji: '🌟', name: 'Genel', desc: 'Yaşam Rehberi' }
+  },
+  'fr': {
+    'title': '🎴 Sélectionner un Tirage (200 💰 Jetons)',
+    '3-card': { emoji: '🎴', name: '3 Cartes', desc: 'Passé-Présent-Avenir' },
+    '7-card': { emoji: '🎴', name: '7 Cartes', desc: 'Interprétation Détaillée' },
+    'yes-no': { emoji: '✨', name: 'Oui/Non', desc: 'Réponse Rapide' },
+    'love': { emoji: '💕', name: 'Amour', desc: 'Relation' },
+    'work': { emoji: '💼', name: 'Carrière', desc: 'Travail' },
+    'general': { emoji: '🌟', name: 'Général', desc: 'Guide de Vie' }
+  },
+  'en': {
+    'title': '🎴 Select a Spread (200 💰 Tokens)',
+    '3-card': { emoji: '🎴', name: '3 Cards', desc: 'Past-Present-Future' },
+    '7-card': { emoji: '🎴', name: '7 Cards', desc: 'Detailed Reading' },
+    'yes-no': { emoji: '✨', name: 'Yes/No', desc: 'Quick Answer' },
+    'love': { emoji: '💕', name: 'Love', desc: 'Relationship' },
+    'work': { emoji: '💼', name: 'Career', desc: 'Work' },
+    'general': { emoji: '🌟', name: 'General', desc: 'Life Guidance' }
+  }
+};
+
+function updateSpreadButtons() {
+  const lang = (typeof getSiteLang === 'function') ? getSiteLang() : localStorage.getItem('siteLang') || 'tr';
+  const trans = SPREAD_TRANSLATIONS[lang] || SPREAD_TRANSLATIONS['tr'];
+
+  const titleEl = document.getElementById('spreadSelectTitle');
+  if (titleEl) titleEl.textContent = trans.title;
+
+  const buttons = [
+    { id: 'btn-3card', key: '3-card' },
+    { id: 'btn-7card', key: '7-card' },
+    { id: 'btn-yesno', key: 'yes-no' },
+    { id: 'btn-love', key: 'love' },
+    { id: 'btn-work', key: 'work' },
+    { id: 'btn-general', key: 'general' }
+  ];
+
+  buttons.forEach(btn => {
+    const el = document.getElementById(btn.id);
+    if (el && trans[btn.key]) {
+      const t = trans[btn.key];
+      el.innerHTML = `${t.emoji} ${t.name}<br><small>${t.desc}</small>`;
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', updateSpreadButtons);
+
+// Hook into setSiteLang if available
+if (typeof window !== 'undefined') {
+  const originalSetSiteLang = window.setSiteLang;
+  if (typeof originalSetSiteLang === 'function') {
+    window.setSiteLang = function(lang) {
+      originalSetSiteLang(lang);
+      updateSpreadButtons();
+    };
+  }
+}
+
 function instantTarot(){
  const idx=Math.floor(Math.random()*TAROT_DECK.length);
  const card=TAROT_DECK[idx];
