@@ -359,15 +359,31 @@ def bootstrap_admin_user():
         })
     print("✅ Admin Yohanna prêt dans la base de données.", flush=True)
 
+def validate_avatar_data(avatar_data):
+    """Validate that avatar file exists, return default if not"""
+    if not avatar_data or not avatar_data.startswith("/static/avatars/"):
+        return avatar_data
+    try:
+        avatar_path = os.path.join(app.root_path, avatar_data.lstrip("/"))
+        if not os.path.exists(avatar_path):
+            # File doesn't exist, return empty to use default
+            return ""
+    except:
+        pass
+    return avatar_data
+
 def public_profile(username, data):
     # Profil public : email caché aux autres joueurs.
+    # Validate avatar data before including in response
+    avatar_data = validate_avatar_data(data.get("avatarData", ""))
+
     p = {
         "username": username,
         "chips": data.get("chips", 1000),
         "wins": data.get("wins", 0),
         "games": data.get("games", 0),
         "avatar": data.get("avatar", "woman.png"),
-        "avatarData": data.get("avatarData", ""),
+        "avatarData": avatar_data,
         "nameColor": data.get("nameColor", "default"),
         "avatarFrame": data.get("avatarFrame", "none"),
         "inventory": data.get("inventory", []),
@@ -6761,6 +6777,13 @@ def api_profile_avatar():
 
     avatar_dir = os.path.join(app.root_path, "static", "avatars")
     os.makedirs(avatar_dir, exist_ok=True)
+
+    # Ensure directory has proper permissions
+    try:
+        os.chmod(avatar_dir, 0o755)
+    except:
+        pass
+
     avatar_filename = f"{username.lower()}_{int(time.time())}.{ext}"
     avatar_path = os.path.join(avatar_dir, avatar_filename)
     with open(avatar_path, "wb") as fw:
@@ -6771,6 +6794,17 @@ def api_profile_avatar():
         key = next((k for k in users if k.lower() == username.lower()), None)
         if not key:
             return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+
+        # Delete old avatar file if it exists and is different
+        old_avatar = users[key].get("avatarData", "")
+        if old_avatar and old_avatar.startswith("/static/avatars/") and old_avatar != avatar_url:
+            try:
+                old_path = os.path.join(app.root_path, old_avatar.lstrip("/"))
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            except Exception:
+                pass
+
         users[key]["avatar"] = avatar_url
         users[key]["avatarData"] = avatar_url
 
@@ -10809,6 +10843,16 @@ def profile_page():
     </script>
     """)
 
+def ensure_avatars_directory():
+    """Ensure avatars directory exists with proper permissions"""
+    try:
+        avatars_dir = os.path.join(app.root_path, "static", "avatars")
+        os.makedirs(avatars_dir, exist_ok=True)
+        os.chmod(avatars_dir, 0o755)
+        print("✓ Avatar directory initialized", flush=True)
+    except Exception as e:
+        print(f"⚠ Avatar directory error: {e}", flush=True)
+
 if __name__ == "__main__":
     import sys, traceback
     try:
@@ -10818,6 +10862,7 @@ if __name__ == "__main__":
             bootstrap_admin_user()
         if "ensure_owner_user" in globals():
             ensure_owner_user()
+        ensure_avatars_directory()
     except Exception:
         traceback.print_exc()
     port = int(os.environ.get("PORT", 10000))
