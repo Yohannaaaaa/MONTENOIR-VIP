@@ -608,6 +608,9 @@ def monte_ensure_user_defaults(u):
     u.setdefault("openedChests", 0)
     u.setdefault("tournaments", [])
     u.setdefault("premiumTarotRequests", [])
+    u.setdefault("avatar", "woman.png")
+    u.setdefault("avatarData", "")
+    u.setdefault("avatarFrame", "none")
     return u
 
 def monte_calc_level(xp):
