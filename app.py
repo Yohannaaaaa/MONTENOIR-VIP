@@ -5244,8 +5244,8 @@ def api_premium_tarot():
 
 
 @app.route("/premium_old_disabled_259292")
-
-
+def premium_old_disabled():
+    return {"error": "This endpoint is disabled"}, 404
 
 # ===== TAROT REQUESTS + OWNER PANEL =====
 TAROT_REQUESTS_FILE = os.path.join(os.environ.get("DATA_DIR","."), "tarot_requests.json")
@@ -5550,6 +5550,37 @@ def _load_french_minor_translations():
 CARD_CONTENT_TRANSLATIONS_FR = _load_french_card_translations()
 MINOR_CARD_TRANSLATIONS_FR = _load_french_minor_translations()
 
+# Mapping for minor arcana card names (Turkish to French)
+MINOR_SUIT_NAMES_FR = {
+    'Kase': 'Coupes',
+    'Değnekler': 'Bâtons',
+    'Kılıçlar': 'Épées',
+    'Paralar': 'Deniers'
+}
+
+MINOR_RANK_NAMES_FR = {
+    'As': 'As',
+    '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10',
+    'Vale': 'Valet',
+    'Şövalye': 'Cavalier',
+    'Kraliçe': 'Reine',
+    'Kral': 'Roi'
+}
+
+def _get_minor_french_name(turkish_name):
+    """Convert Turkish minor card name to French"""
+    # Parse Turkish name: "Kase (As)" -> "Coupes (As)"
+    if '(' not in turkish_name:
+        return turkish_name
+
+    suit_tr, rest = turkish_name.split(' (')
+    rank = rest.rstrip(')')
+
+    suit_fr = MINOR_SUIT_NAMES_FR.get(suit_tr, suit_tr)
+    rank_fr = MINOR_RANK_NAMES_FR.get(rank, rank)
+
+    return f'{suit_fr} ({rank_fr})'
+
 def _translate_card_name(name, lang='tr'):
     """Translate card name to target language"""
     if lang not in CARD_NAMES_TRANSLATIONS:
@@ -5830,9 +5861,11 @@ def _format_card(card, pos='Düz', lang='tr'):
 
     # Handle life_areas translation for French
     life_areas = p.get('life_areas', {})
-    if lang == 'fr' and CARD_CONTENT_TRANSLATIONS_FR:
+    if lang == 'fr':
         card_name_tr = card.get('name', '')
-        if card_name_tr in CARD_CONTENT_TRANSLATIONS_FR:
+
+        # Try major arcana translations first
+        if CARD_CONTENT_TRANSLATIONS_FR and card_name_tr in CARD_CONTENT_TRANSLATIONS_FR:
             fr_card = CARD_CONTENT_TRANSLATIONS_FR[card_name_tr]
             fr_content = fr_card.get(turkish_pos, {})
             if fr_content:
@@ -5844,6 +5877,25 @@ def _format_card(card, pos='Düz', lang='tr'):
                 # Translate life_areas keys and values
                 fr_life_areas = fr_content.get('life_areas', {})
                 life_areas = fr_life_areas if fr_life_areas else life_areas
+
+        # Try minor arcana translations
+        elif MINOR_CARD_TRANSLATIONS_FR:
+            fr_card_name = _get_minor_french_name(card_name_tr)
+            if fr_card_name in MINOR_CARD_TRANSLATIONS_FR:
+                fr_card = MINOR_CARD_TRANSLATIONS_FR[fr_card_name]
+                fr_content = fr_card.get(turkish_pos, {})
+                if fr_content:
+                    result['intro'] = fr_content.get('intro', result['intro'])
+                    result['symbols'] = fr_content.get('symbols', result['symbols'])
+                    result['questions'] = fr_content.get('questions', result['questions'])
+                    result['weekly'] = fr_content.get('weekly', result['weekly'])
+                    result['hidden'] = fr_content.get('hidden', result['hidden'])
+                    # Translate life_areas keys and values
+                    fr_life_areas = fr_content.get('life_areas', {})
+                    life_areas = fr_life_areas if fr_life_areas else life_areas
+
+                    # Update card name to French
+                    card_name = _translate_card_name(fr_card_name, lang)
 
     # Translate life_areas field keys for display
     if lang == 'fr':

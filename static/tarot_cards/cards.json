@@ -68,7 +68,7 @@
     },
     "number": "XI",
     "name": "ADALET",
-    "type": "minor",
+    "type": "major",
     "image": "11_adalet.webp"
   },
   {
@@ -104,7 +104,7 @@
     },
     "number": "XII",
     "name": "ASILAN ADAM",
-    "type": "minor",
+    "type": "major",
     "image": "12_asili_adam.webp"
   },
   {
@@ -140,7 +140,7 @@
     },
     "number": "XVIII",
     "name": "AY",
-    "type": "minor",
+    "type": "major",
     "image": "18_ay.webp"
   },
   {
@@ -176,7 +176,7 @@
     },
     "number": "V",
     "name": "AZİZ",
-    "type": "minor",
+    "type": "major",
     "image": "05_basrahip.webp"
   },
   {
@@ -212,7 +212,7 @@
     },
     "number": "II",
     "name": "AZİZE",
-    "type": "minor",
+    "type": "major",
     "image": "02_bakireyiz.webp"
   },
   {
@@ -248,7 +248,7 @@
     },
     "number": "VI",
     "name": "AŞIKLAR",
-    "type": "minor",
+    "type": "major",
     "image": "06_asiklar.webp"
   },
   {
@@ -284,7 +284,7 @@
     },
     "number": "I",
     "name": "BÜYÜCÜ",
-    "type": "minor",
+    "type": "major",
     "image": "01_sihirbaz.webp"
   },
   {
@@ -320,7 +320,7 @@
     },
     "number": "XIV",
     "name": "DENGE",
-    "type": "minor",
+    "type": "major",
     "image": "14_itidal.webp"
   },
   {
@@ -356,7 +356,7 @@
     },
     "number": "XXI",
     "name": "DÜNYA",
-    "type": "minor",
+    "type": "major",
     "image": "21_dunya.webp"
   },
   {
@@ -392,7 +392,7 @@
     },
     "number": "IX",
     "name": "ERMİŞ",
-    "type": "minor",
+    "type": "major",
     "image": "09_munzevi.webp"
   },
   {
@@ -428,7 +428,7 @@
     },
     "number": "XIX",
     "name": "GÜNEŞ",
-    "type": "minor",
+    "type": "major",
     "image": "19_gunes.webp"
   },
   {
@@ -464,7 +464,7 @@
     },
     "number": "VIII",
     "name": "GÜÇ",
-    "type": "minor",
+    "type": "major",
     "image": "08_guc.webp"
   },
   {
@@ -500,7 +500,7 @@
     },
     "number": "X",
     "name": "KADER ÇARKI",
-    "type": "minor",
+    "type": "major",
     "image": "10_kader_carki.webp"
   },
   {
@@ -536,7 +536,7 @@
     },
     "number": "XVI",
     "name": "KULE",
-    "type": "minor",
+    "type": "major",
     "image": "16_kule.webp"
   },
   {
@@ -572,7 +572,7 @@
     },
     "number": "XX",
     "name": "MAHKEME (Yargı)",
-    "type": "minor",
+    "type": "major",
     "image": null
   },
   {
@@ -608,7 +608,7 @@
     },
     "number": "VII",
     "name": "SAVAŞ ARABASI",
-    "type": "minor",
+    "type": "major",
     "image": "07_savas_arabasi.webp"
   },
   {
@@ -644,7 +644,7 @@
     },
     "number": "XVII",
     "name": "YILDIZ",
-    "type": "minor",
+    "type": "major",
     "image": "17_yildiz.webp"
   },
   {
@@ -680,7 +680,7 @@
     },
     "number": "XIII",
     "name": "ÖLÜM",
-    "type": "minor",
+    "type": "major",
     "image": "13_olum.webp"
   },
   {
@@ -716,7 +716,7 @@
     },
     "number": "IV",
     "name": "İMPARATOR",
-    "type": "minor",
+    "type": "major",
     "image": "04_imparator.webp"
   },
   {
@@ -752,7 +752,7 @@
     },
     "number": "III",
     "name": "İMPARATORİÇE",
-    "type": "minor",
+    "type": "major",
     "image": "03_imparatorice.webp"
   },
   {
@@ -788,7 +788,7 @@
     },
     "number": "XV",
     "name": "ŞEYTAN",
-    "type": "minor",
+    "type": "major",
     "image": "15_iblis.webp"
   },
   {
