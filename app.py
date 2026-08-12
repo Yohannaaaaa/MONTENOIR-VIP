@@ -5678,28 +5678,28 @@ function selectAndSend(c,s,d,p){
  }
 }
 const TAROT_DECK=[
- {num:'0',name:'Deli',symbol:'🃏',meaning:'Yeni başlangıçlar, cesaret ve bilinmeyene adım atma zamanı.'},
- {num:'I',name:'Büyücü',symbol:'🪄',meaning:'Elindeki güçleri fark et, iradenle istediğini yaratabilirsin.'},
- {num:'II',name:'Azize',symbol:'🌙',meaning:'İçsel bilgeliğine güven, sezgilerin sana doğru yolu gösteriyor.'},
- {num:'III',name:'İmparatoriçe',symbol:'👑',meaning:'Bolluk, bereket ve yaratıcılık enerjisi çevreni sarıyor.'},
- {num:'IV',name:'İmparator',symbol:'⚔️',meaning:'Disiplin ve yapı kurma zamanı, kontrolü eline al.'},
- {num:'V',name:'Aziz',symbol:'📿',meaning:'Gelenek, rehberlik ve manevi öğretilerden güç al.'},
- {num:'VI',name:'Aşıklar',symbol:'❤️',meaning:'Önemli bir seçim ya da ilişki senin için dönüm noktası olacak.'},
- {num:'VII',name:'Savaş Arabası',symbol:'🏇',meaning:'Kararlılıkla ilerle, zafer disiplinli irade ile gelir.'},
- {num:'VIII',name:'Güç',symbol:'🦁',meaning:'İç gücün ve sabrınla zorlukların üstesinden geliyorsun.'},
- {num:'IX',name:'Ermiş',symbol:'🕯️',meaning:'Yalnız kalıp içine dönme, cevaplar sessizlikte saklı.'},
- {num:'X',name:'Kader Çarkı',symbol:'☸️',meaning:'Değişim kapıda, akışa güven, döngü senin lehine dönüyor.'},
- {num:'XI',name:'Adalet',symbol:'⚖️',meaning:'Denge ve doğruluk zamanı, yaptıkların karşılığını buluyor.'},
- {num:'XII',name:'Asılan Adam',symbol:'🙃',meaning:'Bakış açını değiştir, teslimiyet yeni bir anlayış getirir.'},
- {num:'XIII',name:'Ölüm',symbol:'🦋',meaning:'Bir dönem kapanıyor, dönüşüm ve yeniden doğuş yakında.'},
- {num:'XIV',name:'Denge',symbol:'🌊',meaning:'Uyum ve ölçülülük ara, aşırılıklardan kaçın.'},
- {num:'XV',name:'Şeytan',symbol:'⛓️',meaning:'Bağımlılıklar ya da korkular seni tutsak ediyor olabilir, farkındalık özgürleştirir.'},
- {num:'XVI',name:'Kule',symbol:'🌩️',meaning:'Ani bir değişim ya da sarsıntı, aslında seni gerçeğe uyandırıyor.'},
- {num:'XVII',name:'Yıldız',symbol:'⭐',meaning:'Umut ve şifa zamanı, evren senin için bir yol açıyor.'},
- {num:'XVIII',name:'Ay',symbol:'🌕',meaning:'Belirsizlik ve gizli duygular var, sezgilerine kulak ver.'},
- {num:'XIX',name:'Güneş',symbol:'☀️',meaning:'Mutluluk, başarı ve netlik yakında hayatına giriyor.'},
- {num:'XX',name:'Mahkeme',symbol:'📯',meaning:'Bir uyanış ve hesaplaşma zamanı, geçmişle barış yap.'},
- {num:'XXI',name:'Dünya',symbol:'🌍',meaning:'Bir döngü tamamlanıyor, tatmin ve bütünlük hissi kapıda.'}
+ {num:'0',name:'Deli',symbol:'🃏',meaning:'Yeni başlangıçlar, cesaret ve bilinmeyene adım atma zamanı.',image:'00_joker.jpg'},
+ {num:'I',name:'Büyücü',symbol:'🪄',meaning:'Elindeki güçleri fark et, iradenle istediğini yaratabilirsin.',image:'01_sihirbaz.jpg'},
+ {num:'II',name:'Azize',symbol:'🌙',meaning:'İçsel bilgeliğine güven, sezgilerin sana doğru yolu gösteriyor.',image:'02_bakireyiz.jpg'},
+ {num:'III',name:'İmparatoriçe',symbol:'👑',meaning:'Bolluk, bereket ve yaratıcılık enerjisi çevreni sarıyor.',image:'03_imparatorice.jpg'},
+ {num:'IV',name:'İmparator',symbol:'⚔️',meaning:'Disiplin ve yapı kurma zamanı, kontrolü eline al.',image:'04_imparator.jpg'},
+ {num:'V',name:'Aziz',symbol:'📿',meaning:'Gelenek, rehberlik ve manevi öğretilerden güç al.',image:'05_basrahip.jpg'},
+ {num:'VI',name:'Aşıklar',symbol:'❤️',meaning:'Önemli bir seçim ya da ilişki senin için dönüm noktası olacak.',image:'06_asiklar.jpg'},
+ {num:'VII',name:'Savaş Arabası',symbol:'🏇',meaning:'Kararlılıkla ilerle, zafer disiplinli irade ile gelir.',image:'07_savas_arabasi.jpg'},
+ {num:'VIII',name:'Güç',symbol:'🦁',meaning:'İç gücün ve sabrınla zorlukların üstesinden geliyorsun.',image:'08_guc.jpg'},
+ {num:'IX',name:'Ermiş',symbol:'🕯️',meaning:'Yalnız kalıp içine dönme, cevaplar sessizlikte saklı.',image:'09_munzevi.jpg'},
+ {num:'X',name:'Kader Çarkı',symbol:'☸️',meaning:'Değişim kapıda, akışa güven, döngü senin lehine dönüyor.',image:'10_kader_carki.jpg'},
+ {num:'XI',name:'Adalet',symbol:'⚖️',meaning:'Denge ve doğruluk zamanı, yaptıkların karşılığını buluyor.',image:'11_adalet.jpg'},
+ {num:'XII',name:'Asılan Adam',symbol:'🙃',meaning:'Bakış açını değiştir, teslimiyet yeni bir anlayış getirir.',image:'12_asili_adam.jpg'},
+ {num:'XIII',name:'Ölüm',symbol:'🦋',meaning:'Bir dönem kapanıyor, dönüşüm ve yeniden doğuş yakında.',image:'13_olum.jpg'},
+ {num:'XIV',name:'Denge',symbol:'🌊',meaning:'Uyum ve ölçülülük ara, aşırılıklardan kaçın.',image:'14_itidal.jpg'},
+ {num:'XV',name:'Şeytan',symbol:'⛓️',meaning:'Bağımlılıklar ya da korkular seni tutsak ediyor olabilir, farkındalık özgürleştirir.',image:'15_iblis.jpg'},
+ {num:'XVI',name:'Kule',symbol:'🌩️',meaning:'Ani bir değişim ya da sarsıntı, aslında seni gerçeğe uyandırıyor.',image:'16_kule.jpg'},
+ {num:'XVII',name:'Yıldız',symbol:'⭐',meaning:'Umut ve şifa zamanı, evren senin için bir yol açıyor.',image:'17_yildiz.jpg'},
+ {num:'XVIII',name:'Ay',symbol:'🌕',meaning:'Belirsizlik ve gizli duygular var, sezgilerine kulak ver.',image:'18_ay.jpg'},
+ {num:'XIX',name:'Güneş',symbol:'☀️',meaning:'Mutluluk, başarı ve netlik yakında hayatına giriyor.',image:'19_gunes.jpg'},
+ {num:'XX',name:'Mahkeme',symbol:'📯',meaning:'Bir uyanış ve hesaplaşma zamanı, geçmişle barış yap.',image:'20_yargi.jpg'},
+ {num:'XXI',name:'Dünya',symbol:'🌍',meaning:'Bir döngü tamamlanıyor, tatmin ve bütünlük hissi kapıda.',image:'21_dunya.jpg'}
 ];
 function instantTarot(){
  const idx=Math.floor(Math.random()*TAROT_DECK.length);
@@ -5721,7 +5721,7 @@ function instantTarot(){
  const imgEl=document.createElement('img');
  imgEl.className='cardArt';
  imgEl.onerror=function(){ imgEl.style.display='none'; symEl.style.display='block'; };
- imgEl.src='/static/tarot_cards/'+idx+'.jpg';
+ imgEl.src='/static/tarot_cards/'+card.image;
  const nameEl=document.createElement('div');
  nameEl.className='cardName';
  nameEl.textContent=card.name;

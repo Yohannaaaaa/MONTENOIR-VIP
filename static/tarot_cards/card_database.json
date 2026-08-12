@@ -1,0 +1,738 @@
+[
+  {
+    "id": "major_0",
+    "number": 0,
+    "type": "major",
+    "turkish_name": "Joker",
+    "english_name": "The Fool",
+    "filename": "00_joker.jpg"
+  },
+  {
+    "id": "major_1",
+    "number": 1,
+    "type": "major",
+    "turkish_name": "Sihirbaz",
+    "english_name": "The Magician",
+    "filename": "01_sihirbaz.jpg"
+  },
+  {
+    "id": "major_2",
+    "number": 2,
+    "type": "major",
+    "turkish_name": "Bakireyiz",
+    "english_name": "The High Priestess",
+    "filename": "02_bakireyiz.jpg"
+  },
+  {
+    "id": "major_3",
+    "number": 3,
+    "type": "major",
+    "turkish_name": "İmparatoriçe",
+    "english_name": "The Empress",
+    "filename": "03_imparatorice.jpg"
+  },
+  {
+    "id": "major_4",
+    "number": 4,
+    "type": "major",
+    "turkish_name": "İmparator",
+    "english_name": "The Emperor",
+    "filename": "04_imparator.jpg"
+  },
+  {
+    "id": "major_5",
+    "number": 5,
+    "type": "major",
+    "turkish_name": "Başrahip",
+    "english_name": "The Hierophant",
+    "filename": "05_basrahip.jpg"
+  },
+  {
+    "id": "major_6",
+    "number": 6,
+    "type": "major",
+    "turkish_name": "Aşıklar",
+    "english_name": "The Lovers",
+    "filename": "06_asiklar.jpg"
+  },
+  {
+    "id": "major_7",
+    "number": 7,
+    "type": "major",
+    "turkish_name": "Savaş Arabası",
+    "english_name": "The Chariot",
+    "filename": "07_savas_arabasi.jpg"
+  },
+  {
+    "id": "major_8",
+    "number": 8,
+    "type": "major",
+    "turkish_name": "Güç",
+    "english_name": "Strength",
+    "filename": "08_guc.jpg"
+  },
+  {
+    "id": "major_9",
+    "number": 9,
+    "type": "major",
+    "turkish_name": "Münzevi",
+    "english_name": "The Hermit",
+    "filename": "09_munzevi.jpg"
+  },
+  {
+    "id": "major_10",
+    "number": 10,
+    "type": "major",
+    "turkish_name": "Kader Çarkı",
+    "english_name": "Wheel of Fortune",
+    "filename": "10_kader_carki.jpg"
+  },
+  {
+    "id": "major_11",
+    "number": 11,
+    "type": "major",
+    "turkish_name": "Adalet",
+    "english_name": "Justice",
+    "filename": "11_adalet.jpg"
+  },
+  {
+    "id": "major_12",
+    "number": 12,
+    "type": "major",
+    "turkish_name": "Asılı Adam",
+    "english_name": "The Hanged Man",
+    "filename": "12_asili_adam.jpg"
+  },
+  {
+    "id": "major_13",
+    "number": 13,
+    "type": "major",
+    "turkish_name": "Ölüm",
+    "english_name": "Death",
+    "filename": "13_olum.jpg"
+  },
+  {
+    "id": "major_14",
+    "number": 14,
+    "type": "major",
+    "turkish_name": "İtidal",
+    "english_name": "Temperance",
+    "filename": "14_itidal.jpg"
+  },
+  {
+    "id": "major_15",
+    "number": 15,
+    "type": "major",
+    "turkish_name": "İblis",
+    "english_name": "The Devil",
+    "filename": "15_iblis.jpg"
+  },
+  {
+    "id": "major_16",
+    "number": 16,
+    "type": "major",
+    "turkish_name": "Kule",
+    "english_name": "The Tower",
+    "filename": "16_kule.jpg"
+  },
+  {
+    "id": "major_17",
+    "number": 17,
+    "type": "major",
+    "turkish_name": "Yıldız",
+    "english_name": "The Star",
+    "filename": "17_yildiz.jpg"
+  },
+  {
+    "id": "major_18",
+    "number": 18,
+    "type": "major",
+    "turkish_name": "Ay",
+    "english_name": "The Moon",
+    "filename": "18_ay.jpg"
+  },
+  {
+    "id": "major_19",
+    "number": 19,
+    "type": "major",
+    "turkish_name": "Güneş",
+    "english_name": "The Sun",
+    "filename": "19_gunes.jpg"
+  },
+  {
+    "id": "major_20",
+    "number": 20,
+    "type": "major",
+    "turkish_name": "Yargi",
+    "english_name": "Judgement",
+    "filename": "20_yargi.jpg"
+  },
+  {
+    "id": "major_21",
+    "number": 21,
+    "type": "major",
+    "turkish_name": "Dünya",
+    "english_name": "The World",
+    "filename": "21_dunya.jpg"
+  },
+  {
+    "id": "wands_1",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 1,
+    "type": "minor",
+    "english_name": "Ace of Wands",
+    "turkish_name": "Değnek Ace",
+    "filename": "wands_01_ace.jpg"
+  },
+  {
+    "id": "wands_2",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 2,
+    "type": "minor",
+    "english_name": "Two of Wands",
+    "turkish_name": "Değnek Two",
+    "filename": "wands_02_two.jpg"
+  },
+  {
+    "id": "wands_3",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 3,
+    "type": "minor",
+    "english_name": "Three of Wands",
+    "turkish_name": "Değnek Three",
+    "filename": "wands_03_three.jpg"
+  },
+  {
+    "id": "wands_4",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 4,
+    "type": "minor",
+    "english_name": "Four of Wands",
+    "turkish_name": "Değnek Four",
+    "filename": "wands_04_four.jpg"
+  },
+  {
+    "id": "wands_5",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 5,
+    "type": "minor",
+    "english_name": "Five of Wands",
+    "turkish_name": "Değnek Five",
+    "filename": "wands_05_five.jpg"
+  },
+  {
+    "id": "wands_6",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 6,
+    "type": "minor",
+    "english_name": "Six of Wands",
+    "turkish_name": "Değnek Six",
+    "filename": "wands_06_six.jpg"
+  },
+  {
+    "id": "wands_7",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 7,
+    "type": "minor",
+    "english_name": "Seven of Wands",
+    "turkish_name": "Değnek Seven",
+    "filename": "wands_07_seven.jpg"
+  },
+  {
+    "id": "wands_8",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 8,
+    "type": "minor",
+    "english_name": "Eight of Wands",
+    "turkish_name": "Değnek Eight",
+    "filename": "wands_08_eight.jpg"
+  },
+  {
+    "id": "wands_9",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 9,
+    "type": "minor",
+    "english_name": "Nine of Wands",
+    "turkish_name": "Değnek Nine",
+    "filename": "wands_09_nine.jpg"
+  },
+  {
+    "id": "wands_10",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 10,
+    "type": "minor",
+    "english_name": "Ten of Wands",
+    "turkish_name": "Değnek Ten",
+    "filename": "wands_10_ten.jpg"
+  },
+  {
+    "id": "wands_11",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 11,
+    "type": "minor",
+    "english_name": "Page of Wands",
+    "turkish_name": "Değnek Page",
+    "filename": "wands_11_page.jpg"
+  },
+  {
+    "id": "wands_12",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 12,
+    "type": "minor",
+    "english_name": "Knight of Wands",
+    "turkish_name": "Değnek Knight",
+    "filename": "wands_12_knight.jpg"
+  },
+  {
+    "id": "wands_13",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 13,
+    "type": "minor",
+    "english_name": "Queen of Wands",
+    "turkish_name": "Değnek Queen",
+    "filename": "wands_13_queen.jpg"
+  },
+  {
+    "id": "wands_14",
+    "suit": "wands",
+    "suit_turkish": "Değnek",
+    "number": 14,
+    "type": "minor",
+    "english_name": "King of Wands",
+    "turkish_name": "Değnek King",
+    "filename": "wands_14_king.jpg"
+  },
+  {
+    "id": "cups_1",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 1,
+    "type": "minor",
+    "english_name": "Ace of Cups",
+    "turkish_name": "Kupa Ace",
+    "filename": "cups_01_ace.jpg"
+  },
+  {
+    "id": "cups_2",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 2,
+    "type": "minor",
+    "english_name": "Two of Cups",
+    "turkish_name": "Kupa Two",
+    "filename": "cups_02_two.jpg"
+  },
+  {
+    "id": "cups_3",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 3,
+    "type": "minor",
+    "english_name": "Three of Cups",
+    "turkish_name": "Kupa Three",
+    "filename": "cups_03_three.jpg"
+  },
+  {
+    "id": "cups_4",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 4,
+    "type": "minor",
+    "english_name": "Four of Cups",
+    "turkish_name": "Kupa Four",
+    "filename": "cups_04_four.jpg"
+  },
+  {
+    "id": "cups_5",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 5,
+    "type": "minor",
+    "english_name": "Five of Cups",
+    "turkish_name": "Kupa Five",
+    "filename": "cups_05_five.jpg"
+  },
+  {
+    "id": "cups_6",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 6,
+    "type": "minor",
+    "english_name": "Six of Cups",
+    "turkish_name": "Kupa Six",
+    "filename": "cups_06_six.jpg"
+  },
+  {
+    "id": "cups_7",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 7,
+    "type": "minor",
+    "english_name": "Seven of Cups",
+    "turkish_name": "Kupa Seven",
+    "filename": "cups_07_seven.jpg"
+  },
+  {
+    "id": "cups_8",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 8,
+    "type": "minor",
+    "english_name": "Eight of Cups",
+    "turkish_name": "Kupa Eight",
+    "filename": "cups_08_eight.jpg"
+  },
+  {
+    "id": "cups_9",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 9,
+    "type": "minor",
+    "english_name": "Nine of Cups",
+    "turkish_name": "Kupa Nine",
+    "filename": "cups_09_nine.jpg"
+  },
+  {
+    "id": "cups_10",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 10,
+    "type": "minor",
+    "english_name": "Ten of Cups",
+    "turkish_name": "Kupa Ten",
+    "filename": "cups_10_ten.jpg"
+  },
+  {
+    "id": "cups_11",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 11,
+    "type": "minor",
+    "english_name": "Page of Cups",
+    "turkish_name": "Kupa Page",
+    "filename": "cups_11_page.jpg"
+  },
+  {
+    "id": "cups_12",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 12,
+    "type": "minor",
+    "english_name": "Knight of Cups",
+    "turkish_name": "Kupa Knight",
+    "filename": "cups_12_knight.jpg"
+  },
+  {
+    "id": "cups_13",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 13,
+    "type": "minor",
+    "english_name": "Queen of Cups",
+    "turkish_name": "Kupa Queen",
+    "filename": "cups_13_queen.jpg"
+  },
+  {
+    "id": "cups_14",
+    "suit": "cups",
+    "suit_turkish": "Kupa",
+    "number": 14,
+    "type": "minor",
+    "english_name": "King of Cups",
+    "turkish_name": "Kupa King",
+    "filename": "cups_14_king.jpg"
+  },
+  {
+    "id": "swords_1",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 1,
+    "type": "minor",
+    "english_name": "Ace of Swords",
+    "turkish_name": "Kılıç Ace",
+    "filename": "swords_01_ace.jpg"
+  },
+  {
+    "id": "swords_2",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 2,
+    "type": "minor",
+    "english_name": "Two of Swords",
+    "turkish_name": "Kılıç Two",
+    "filename": "swords_02_two.jpg"
+  },
+  {
+    "id": "swords_3",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 3,
+    "type": "minor",
+    "english_name": "Three of Swords",
+    "turkish_name": "Kılıç Three",
+    "filename": "swords_03_three.jpg"
+  },
+  {
+    "id": "swords_4",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 4,
+    "type": "minor",
+    "english_name": "Four of Swords",
+    "turkish_name": "Kılıç Four",
+    "filename": "swords_04_four.jpg"
+  },
+  {
+    "id": "swords_5",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 5,
+    "type": "minor",
+    "english_name": "Five of Swords",
+    "turkish_name": "Kılıç Five",
+    "filename": "swords_05_five.jpg"
+  },
+  {
+    "id": "swords_6",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 6,
+    "type": "minor",
+    "english_name": "Six of Swords",
+    "turkish_name": "Kılıç Six",
+    "filename": "swords_06_six.jpg"
+  },
+  {
+    "id": "swords_7",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 7,
+    "type": "minor",
+    "english_name": "Seven of Swords",
+    "turkish_name": "Kılıç Seven",
+    "filename": "swords_07_seven.jpg"
+  },
+  {
+    "id": "swords_8",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 8,
+    "type": "minor",
+    "english_name": "Eight of Swords",
+    "turkish_name": "Kılıç Eight",
+    "filename": "swords_08_eight.jpg"
+  },
+  {
+    "id": "swords_9",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 9,
+    "type": "minor",
+    "english_name": "Nine of Swords",
+    "turkish_name": "Kılıç Nine",
+    "filename": "swords_09_nine.jpg"
+  },
+  {
+    "id": "swords_10",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 10,
+    "type": "minor",
+    "english_name": "Ten of Swords",
+    "turkish_name": "Kılıç Ten",
+    "filename": "swords_10_ten.jpg"
+  },
+  {
+    "id": "swords_11",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 11,
+    "type": "minor",
+    "english_name": "Page of Swords",
+    "turkish_name": "Kılıç Page",
+    "filename": "swords_11_page.jpg"
+  },
+  {
+    "id": "swords_12",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 12,
+    "type": "minor",
+    "english_name": "Knight of Swords",
+    "turkish_name": "Kılıç Knight",
+    "filename": "swords_12_knight.jpg"
+  },
+  {
+    "id": "swords_13",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 13,
+    "type": "minor",
+    "english_name": "Queen of Swords",
+    "turkish_name": "Kılıç Queen",
+    "filename": "swords_13_queen.jpg"
+  },
+  {
+    "id": "swords_14",
+    "suit": "swords",
+    "suit_turkish": "Kılıç",
+    "number": 14,
+    "type": "minor",
+    "english_name": "King of Swords",
+    "turkish_name": "Kılıç King",
+    "filename": "swords_14_king.jpg"
+  },
+  {
+    "id": "pentacles_1",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 1,
+    "type": "minor",
+    "english_name": "Ace of Pentacles",
+    "turkish_name": "Tılsım Ace",
+    "filename": "pentacles_01_ace.jpg"
+  },
+  {
+    "id": "pentacles_2",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 2,
+    "type": "minor",
+    "english_name": "Two of Pentacles",
+    "turkish_name": "Tılsım Two",
+    "filename": "pentacles_02_two.jpg"
+  },
+  {
+    "id": "pentacles_3",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 3,
+    "type": "minor",
+    "english_name": "Three of Pentacles",
+    "turkish_name": "Tılsım Three",
+    "filename": "pentacles_03_three.jpg"
+  },
+  {
+    "id": "pentacles_4",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 4,
+    "type": "minor",
+    "english_name": "Four of Pentacles",
+    "turkish_name": "Tılsım Four",
+    "filename": "pentacles_04_four.jpg"
+  },
+  {
+    "id": "pentacles_5",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 5,
+    "type": "minor",
+    "english_name": "Five of Pentacles",
+    "turkish_name": "Tılsım Five",
+    "filename": "pentacles_05_five.jpg"
+  },
+  {
+    "id": "pentacles_6",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 6,
+    "type": "minor",
+    "english_name": "Six of Pentacles",
+    "turkish_name": "Tılsım Six",
+    "filename": "pentacles_06_six.jpg"
+  },
+  {
+    "id": "pentacles_7",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 7,
+    "type": "minor",
+    "english_name": "Seven of Pentacles",
+    "turkish_name": "Tılsım Seven",
+    "filename": "pentacles_07_seven.jpg"
+  },
+  {
+    "id": "pentacles_8",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 8,
+    "type": "minor",
+    "english_name": "Eight of Pentacles",
+    "turkish_name": "Tılsım Eight",
+    "filename": "pentacles_08_eight.jpg"
+  },
+  {
+    "id": "pentacles_9",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 9,
+    "type": "minor",
+    "english_name": "Nine of Pentacles",
+    "turkish_name": "Tılsım Nine",
+    "filename": "pentacles_09_nine.jpg"
+  },
+  {
+    "id": "pentacles_10",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 10,
+    "type": "minor",
+    "english_name": "Ten of Pentacles",
+    "turkish_name": "Tılsım Ten",
+    "filename": "pentacles_10_ten.jpg"
+  },
+  {
+    "id": "pentacles_11",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 11,
+    "type": "minor",
+    "english_name": "Page of Pentacles",
+    "turkish_name": "Tılsım Page",
+    "filename": "pentacles_11_page.jpg"
+  },
+  {
+    "id": "pentacles_12",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 12,
+    "type": "minor",
+    "english_name": "Knight of Pentacles",
+    "turkish_name": "Tılsım Knight",
+    "filename": "pentacles_12_knight.jpg"
+  },
+  {
+    "id": "pentacles_13",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 13,
+    "type": "minor",
+    "english_name": "Queen of Pentacles",
+    "turkish_name": "Tılsım Queen",
+    "filename": "pentacles_13_queen.jpg"
+  },
+  {
+    "id": "pentacles_14",
+    "suit": "pentacles",
+    "suit_turkish": "Tılsım",
+    "number": 14,
+    "type": "minor",
+    "english_name": "King of Pentacles",
+    "turkish_name": "Tılsım King",
+    "filename": "pentacles_14_king.jpg"
+  }
+]
