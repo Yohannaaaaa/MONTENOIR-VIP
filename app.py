@@ -5319,16 +5319,234 @@ def load_tarot_cards_db():
         print(f"Error loading tarot cards: {e}", flush=True)
         return []
 
+# Tarot spread functions (inline)
+import random as _random
+
+SPREAD_COST = 200
+
+def _load_tarot_deck():
+    try:
+        with open('/home/user/MONTENOIR-VIP/static/tarot_cards/cards.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return []
+
+def _select_cards(count=3):
+    cards = _load_tarot_deck()
+    return _random.sample(cards, min(count, len(cards)))
+
+def _format_card(card, pos='Düz'):
+    if pos not in card.get('positions', {}):
+        pos = 'Düz'
+    p = card['positions'].get(pos, {})
+    return {'number': card.get('number'), 'name': card.get('name'), 'position': pos,
+            'image': card.get('image'), 'intro': p.get('intro', ''), 'hidden': p.get('hidden', '')}
+
+def three_card_spread(question=''):
+    cards = _select_cards(3)
+    return {'type': '3-card', 'name': '3-Kart Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': p, 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i, p in enumerate(['Geçmiş', 'Şimdiki', 'Gelecek'])]}
+
+def seven_card_spread(question=''):
+    cards = _select_cards(7)
+    pos = ['Durum', 'Zorluk', 'Destek', 'Yakın Gelecek', 'Uzak Gelecek', 'Tavsiye', 'Sonuç']
+    return {'type': '7-card', 'name': '7-Kart Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(7)]}
+
+def yes_no_spread(question=''):
+    cards = _select_cards(1)
+    pos = _random.choice(['Düz', 'Ters'])
+    card = _format_card(cards[0], pos)
+    answer = 'Evet ✨' if pos == 'Düz' else 'Hayır ❌'
+    return {'type': 'yes-no', 'name': 'Evet/Hayır Okuyuşu', 'question': question, 'cost': SPREAD_COST,
+            'answer': answer, 'card': card}
+
+def love_spread(question=''):
+    cards = _select_cards(5)
+    pos = ['Mevcut Durum', 'Partneriniz', 'Sizin Hisleriniz', 'İlişkinin Yönü', 'Tavsiye']
+    return {'type': 'love', 'name': '💕 Aşk Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(5)]}
+
+def work_spread(question=''):
+    cards = _select_cards(5)
+    pos = ['Mevcut Kariyer', 'Zorluklar', 'Fırsatlar', 'Yakın Gelecek', 'Tavsiye']
+    return {'type': 'work', 'name': '💼 İş Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(5)]}
+
+def general_spread(question=''):
+    cards = _select_cards(6)
+    pos = ['Geçmiş', 'Şimdiki', 'Yakın Gelecek', 'Tavsiye', 'Dış Etkenler', 'Sonuç']
+    return {'type': 'general', 'name': '✨ Genel Okuyuş', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(6)]}
+
+def get_user_chips(username):
+    """Get user's current chip balance"""
+    try:
+        with users_txn() as users:
+            key = monte_find_or_create_user(users, username)
+            return users[key].get('chips', 0)
+    except:
+        return 0
+
+def deduct_user_chips(username, amount):
+    """Deduct chips from user balance"""
+    try:
+        with users_txn() as users:
+            key = monte_find_or_create_user(users, username)
+            current = users[key].get('chips', 0)
+            if current < amount:
+                return False
+            users[key]['chips'] = current - amount
+            return True
+    except:
+        return False
+
 @app.route("/api/tarot-cards")
 def api_tarot_cards():
     """API endpoint for all tarot cards with interpretations"""
     cards = load_tarot_cards_db()
     return jsonify(cards)
 
+@app.route("/api/tarot/reading/3-card", methods=["POST"])
+def api_tarot_3card():
+    """3-card tarot spread: Past, Present, Future"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = three_card_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/7-card", methods=["POST"])
+def api_tarot_7card():
+    """7-card tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = seven_card_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/yes-no", methods=["POST"])
+def api_tarot_yesno():
+    """Yes/No tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = yes_no_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/love", methods=["POST"])
+def api_tarot_love():
+    """Love/Relationship tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = love_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/work", methods=["POST"])
+def api_tarot_work():
+    """Work/Career tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = work_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
+@app.route("/api/tarot/reading/general", methods=["POST"])
+def api_tarot_general():
+    """General tarot spread"""
+    data = request.get_json(force=True, silent=True) or {}
+    question = data.get("question", "")
+    username = data.get("username", "")
+
+    if username:
+        chips = get_user_chips(username)
+        if chips < SPREAD_COST:
+            return {"ok": False, "msg": f"Yeterli jeton yok. Gerekli: {SPREAD_COST}, Mevcut: {chips}"}, 402
+
+        if not deduct_user_chips(username, SPREAD_COST):
+            return {"ok": False, "msg": "Jeton düşülemedi"}, 400
+
+    result = general_spread(question)
+    result['ok'] = True
+    if username:
+        result['remaining_chips'] = get_user_chips(username)
+    return jsonify(result)
+
 @app.route("/tarot-cards")
 def tarot_cards_page():
     """Display all tarot cards with interpretations"""
     return render_template('tarot_cards.html')
+
+@app.route("/tarot-reading")
+def tarot_reading_page():
+    """Interactive tarot reading with AI"""
+    return render_template('tarot_reading.html')
 
 @app.route("/tarot")
 def tarot_page():
@@ -5624,6 +5842,20 @@ textarea{min-height:100px;grid-column:1/-1}
 <button onclick='instantTarot()'><span data-i18n='tarot_instant_btn'>🃏 Kartı Aç</span></button>
 </div>
 <div id='aiResult' class='status cardMeaning'></div>
+
+<!-- Spread Selection Buttons -->
+<div style='margin-top:30px;border-top:2px solid #d4af37;padding-top:20px;'>
+<h3 style='text-align:center;color:#d4af37;margin-bottom:15px;'>🎴 Açılım Seçin (200 💰 Jeton)</h3>
+<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;'>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("3-card")'>🎴 3-Kart<br><small>Geçmiş-Şimdiki-Gelecek</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("7-card")'>🎴 7-Kart<br><small>Detaylı Yorum</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("yes-no")'>✨ Evet/Hayır<br><small>Hızlı Cevap</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("love")'>💕 Aşk<br><small>İlişki</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("work")'>💼 İş<br><small>Kariyer</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("general")'>🌟 Genel<br><small>Yaşam Rehberi</small></button>
+</div>
+<div id='spreadResult' class='status cardMeaning' style='margin-top:20px;'></div>
+</div>
 </div>
 
 <div id='coinPacks' class='panel'>
@@ -5760,6 +5992,53 @@ tarotForm.addEventListener('submit',e=>{
  e.preventDefault();
  submitTarotForm();
 });
+
+// Spread Reading Function
+function getSpreadReading(type){
+ const username=getSavedUser();
+ const spreadResult=document.getElementById('spreadResult');
+
+ if(!username){
+   spreadResult.textContent='❌ Önce giriş yap!';
+   spreadResult.className='status cardMeaning error';
+   return;
+ }
+
+ spreadResult.textContent='⏳ Kartlar çekiliyor...';
+ spreadResult.className='status cardMeaning';
+
+ fetch('/api/tarot/reading/'+type,{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({username:username,question:''})
+ }).then(r=>{
+   if(r.status===402) return r.json().then(d=>{throw new Error(d.msg)});
+   if(!r.ok) throw new Error('Okuma başarısız');
+   return r.json();
+ }).then(d=>{
+   let html='<strong>✨ '+d.name+'</strong><br>';
+   if(d.remaining_chips!==undefined) html+='💰 Kalan: '+d.remaining_chips+' jeton<br><br>';
+
+   if(d.type==='yes-no'){
+     html+='<div style="font-size:2em;margin:20px 0;font-weight:bold;">'+d.answer+'</div>';
+     if(d.card) html+='<strong>'+d.card.name+'</strong> ('+d.card.position+')<br>'+d.card.intro;
+   } else {
+     html+='<div style="margin-top:15px;">';
+     if(d.spread){
+       d.spread.forEach(item=>{
+         html+='<div style="margin:15px 0;padding:10px;border-left:3px solid #d4af37;"><strong>'+item.position+':</strong> '+item.card.name+' ('+item.card.position+')<br><small>'+item.card.intro+'</small></div>';
+       });
+     }
+     html+='</div>';
+   }
+
+   spreadResult.innerHTML=html;
+   spreadResult.className='status cardMeaning';
+ }).catch(e=>{
+   spreadResult.textContent='❌ '+e.message;
+   spreadResult.className='status cardMeaning error';
+ });
+}
 </script>
 </body></html>""" + Londres_I18N_SCRIPT
 
