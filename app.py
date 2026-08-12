@@ -5313,7 +5313,8 @@ fetch('/api/owner/requests?key='+encodeURIComponent(key)).then(r=>r.json()).then
 def load_tarot_cards_db():
     """Load parsed tarot cards from JSON"""
     try:
-        with open('/home/user/MONTENOIR-VIP/static/tarot_cards/cards.json', 'r', encoding='utf-8') as f:
+        cards_path = os.path.join(app.root_path, 'static', 'tarot_cards', 'cards.json')
+        with open(cards_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading tarot cards: {e}", flush=True)
@@ -5326,9 +5327,11 @@ SPREAD_COST = 200
 
 def _load_tarot_deck():
     try:
-        with open('/home/user/MONTENOIR-VIP/static/tarot_cards/cards.json', 'r', encoding='utf-8') as f:
+        cards_path = os.path.join(app.root_path, 'static', 'tarot_cards', 'cards.json')
+        with open(cards_path, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except:
+    except Exception as e:
+        print(f"Error loading tarot deck: {e}", flush=True)
         return []
 
 def _select_cards(count=3):
