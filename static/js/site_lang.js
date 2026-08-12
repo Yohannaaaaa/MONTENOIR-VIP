@@ -44,6 +44,7 @@ function buildLangSelector(container, onChange, allowed) {
       container.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active', 'selected'));
       btn.classList.add('active', 'selected');
       onChange(l.code);
+      setTimeout(() => location.reload(), 300);
     });
     container.appendChild(btn);
   });
