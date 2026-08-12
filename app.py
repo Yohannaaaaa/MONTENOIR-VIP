@@ -3382,11 +3382,11 @@ function logoutAccount(){
 }
 
 function mySessionToken(){return localStorage.getItem('codenamesSessionToken')||''}
-function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount,token:mySessionToken()})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount,token:mySessionToken()})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount,token:mySessionToken()})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];prevCardOpen=[];lastRenderedClue=null;lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();soundGuessToggle();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){soundEndTurnSfx();socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a});closeModals()}
+function createRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);socket.emit('create_room',{password:roomPassword.value.trim(),account:currentAccount,token:mySessionToken()})}function joinExistingRoom(){if(!requireLogin())return;myName=currentAccount;playerName.value=currentAccount;localStorage.setItem('codenamesName',currentAccount);let c=roomInput.value.trim().toUpperCase();if(!c){alert('Oda kodu yaz.');return}socket.emit('join_room_code',{room:c,password:roomPassword.value.trim(),account:currentAccount,token:mySessionToken()})}function sitAtTable(){if(!requireLogin())return;if(!roomCode){alert('Önce oda oluştur veya odaya katıl.');return}let n=playerName.value.trim();if(!n){alert('Oyuncu adı yaz.');return}myName=n;myRole=roleChoice.value;myTeam=teamChoice.value;currentChips=currentProfile?currentProfile.chips:getSavedChips(myName);joined=true;saveLocalProfile();socket.emit('sit',{room:roomCode,name:n,avatar:avatarChoice.value,avatarData:(currentProfile&&currentProfile.avatarData)||'',nameColor:(currentProfile&&currentProfile.nameColor)||'default',avatarFrame:(currentProfile&&currentProfile.avatarFrame)||'none',team:myTeam,role:myRole,chips:currentChips,account:currentAccount,token:mySessionToken()})}function startGame(){if(!requireLogin())return;if(!joined){alert('Önce masaya otur.');return}socket.emit('start_game',{room:roomCode})}function newGame(){dealSoundPlayed=false;lastOpenedStates=[];lastOpenedMeta=[];prevCardOpen=[];lastRenderedClue=null;lastWinner='';socket.emit('new_game',{room:roomCode})}function goLobby(){gameScreen.classList.add('hidden');lobby.classList.remove('hidden')}function joinTeam(t,r){if(!requireLogin())return;myTeam=t;myRole=r;saveLocalProfile();socket.emit('join_team',{room:roomCode,team:t,role:r})}function toggleGuess(i){unlockSfx();soundGuessToggle();socket.emit('toggle_guess',{room:roomCode,index:i})}function revealCard(i,e){if(e)e.stopPropagation();unlockSfx();playTone(740,.045,'triangle',.035);socket.emit('reveal_card',{room:roomCode,index:i})}function showGuesses(i,e){if(e)e.stopPropagation();socket.emit('show_guesses',{room:roomCode,index:i})}function sendClue(){let c=clueText.value.trim(),n=clueNumber.value;if(!c){alert('İpucu yaz.');return}socket.emit('send_clue',{room:roomCode,clue:c,number:n,name:myName})}function endTurn(){soundEndTurnSfx();socket.emit('end_turn',{room:roomCode})}function setCategory(c){socket.emit('set_category',{room:roomCode,category:c});closeModals()}function buyVirtualChips(a){if(!myName){alert('Önce profil oluştur.');return}if(currentChips<=0){alert('Jetonu bitti! Sadece paralı jeton alabilirsin.');return}socket.emit('buy_virtual_chips',{room:roomCode,amount:a,type:'bonus'});closeModals()}
 function demoBuyChips(amount, provider){
     if(!currentAccount){alert('Önce giriş yap.');openAuth();return}
     if(!confirm(provider+' démo ile '+amount+' jeton eklensin mi?')) return;
-    socket.emit('buy_virtual_chips',{room:roomCode,amount:amount});
+    socket.emit('buy_virtual_chips',{room:roomCode,amount:amount,type:'paid'});
 }
 function buyVipWithChips(pack){
     if(!currentAccount){alert('Önce giriş yap.');openAuth();return}
@@ -4572,6 +4572,7 @@ DEMO_CHIP_AMOUNTS = {1000, 5000, 20000, 75000}
 @socketio.on('buy_virtual_chips')
 def buy_virtual_chips(data):
     code = data.get('room', '')
+    chip_type = data.get('type', 'bonus')
     try:
         amount = int(data.get('amount', 0))
     except (TypeError, ValueError):
@@ -4585,7 +4586,11 @@ def buy_virtual_chips(data):
     player = by_sid(code, request.sid) if code in rooms else None
 
     if player:
-        player['chips'] = int(player.get('chips', 1000)) + amount
+        current_chips = int(player.get('chips', 1000))
+        if chip_type == 'bonus' and current_chips <= 0:
+            emit('error_msg', {'msg': 'Jetonu bitti! Sadece paralı jeton alabilirsin.'})
+            return
+        player['chips'] = current_chips + amount
         save_player_to_user(player)
         if player.get('account'):
             users = load_users()
