@@ -4505,6 +4505,34 @@ def upload_avatar(data):
         emit('avatar_upload_result', {'ok': False, 'msg': 'Resim çok büyük. 1.8 MB altında bir avatar seç.'})
         return
 
+    # Store avatar data in file instead of in database
+    avatar_dir = os.path.join(app.root_path, "static", "avatars")
+    os.makedirs(avatar_dir, exist_ok=True)
+
+    # Extract file type from base64 data
+    import base64
+    try:
+        header, data_part = avatar_data.split(',', 1)
+        if 'png' in header:
+            ext = 'png'
+        elif 'jpeg' in header or 'jpg' in header:
+            ext = 'jpg'
+        elif 'webp' in header:
+            ext = 'webp'
+        else:
+            ext = 'png'
+
+        # Decode and save
+        file_bytes = base64.b64decode(data_part)
+        avatar_filename = f"{account.lower()}_{int(time.time())}.{ext}"
+        avatar_path = os.path.join(avatar_dir, avatar_filename)
+        with open(avatar_path, "wb") as fw:
+            fw.write(file_bytes)
+        avatar_url = f"/static/avatars/{avatar_filename}"
+    except Exception as e:
+        emit('avatar_upload_result', {'ok': False, 'msg': 'Avatar kaydedilemedi.'})
+        return
+
     with users_txn() as users:
         user_key = find_user_key(users, account)
         if not user_key:
@@ -4512,13 +4540,14 @@ def upload_avatar(data):
             users.clear()
             users.update(load_users())
             user_key = find_user_key(users, account)
-        users[user_key]['avatarData'] = avatar_data
+        # Store file path instead of base64 data
+        users[user_key]['avatarData'] = avatar_url
         users[user_key]['avatar'] = users[user_key].get('avatar', 'woman.png')
 
     if code in rooms:
         for p in rooms[code].get('players', []):
             if (p.get('account','').lower() == user_key.lower()) or p.get('sid') == request.sid:
-                p['avatarData'] = avatar_data
+                p['avatarData'] = avatar_url
                 p['avatar'] = users[user_key].get('avatar', p.get('avatar', 'woman.png'))
                 p['account'] = user_key
         emit('players_update', {'players': rooms[code]['players'], 'locks': rooms[code]['locks'], 'micStates': rooms[code].get('micStates', {}), 'ready': rooms[code].get('ready', {})}, to=code)
