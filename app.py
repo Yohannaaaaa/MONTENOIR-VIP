@@ -5535,7 +5535,20 @@ def _load_french_card_translations():
     except:
         return {}
 
+def _load_french_minor_translations():
+    """Load French minor arcana translations from external file"""
+    try:
+        import sys
+        import os
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, module_path)
+        from tarot_minors_fr_complete import MINOR_CARD_TRANSLATIONS_FR
+        return MINOR_CARD_TRANSLATIONS_FR
+    except:
+        return {}
+
 CARD_CONTENT_TRANSLATIONS_FR = _load_french_card_translations()
+MINOR_CARD_TRANSLATIONS_FR = _load_french_minor_translations()
 
 def _translate_card_name(name, lang='tr'):
     """Translate card name to target language"""
