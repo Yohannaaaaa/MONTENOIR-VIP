@@ -5319,13 +5319,70 @@ def load_tarot_cards_db():
         print(f"Error loading tarot cards: {e}", flush=True)
         return []
 
-# Import tarot reading functions
-try:
-    from tarot_reading import (three_card_spread, seven_card_spread, yes_no_spread,
-                               love_spread, work_spread, general_spread, SPREAD_COST)
-except ImportError:
-    print("Warning: tarot_reading module not found", flush=True)
-    SPREAD_COST = 200
+# Tarot spread functions (inline)
+import random as _random
+
+SPREAD_COST = 200
+
+def _load_tarot_deck():
+    try:
+        with open('/home/user/MONTENOIR-VIP/static/tarot_cards/cards.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return []
+
+def _select_cards(count=3):
+    cards = _load_tarot_deck()
+    return _random.sample(cards, min(count, len(cards)))
+
+def _format_card(card, pos='Düz'):
+    if pos not in card.get('positions', {}):
+        pos = 'Düz'
+    p = card['positions'].get(pos, {})
+    return {'number': card.get('number'), 'name': card.get('name'), 'position': pos,
+            'image': card.get('image'), 'intro': p.get('intro', ''), 'hidden': p.get('hidden', '')}
+
+def three_card_spread(question=''):
+    cards = _select_cards(3)
+    return {'type': '3-card', 'name': '3-Kart Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': p, 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i, p in enumerate(['Geçmiş', 'Şimdiki', 'Gelecek'])]}
+
+def seven_card_spread(question=''):
+    cards = _select_cards(7)
+    pos = ['Durum', 'Zorluk', 'Destek', 'Yakın Gelecek', 'Uzak Gelecek', 'Tavsiye', 'Sonuç']
+    return {'type': '7-card', 'name': '7-Kart Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(7)]}
+
+def yes_no_spread(question=''):
+    cards = _select_cards(1)
+    pos = _random.choice(['Düz', 'Ters'])
+    card = _format_card(cards[0], pos)
+    answer = 'Evet ✨' if pos == 'Düz' else 'Hayır ❌'
+    return {'type': 'yes-no', 'name': 'Evet/Hayır Okuyuşu', 'question': question, 'cost': SPREAD_COST,
+            'answer': answer, 'card': card}
+
+def love_spread(question=''):
+    cards = _select_cards(5)
+    pos = ['Mevcut Durum', 'Partneriniz', 'Sizin Hisleriniz', 'İlişkinin Yönü', 'Tavsiye']
+    return {'type': 'love', 'name': '💕 Aşk Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(5)]}
+
+def work_spread(question=''):
+    cards = _select_cards(5)
+    pos = ['Mevcut Kariyer', 'Zorluklar', 'Fırsatlar', 'Yakın Gelecek', 'Tavsiye']
+    return {'type': 'work', 'name': '💼 İş Açılımı', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(5)]}
+
+def general_spread(question=''):
+    cards = _select_cards(6)
+    pos = ['Geçmiş', 'Şimdiki', 'Yakın Gelecek', 'Tavsiye', 'Dış Etkenler', 'Sonuç']
+    return {'type': 'general', 'name': '✨ Genel Okuyuş', 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+                      for i in range(6)]}
 
 def get_user_chips(username):
     """Get user's current chip balance"""
