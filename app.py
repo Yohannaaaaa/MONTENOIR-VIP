@@ -936,8 +936,16 @@ def owner_manage_user(data):
             emit("owner_action_result", {"ok": True, "msg": "Hesap silindi."})
             return
         elif action == "reset_avatar":
+            old_avatar = users[key].get("avatarData", "")
+            if old_avatar and old_avatar.startswith("/static/avatars/"):
+                try:
+                    avatar_path = os.path.join(app.root_path, old_avatar.lstrip("/"))
+                    if os.path.exists(avatar_path):
+                        os.remove(avatar_path)
+                except Exception:
+                    pass
             users[key]["avatarData"] = ""
-            users[key]["avatar"] = "woman.png"
+            users[key]["avatar"] = ""
         elif action == "reset_password_link":
             token = str(random.randint(100000, 999999))
             users[key]["resetToken"] = token
@@ -1065,7 +1073,6 @@ def clean_profile_payload(username, data):
         "avatarFrame": data.get("avatarFrame", "gold"),
         "membershipLabel": data.get("membershipLabel", ""),
         "membershipLevel": data.get("membershipLevel", ""),
-        "vipBadge": get_vip_badge(data),
         "isAdmin": bool(data.get("isAdmin", False)),
         "isOwner": bool(data.get("isOwner", False)) or is_owner_username(username),
     }
@@ -4513,8 +4520,16 @@ def delete_avatar(data):
         if not user_key:
             emit('avatar_upload_result', {'ok': False, 'msg': 'Kullanıcı bulunamadı.'})
             return
+        old_avatar = users[user_key].get('avatarData', '')
+        if old_avatar and old_avatar.startswith('/static/avatars/'):
+            try:
+                avatar_path = os.path.join(app.root_path, old_avatar.lstrip('/'))
+                if os.path.exists(avatar_path):
+                    os.remove(avatar_path)
+            except Exception:
+                pass
         users[user_key]['avatarData'] = ''
-        users[user_key]['avatar'] = 'woman.png'
+        users[user_key]['avatar'] = ''
     emit('avatar_upload_result', {'ok': True, 'profile': private_profile(user_key, users[user_key])})
 @socketio.on('buy_vip_with_chips')
 def buy_vip_with_chips(data):
@@ -5228,6 +5243,10 @@ def api_premium_tarot():
 
 
 
+@app.route("/premium_old_disabled_259292")
+def premium_old_disabled():
+    return {"error": "This endpoint is disabled"}, 404
+
 # ===== TAROT REQUESTS + OWNER PANEL =====
 TAROT_REQUESTS_FILE = os.path.join(os.environ.get("DATA_DIR","."), "tarot_requests.json")
 ALLOWED_TAROT_EXT = {"pdf","jpg","jpeg","png"}
@@ -5406,53 +5425,540 @@ def _select_cards(count=3):
     cards = _load_tarot_deck()
     return _random.sample(cards, min(count, len(cards)))
 
-def _format_card(card, pos='Düz'):
-    if pos not in card.get('positions', {}):
-        pos = 'Düz'
-    p = card['positions'].get(pos, {})
-    return {'number': card.get('number'), 'name': card.get('name'), 'position': pos,
-            'image': card.get('image'), 'intro': p.get('intro', ''), 'hidden': p.get('hidden', '')}
+CARD_NAMES_TRANSLATIONS = {
+    'fr': {
+        'JOKER (Deli)': 'LE FOU',
+        'BÜYÜCÜ': 'LE MAGICIEN',
+        'AZİZE': 'LA PRÊTRESSE',
+        'İMPARATORİÇE': 'L\'IMPÉRATRICE',
+        'İMPARATOR': 'L\'EMPEREUR',
+        'AZİZ': 'LE PAPE',
+        'AŞIKLAR': 'LES AMOUREUX',
+        'SAVAŞ ARABASI': 'LE CHAR',
+        'GÜÇ': 'LA FORCE',
+        'ERMİŞ': 'L\'ERMITE',
+        'KADER ÇARKI': 'LA ROUE DE LA FORTUNE',
+        'ADALET': 'LA JUSTICE',
+        'ASILAN ADAM': 'LE PENDU',
+        'ÖLÜM': 'LA MORT',
+        'DENGE': 'LA TEMPÉRANCE',
+        'ŞEYTAN': 'LE DIABLE',
+        'KULE': 'LA TOUR',
+        'YILDIZ': 'L\'ÉTOILE',
+        'AY': 'LA LUNE',
+        'GÜNEŞ': 'LE SOLEIL',
+        'MAHKEME (Yargı)': 'LE JUGEMENT',
+        'DÜNYA': 'LE MONDE',
+        'Düz': 'Droit',
+        'Ters': 'Inversé',
+        'i̇lişki': 'Relation',
+        'kariyer': 'Carrière',
+        'para': 'Finances',
+        'sağlık': 'Santé',
+        'aile': 'Famille',
+    },
+    'en': {
+        'JOKER (Deli)': 'THE FOOL',
+        'BÜYÜCÜ': 'THE MAGICIAN',
+        'AZİZE': 'THE HIGH PRIESTESS',
+        'İMPARATORİÇE': 'THE EMPRESS',
+        'İMPARATOR': 'THE EMPEROR',
+        'AZİZ': 'THE HIEROPHANT',
+        'AŞIKLAR': 'THE LOVERS',
+        'SAVAŞ ARABASI': 'THE CHARIOT',
+        'GÜÇ': 'STRENGTH',
+        'ERMİŞ': 'THE HERMIT',
+        'KADER ÇARKI': 'WHEEL OF FORTUNE',
+        'ADALET': 'JUSTICE',
+        'ASILAN ADAM': 'THE HANGED MAN',
+        'ÖLÜM': 'DEATH',
+        'DENGE': 'TEMPERANCE',
+        'ŞEYTAN': 'THE DEVIL',
+        'KULE': 'THE TOWER',
+        'YILDIZ': 'THE STAR',
+        'AY': 'THE MOON',
+        'GÜNEŞ': 'THE SUN',
+        'MAHKEME (Yargı)': 'JUDGEMENT',
+        'DÜNYA': 'THE WORLD',
+        'Düz': 'Upright',
+        'Ters': 'Reversed',
+        'i̇lişki': 'Relationship',
+        'kariyer': 'Career',
+        'para': 'Money',
+        'sağlık': 'Health',
+        'aile': 'Family',
+    },
+    'es': {
+        'JOKER (Deli)': 'EL LOCO',
+        'BÜYÜCÜ': 'EL MAGO',
+        'AZİZE': 'LA SACERDOTISA',
+        'İMPARATORİÇE': 'LA EMPERATRIZ',
+        'İMPARATOR': 'EL EMPERADOR',
+        'AZİZ': 'EL HIEROFANTE',
+        'AŞIKLAR': 'LOS AMANTES',
+        'SAVAŞ ARABASI': 'EL CARRO',
+        'GÜÇ': 'LA FUERZA',
+        'ERMİŞ': 'EL ERMITAÑO',
+        'KADER ÇARKI': 'LA RUEDA DE LA FORTUNA',
+        'ADALET': 'LA JUSTICIA',
+        'ASILAN ADAM': 'EL COLGADO',
+        'ÖLÜM': 'LA MUERTE',
+        'DENGE': 'LA TEMPLANZA',
+        'ŞEYTAN': 'EL DIABLO',
+        'KULE': 'LA TORRE',
+        'YILDIZ': 'LA ESTRELLA',
+        'AY': 'LA LUNA',
+        'GÜNEŞ': 'EL SOL',
+        'MAHKEME (Yargı)': 'EL JUICIO',
+        'DÜNYA': 'EL MUNDO',
+        'Düz': 'Derecho',
+        'Ters': 'Invertido',
+        'i̇lişki': 'Relación',
+        'kariyer': 'Carrera',
+        'para': 'Dinero',
+        'sağlık': 'Salud',
+        'aile': 'Familia',
+    },
+}
 
-def three_card_spread(question=''):
+# French translations for card content - imported from tarot_fr_translations.py
+def _load_french_card_translations():
+    """Load French card content translations from external file"""
+    try:
+        import sys
+        import os
+        # Try to import from the tarot_fr_translations module
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, module_path)
+        from tarot_fr_translations import CARD_CONTENT_TRANSLATIONS_FR
+        return CARD_CONTENT_TRANSLATIONS_FR
+    except:
+        return {}
+
+def _load_french_minor_translations():
+    """Load French minor arcana translations from external file"""
+    try:
+        import sys
+        import os
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, module_path)
+        from tarot_minors_fr_complete import MINOR_CARD_TRANSLATIONS_FR
+        return MINOR_CARD_TRANSLATIONS_FR
+    except:
+        return {}
+
+CARD_CONTENT_TRANSLATIONS_FR = _load_french_card_translations()
+MINOR_CARD_TRANSLATIONS_FR = _load_french_minor_translations()
+
+# Mapping for minor arcana card names (Turkish to French)
+MINOR_SUIT_NAMES_FR = {
+    'Kase': 'Coupes',
+    'Değnekler': 'Bâtons',
+    'Kılıçlar': 'Épées',
+    'Paralar': 'Deniers'
+}
+
+MINOR_RANK_NAMES_FR = {
+    'As': 'As',
+    '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10',
+    'Vale': 'Valet',
+    'Şövalye': 'Cavalier',
+    'Kraliçe': 'Reine',
+    'Kral': 'Roi'
+}
+
+def _get_minor_french_name(turkish_name):
+    """Convert Turkish minor card name to French"""
+    # Parse Turkish name: "Kase (As)" -> "Coupes (As)"
+    if '(' not in turkish_name:
+        return turkish_name
+
+    suit_tr, rest = turkish_name.split(' (')
+    rank = rest.rstrip(')')
+
+    suit_fr = MINOR_SUIT_NAMES_FR.get(suit_tr, suit_tr)
+    rank_fr = MINOR_RANK_NAMES_FR.get(rank, rank)
+
+    return f'{suit_fr} ({rank_fr})'
+
+def _translate_card_name(name, lang='tr'):
+    """Translate card name to target language"""
+    if lang not in CARD_NAMES_TRANSLATIONS:
+        return name
+    translations = CARD_NAMES_TRANSLATIONS[lang]
+    return translations.get(name, name)
+
+def _translate_card_content(content, lang='tr'):
+    """Translate card content field names (life_areas keys)"""
+    if lang == 'tr' or lang not in CARD_NAMES_TRANSLATIONS:
+        return content
+
+    if not isinstance(content, dict):
+        return content
+
+    translations = CARD_NAMES_TRANSLATIONS[lang]
+    translated = {}
+
+    for key, value in content.items():
+        translated_key = translations.get(key, key)
+        if isinstance(value, dict):
+            translated[translated_key] = _translate_card_content(value, lang)
+        else:
+            translated[translated_key] = value
+
+    return translated
+
+TAROT_TRANSLATIONS = {
+    'tr': {
+        '3-card_name': '3-Kart Açılımı',
+        '7-card_name': '7-Kart Açılımı',
+        'yes-no_name': 'Evet/Hayır Okuyuşu',
+        'love_name': '💕 Aşk Açılımı',
+        'work_name': '💼 İş Açılımı',
+        'general_name': '✨ Genel Okuyuş',
+        'upright': 'Düz',
+        'reversed': 'Ters',
+        'yes': 'Evet ✨',
+        'no': 'Hayır ❌',
+        'positions_3': ['Geçmiş', 'Şimdiki', 'Gelecek'],
+        'positions_7': ['Durum', 'Zorluk', 'Destek', 'Yakın Gelecek', 'Uzak Gelecek', 'Tavsiye', 'Sonuç'],
+        'positions_love': ['Mevcut Durum', 'Partneriniz', 'Sizin Hisleriniz', 'İlişkinin Yönü', 'Tavsiye'],
+        'positions_work': ['Mevcut Kariyer', 'Zorluklar', 'Fırsatlar', 'Yakın Gelecek', 'Tavsiye'],
+        'positions_general': ['Geçmiş', 'Şimdiki', 'Yakın Gelecek', 'Tavsiye', 'Dış Etkenler', 'Sonuç'],
+    },
+    'en': {
+        '3-card_name': '3-Card Spread',
+        '7-card_name': '7-Card Spread',
+        'yes-no_name': 'Yes/No Reading',
+        'love_name': '💕 Love Spread',
+        'work_name': '💼 Career Spread',
+        'general_name': '✨ General Reading',
+        'upright': 'Upright',
+        'reversed': 'Reversed',
+        'yes': 'Yes ✨',
+        'no': 'No ❌',
+        'positions_3': ['Past', 'Present', 'Future'],
+        'positions_7': ['Situation', 'Challenge', 'Support', 'Near Future', 'Far Future', 'Advice', 'Outcome'],
+        'positions_love': ['Current State', 'Partner', 'Your Feelings', 'Relationship Direction', 'Advice'],
+        'positions_work': ['Current Career', 'Challenges', 'Opportunities', 'Near Future', 'Advice'],
+        'positions_general': ['Past', 'Present', 'Near Future', 'Advice', 'External Factors', 'Outcome'],
+    },
+    'fr': {
+        '3-card_name': 'Tirage en 3 Cartes',
+        '7-card_name': 'Tirage en 7 Cartes',
+        'yes-no_name': 'Tirage Oui/Non',
+        'love_name': '💕 Tirage Amour',
+        'work_name': '💼 Tirage Carrière',
+        'general_name': '✨ Tirage Général',
+        'upright': 'Droit',
+        'reversed': 'Inversé',
+        'yes': 'Oui ✨',
+        'no': 'Non ❌',
+        'positions_3': ['Passé', 'Présent', 'Avenir'],
+        'positions_7': ['Situation', 'Défi', 'Support', 'Futur Proche', 'Futur Lointain', 'Conseil', 'Résultat'],
+        'positions_love': ['État Actuel', 'Partenaire', 'Vos Sentiments', 'Direction de la Relation', 'Conseil'],
+        'positions_work': ['Carrière Actuelle', 'Défis', 'Opportunités', 'Futur Proche', 'Conseil'],
+        'positions_general': ['Passé', 'Présent', 'Futur Proche', 'Conseil', 'Facteurs Externes', 'Résultat'],
+    },
+    'es': {
+        '3-card_name': 'Tirada de 3 Cartas',
+        '7-card_name': 'Tirada de 7 Cartas',
+        'yes-no_name': 'Tirada Sí/No',
+        'love_name': '💕 Tirada de Amor',
+        'work_name': '💼 Tirada de Carrera',
+        'general_name': '✨ Tirada General',
+        'upright': 'Derecho',
+        'reversed': 'Invertido',
+        'yes': 'Sí ✨',
+        'no': 'No ❌',
+        'positions_3': ['Pasado', 'Presente', 'Futuro'],
+        'positions_7': ['Situación', 'Desafío', 'Apoyo', 'Futuro Cercano', 'Futuro Lejano', 'Consejo', 'Resultado'],
+        'positions_love': ['Estado Actual', 'Pareja', 'Tus Sentimientos', 'Dirección de la Relación', 'Consejo'],
+        'positions_work': ['Carrera Actual', 'Desafíos', 'Oportunidades', 'Futuro Cercano', 'Consejo'],
+        'positions_general': ['Pasado', 'Presente', 'Futuro Cercano', 'Consejo', 'Factores Externos', 'Resultado'],
+    },
+    'de': {
+        '3-card_name': '3-Karten-Lesung',
+        '7-card_name': '7-Karten-Lesung',
+        'yes-no_name': 'Ja/Nein-Lesung',
+        'love_name': '💕 Liebesspreitung',
+        'work_name': '💼 Karriere-Spreitung',
+        'general_name': '✨ Allgemeine Lesung',
+        'upright': 'Aufrecht',
+        'reversed': 'Umgekehrt',
+        'yes': 'Ja ✨',
+        'no': 'Nein ❌',
+        'positions_3': ['Vergangenheit', 'Gegenwart', 'Zukunft'],
+        'positions_7': ['Situation', 'Herausforderung', 'Unterstützung', 'Nahe Zukunft', 'Ferne Zukunft', 'Rat', 'Ergebnis'],
+        'positions_love': ['Aktueller Zustand', 'Partner', 'Ihre Gefühle', 'Beziehungsrichtung', 'Rat'],
+        'positions_work': ['Aktuelle Karriere', 'Herausforderungen', 'Chancen', 'Nahe Zukunft', 'Rat'],
+        'positions_general': ['Vergangenheit', 'Gegenwart', 'Nahe Zukunft', 'Rat', 'Externe Faktoren', 'Ergebnis'],
+    },
+    'it': {
+        '3-card_name': 'Stesa di 3 Carte',
+        '7-card_name': 'Stesa di 7 Carte',
+        'yes-no_name': 'Lettura Sì/No',
+        'love_name': '💕 Stesa d\'Amore',
+        'work_name': '💼 Stesa di Carriera',
+        'general_name': '✨ Lettura Generale',
+        'upright': 'Diritto',
+        'reversed': 'Rovesciato',
+        'yes': 'Sì ✨',
+        'no': 'No ❌',
+        'positions_3': ['Passato', 'Presente', 'Futuro'],
+        'positions_7': ['Situazione', 'Sfida', 'Supporto', 'Futuro Vicino', 'Futuro Lontano', 'Consiglio', 'Risultato'],
+        'positions_love': ['Stato Attuale', 'Partner', 'I Tuoi Sentimenti', 'Direzione della Relazione', 'Consiglio'],
+        'positions_work': ['Carriera Attuale', 'Sfide', 'Opportunità', 'Futuro Vicino', 'Consiglio'],
+        'positions_general': ['Passato', 'Presente', 'Futuro Vicino', 'Consiglio', 'Fattori Esterni', 'Risultato'],
+    },
+    'pt': {
+        '3-card_name': 'Tiragem de 3 Cartas',
+        '7-card_name': 'Tiragem de 7 Cartas',
+        'yes-no_name': 'Tiragem Sim/Não',
+        'love_name': '💕 Tiragem de Amor',
+        'work_name': '💼 Tiragem de Carreira',
+        'general_name': '✨ Tiragem Geral',
+        'upright': 'Direito',
+        'reversed': 'Invertido',
+        'yes': 'Sim ✨',
+        'no': 'Não ❌',
+        'positions_3': ['Passado', 'Presente', 'Futuro'],
+        'positions_7': ['Situação', 'Desafio', 'Apoio', 'Futuro Próximo', 'Futuro Distante', 'Conselho', 'Resultado'],
+        'positions_love': ['Estado Atual', 'Parceiro', 'Seus Sentimentos', 'Direção do Relacionamento', 'Conselho'],
+        'positions_work': ['Carreira Atual', 'Desafios', 'Oportunidades', 'Futuro Próximo', 'Conselho'],
+        'positions_general': ['Passado', 'Presente', 'Futuro Próximo', 'Conselho', 'Fatores Externos', 'Resultado'],
+    },
+    'nl': {
+        '3-card_name': '3-Kaartenlegging',
+        '7-card_name': '7-Kaartenlegging',
+        'yes-no_name': 'Ja/Nee-Legging',
+        'love_name': '💕 Liefdesspel',
+        'work_name': '💼 Carrière-Spreiding',
+        'general_name': '✨ Algemene Legging',
+        'upright': 'Rechtop',
+        'reversed': 'Omgekeerd',
+        'yes': 'Ja ✨',
+        'no': 'Nee ❌',
+        'positions_3': ['Verleden', 'Heden', 'Toekomst'],
+        'positions_7': ['Situatie', 'Uitdaging', 'Steun', 'Nabije Toekomst', 'Verre Toekomst', 'Advies', 'Uitkomst'],
+        'positions_love': ['Huidige Staat', 'Partner', 'Jouw Gevoelens', 'Richting Relatie', 'Advies'],
+        'positions_work': ['Huidige Carrière', 'Uitdagingen', 'Kansen', 'Nabije Toekomst', 'Advies'],
+        'positions_general': ['Verleden', 'Heden', 'Nabije Toekomst', 'Advies', 'Externe Factoren', 'Uitkomst'],
+    },
+    'ru': {
+        '3-card_name': 'Раскладка из 3 Карт',
+        '7-card_name': 'Раскладка из 7 Карт',
+        'yes-no_name': 'Раскладка Да/Нет',
+        'love_name': '💕 Раскладка Любви',
+        'work_name': '💼 Раскладка Карьеры',
+        'general_name': '✨ Общее Толкование',
+        'upright': 'Прямое',
+        'reversed': 'Перевёрнутое',
+        'yes': 'Да ✨',
+        'no': 'Нет ❌',
+        'positions_3': ['Прошлое', 'Настоящее', 'Будущее'],
+        'positions_7': ['Ситуация', 'Препятствие', 'Поддержка', 'Ближайшее Будущее', 'Далёкое Будущее', 'Совет', 'Результат'],
+        'positions_love': ['Текущее Состояние', 'Партнер', 'Ваши Чувства', 'Направление Отношений', 'Совет'],
+        'positions_work': ['Текущая Карьера', 'Препятствия', 'Возможности', 'Ближайшее Будущее', 'Совет'],
+        'positions_general': ['Прошлое', 'Настоящее', 'Ближайшее Будущее', 'Совет', 'Внешние Факторы', 'Результат'],
+    },
+    'ja': {
+        '3-card_name': '3枚のカードスプレッド',
+        '7-card_name': '7枚のカードスプレッド',
+        'yes-no_name': 'はい/いいえリーディング',
+        'love_name': '💕 恋愛スプレッド',
+        'work_name': '💼 キャリアスプレッド',
+        'general_name': '✨ 一般的なリーディング',
+        'upright': 'アップライト',
+        'reversed': 'リバースド',
+        'yes': 'はい ✨',
+        'no': 'いいえ ❌',
+        'positions_3': ['過去', '現在', '未来'],
+        'positions_7': ['状況', 'チャレンジ', 'サポート', '近い未来', '遠い未来', 'アドバイス', '結果'],
+        'positions_love': ['現在の状態', 'パートナー', 'あなたの気持ち', '関係の方向', 'アドバイス'],
+        'positions_work': ['現在のキャリア', 'チャレンジ', '機会', '近い未来', 'アドバイス'],
+        'positions_general': ['過去', '現在', '近い未来', 'アドバイス', '外部要因', '結果'],
+    },
+    'zh': {
+        '3-card_name': '三卡牌阵',
+        '7-card_name': '七卡牌阵',
+        'yes-no_name': '是/否占卜',
+        'love_name': '💕 爱情牌阵',
+        'work_name': '💼 事业牌阵',
+        'general_name': '✨ 综合占卜',
+        'upright': '正位',
+        'reversed': '逆位',
+        'yes': '是 ✨',
+        'no': '否 ❌',
+        'positions_3': ['过去', '现在', '未来'],
+        'positions_7': ['现状', '挑战', '帮助', '近期未来', '远期未来', '建议', '结果'],
+        'positions_love': ['当前状态', '伴侣', '你的感受', '关系走向', '建议'],
+        'positions_work': ['当前事业', '挑战', '机会', '近期未来', '建议'],
+        'positions_general': ['过去', '现在', '近期未来', '建议', '外部因素', '结果'],
+    },
+    'ko': {
+        '3-card_name': '3카드 스프레드',
+        '7-card_name': '7카드 스프레드',
+        'yes-no_name': '예/아니오 리딩',
+        'love_name': '💕 연애 스프레드',
+        'work_name': '💼 커리어 스프레드',
+        'general_name': '✨ 일반 리딩',
+        'upright': '정위',
+        'reversed': '역위',
+        'yes': '예 ✨',
+        'no': '아니오 ❌',
+        'positions_3': ['과거', '현재', '미래'],
+        'positions_7': ['상황', '도전', '지원', '가까운 미래', '먼 미래', '조언', '결과'],
+        'positions_love': ['현재 상태', '파트너', '당신의 감정', '관계 방향', '조언'],
+        'positions_work': ['현재 커리어', '도전', '기회', '가까운 미래', '조언'],
+        'positions_general': ['과거', '현재', '가까운 미래', '조언', '외부 요인', '결과'],
+    },
+}
+
+def _get_tarot_text(key, lang='tr'):
+    """Get translated tarot text, fallback to Turkish or English"""
+    if lang not in TAROT_TRANSLATIONS:
+        lang = 'en' if lang != 'tr' else 'tr'
+    trans = TAROT_TRANSLATIONS.get(lang, TAROT_TRANSLATIONS['tr'])
+    return trans.get(key, TAROT_TRANSLATIONS['tr'].get(key, key))
+
+def _format_card(card, pos='Düz', lang='tr'):
+    upright_label = _get_tarot_text('upright', lang)
+    reversed_label = _get_tarot_text('reversed', lang)
+
+    # Map orientation labels between Turkish and display language
+    orientation_map = {
+        'Düz': upright_label,
+        'Ters': reversed_label,
+        upright_label: upright_label,
+        reversed_label: reversed_label
+    }
+
+    # Get the correct position from card (always in Turkish)
+    turkish_pos = 'Düz' if pos in [upright_label, 'Düz'] else 'Ters'
+
+    if turkish_pos not in card.get('positions', {}):
+        turkish_pos = 'Düz'
+
+    p = card['positions'].get(turkish_pos, {})
+
+    # Translate card name and position for display
+    card_name = _translate_card_name(card.get('name', ''), lang)
+    display_pos = orientation_map.get(pos, upright_label)
+
+    # Prepare card content
+    result = {
+        'number': card.get('number'),
+        'name': card_name,
+        'position': display_pos,
+        'image': card.get('image'),
+        'intro': p.get('intro', ''),
+        'hidden': p.get('hidden', ''),
+        'symbols': p.get('symbols', ''),
+        'questions': p.get('questions', ''),
+        'weekly': p.get('weekly', '')
+    }
+
+    # Handle life_areas translation for French
+    life_areas = p.get('life_areas', {})
+    if lang == 'fr':
+        card_name_tr = card.get('name', '')
+
+        # Try major arcana translations first
+        if CARD_CONTENT_TRANSLATIONS_FR and card_name_tr in CARD_CONTENT_TRANSLATIONS_FR:
+            fr_card = CARD_CONTENT_TRANSLATIONS_FR[card_name_tr]
+            fr_content = fr_card.get(turkish_pos, {})
+            if fr_content:
+                result['intro'] = fr_content.get('intro', result['intro'])
+                result['symbols'] = fr_content.get('symbols', result['symbols'])
+                result['questions'] = fr_content.get('questions', result['questions'])
+                result['weekly'] = fr_content.get('weekly', result['weekly'])
+                result['hidden'] = fr_content.get('hidden', result['hidden'])
+                # Translate life_areas keys and values
+                fr_life_areas = fr_content.get('life_areas', {})
+                life_areas = fr_life_areas if fr_life_areas else life_areas
+
+        # Try minor arcana translations
+        elif MINOR_CARD_TRANSLATIONS_FR:
+            fr_card_name = _get_minor_french_name(card_name_tr)
+            if fr_card_name in MINOR_CARD_TRANSLATIONS_FR:
+                fr_card = MINOR_CARD_TRANSLATIONS_FR[fr_card_name]
+                fr_content = fr_card.get(turkish_pos, {})
+                if fr_content:
+                    result['intro'] = fr_content.get('intro', result['intro'])
+                    result['symbols'] = fr_content.get('symbols', result['symbols'])
+                    result['questions'] = fr_content.get('questions', result['questions'])
+                    result['weekly'] = fr_content.get('weekly', result['weekly'])
+                    result['hidden'] = fr_content.get('hidden', result['hidden'])
+                    # Translate life_areas keys and values
+                    fr_life_areas = fr_content.get('life_areas', {})
+                    life_areas = fr_life_areas if fr_life_areas else life_areas
+
+                    # Update card name to French
+                    card_name = _translate_card_name(fr_card_name, lang)
+
+    # Translate life_areas field keys for display
+    if lang == 'fr':
+        translated_life_areas = {}
+        for key, value in life_areas.items():
+            if key == 'i̇lişki':
+                translated_life_areas['Relation'] = value
+            elif key == 'kariyer':
+                translated_life_areas['Carrière'] = value
+            elif key == 'para':
+                translated_life_areas['Finances'] = value
+            elif key == 'sağlık':
+                translated_life_areas['Santé'] = value
+            elif key == 'aile':
+                translated_life_areas['Famille'] = value
+            else:
+                translated_life_areas[key] = value
+        result['life_areas'] = translated_life_areas
+    else:
+        result['life_areas'] = life_areas
+
+    return result
+
+def three_card_spread(question='', lang='tr'):
     cards = _select_cards(3)
-    return {'type': '3-card', 'name': '3-Kart Açılımı', 'question': question, 'cost': SPREAD_COST,
-            'spread': [{'position': p, 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
-                      for i, p in enumerate(['Geçmiş', 'Şimdiki', 'Gelecek'])]}
+    return {'type': '3-card', 'name': _get_tarot_text('3-card_name', lang), 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': p, 'card': _format_card(cards[i], _random.choice([_get_tarot_text('upright', lang), _get_tarot_text('reversed', lang)]), lang)}
+                      for i, p in enumerate(_get_tarot_text('positions_3', lang))]}
 
-def seven_card_spread(question=''):
+def seven_card_spread(question='', lang='tr'):
     cards = _select_cards(7)
-    pos = ['Durum', 'Zorluk', 'Destek', 'Yakın Gelecek', 'Uzak Gelecek', 'Tavsiye', 'Sonuç']
-    return {'type': '7-card', 'name': '7-Kart Açılımı', 'question': question, 'cost': SPREAD_COST,
-            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+    pos = _get_tarot_text('positions_7', lang)
+    return {'type': '7-card', 'name': _get_tarot_text('7-card_name', lang), 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice([_get_tarot_text('upright', lang), _get_tarot_text('reversed', lang)]), lang)}
                       for i in range(7)]}
 
-def yes_no_spread(question=''):
+def yes_no_spread(question='', lang='tr'):
     cards = _select_cards(1)
-    pos = _random.choice(['Düz', 'Ters'])
-    card = _format_card(cards[0], pos)
-    answer = 'Evet ✨' if pos == 'Düz' else 'Hayır ❌'
-    return {'type': 'yes-no', 'name': 'Evet/Hayır Okuyuşu', 'question': question, 'cost': SPREAD_COST,
+    orientation = _random.choice([_get_tarot_text('upright', lang), _get_tarot_text('reversed', lang)])
+    card = _format_card(cards[0], orientation, lang)
+    answer = _get_tarot_text('yes', lang) if orientation == _get_tarot_text('upright', lang) else _get_tarot_text('no', lang)
+    return {'type': 'yes-no', 'name': _get_tarot_text('yes-no_name', lang), 'question': question, 'cost': SPREAD_COST,
             'answer': answer, 'card': card}
 
-def love_spread(question=''):
+def love_spread(question='', lang='tr'):
     cards = _select_cards(5)
-    pos = ['Mevcut Durum', 'Partneriniz', 'Sizin Hisleriniz', 'İlişkinin Yönü', 'Tavsiye']
-    return {'type': 'love', 'name': '💕 Aşk Açılımı', 'question': question, 'cost': SPREAD_COST,
-            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+    pos = _get_tarot_text('positions_love', lang)
+    return {'type': 'love', 'name': _get_tarot_text('love_name', lang), 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice([_get_tarot_text('upright', lang), _get_tarot_text('reversed', lang)]), lang)}
                       for i in range(5)]}
 
-def work_spread(question=''):
+def work_spread(question='', lang='tr'):
     cards = _select_cards(5)
-    pos = ['Mevcut Kariyer', 'Zorluklar', 'Fırsatlar', 'Yakın Gelecek', 'Tavsiye']
-    return {'type': 'work', 'name': '💼 İş Açılımı', 'question': question, 'cost': SPREAD_COST,
-            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+    pos = _get_tarot_text('positions_work', lang)
+    return {'type': 'work', 'name': _get_tarot_text('work_name', lang), 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice([_get_tarot_text('upright', lang), _get_tarot_text('reversed', lang)]), lang)}
                       for i in range(5)]}
 
-def general_spread(question=''):
+def general_spread(question='', lang='tr'):
     cards = _select_cards(6)
-    pos = ['Geçmiş', 'Şimdiki', 'Yakın Gelecek', 'Tavsiye', 'Dış Etkenler', 'Sonuç']
-    return {'type': 'general', 'name': '✨ Genel Okuyuş', 'question': question, 'cost': SPREAD_COST,
-            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice(['Düz', 'Ters']))}
+    pos = _get_tarot_text('positions_general', lang)
+    return {'type': 'general', 'name': _get_tarot_text('general_name', lang), 'question': question, 'cost': SPREAD_COST,
+            'spread': [{'position': pos[i], 'card': _format_card(cards[i], _random.choice([_get_tarot_text('upright', lang), _get_tarot_text('reversed', lang)]), lang)}
                       for i in range(6)]}
 
 def get_user_chips(username):
@@ -5504,6 +6010,7 @@ def api_tarot_3card():
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
     username = data.get("username", "")
+    lang = data.get("lang", "tr")
     remaining_chips = 0
 
     if username:
@@ -5511,7 +6018,7 @@ def api_tarot_3card():
         if not ok:
             return {"ok": False, "msg": msg, "cost": cost}, 402
 
-    result = three_card_spread(question)
+    result = three_card_spread(question, lang)
     result['ok'] = True
     if username:
         result['remaining_chips'] = remaining_chips
@@ -5523,6 +6030,7 @@ def api_tarot_7card():
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
     username = data.get("username", "")
+    lang = data.get("lang", "tr")
     remaining_chips = 0
 
     if username:
@@ -5530,7 +6038,7 @@ def api_tarot_7card():
         if not ok:
             return {"ok": False, "msg": msg, "cost": cost}, 402
 
-    result = seven_card_spread(question)
+    result = seven_card_spread(question, lang)
     result['ok'] = True
     if username:
         result['remaining_chips'] = remaining_chips
@@ -5543,13 +6051,14 @@ def api_tarot_yesno():
     remaining_chips = 0
     question = data.get("question", "")
     username = data.get("username", "")
+    lang = data.get("lang", "tr")
 
     if username:
         ok, cost, remaining_chips, msg = deduct_tarot_cost(username)
         if not ok:
             return {"ok": False, "msg": msg, "cost": cost}, 402
 
-    result = yes_no_spread(question)
+    result = yes_no_spread(question, lang)
     result['ok'] = True
     if username:
         result['remaining_chips'] = remaining_chips
@@ -5562,13 +6071,14 @@ def api_tarot_love():
     remaining_chips = 0
     question = data.get("question", "")
     username = data.get("username", "")
+    lang = data.get("lang", "tr")
 
     if username:
         ok, cost, remaining_chips, msg = deduct_tarot_cost(username)
         if not ok:
             return {"ok": False, "msg": msg, "cost": cost}, 402
 
-    result = love_spread(question)
+    result = love_spread(question, lang)
     result['ok'] = True
     if username:
         result['remaining_chips'] = remaining_chips
@@ -5580,6 +6090,7 @@ def api_tarot_work():
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
     username = data.get("username", "")
+    lang = data.get("lang", "tr")
 
     if username:
         chips = get_user_chips(username)
@@ -5589,7 +6100,7 @@ def api_tarot_work():
         if not deduct_user_chips(username, SPREAD_COST):
             return {"ok": False, "msg": "Jeton düşülemedi"}, 400
 
-    result = work_spread(question)
+    result = work_spread(question, lang)
     result['ok'] = True
     if username:
         result['remaining_chips'] = get_user_chips(username)
@@ -5601,6 +6112,7 @@ def api_tarot_general():
     data = request.get_json(force=True, silent=True) or {}
     question = data.get("question", "")
     username = data.get("username", "")
+    lang = data.get("lang", "tr")
 
     if username:
         chips = get_user_chips(username)
@@ -5610,7 +6122,7 @@ def api_tarot_general():
         if not deduct_user_chips(username, SPREAD_COST):
             return {"ok": False, "msg": "Jeton düşülemedi"}, 400
 
-    result = general_spread(question)
+    result = general_spread(question, lang)
     result['ok'] = True
     if username:
         result['remaining_chips'] = get_user_chips(username)
@@ -6075,6 +6587,7 @@ tarotForm.addEventListener('submit',e=>{
 function getSpreadReading(type){
  const username=getSavedUser();
  const spreadResult=document.getElementById('spreadResult');
+ const lang=typeof getSiteLang==='function'?getSiteLang():'tr';
 
  if(!username){
    spreadResult.textContent='❌ Önce giriş yap!';
@@ -6088,7 +6601,7 @@ function getSpreadReading(type){
  fetch('/api/tarot/reading/'+type,{
    method:'POST',
    headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({username:username,question:''})
+   body:JSON.stringify({username:username,question:'',lang:lang})
  }).then(r=>{
    if(r.status===402) return r.json().then(d=>{throw new Error(d.msg)});
    if(!r.ok) throw new Error('Okuma başarısız');
@@ -6204,8 +6717,16 @@ def api_profile_avatar_delete():
         key = next((k for k in users if k.lower() == username.lower()), None)
         if not key:
             return {"ok": False, "msg": "Kullanıcı bulunamadı."}
+        old_avatar = users[key].get("avatarData", "")
+        if old_avatar and old_avatar.startswith("/static/avatars/"):
+            try:
+                avatar_path = os.path.join(app.root_path, old_avatar.lstrip("/"))
+                if os.path.exists(avatar_path):
+                    os.remove(avatar_path)
+            except Exception:
+                pass
         users[key]["avatarData"] = ""
-        users[key]["avatar"] = "woman.png"
+        users[key]["avatar"] = ""
     return {"ok": True, "msg": "Avatar silindi."}
 
 @app.route("/api/vip/daily-bonus", methods=["POST"])
@@ -6270,7 +6791,7 @@ def api_daily_reward():
 @app.route("/premium")
 def premium_page():
     stripe_ready_js = "true" if stripe_configured() else "false"
-    html = """<html><head><meta charset='utf-8'><style>
+    return """<html><head><meta charset='utf-8'><style>
 body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900px;margin:0 auto}
 #globalLocaBtn{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:#d4af37;border:1px solid #d4af37;padding:10px 14px;border-radius:12px;text-decoration:none;background:rgba(0,0,0,.70)}
 #globalLocaBtn:hover{background:rgba(212,175,55,.1)}
@@ -6292,39 +6813,39 @@ body{background:#050505;color:#fff;font-family:Arial;padding:30px;max-width:900p
 .msg.success{background:rgba(76,175,80,.2);color:#4caf50}
 .msg.error{background:rgba(244,67,54,.2);color:#f44336}
     </style></head><body>
-<a class='locaBtn' id="globalLocaBtn" href='/'>🚪 LOCA</a>
+<a class='locaBtn' id='globalLocaBtn' href='/'>🚪 LOCA</a>
 <div class='lang-selector' id='langSelector'></div>
-<h1>💎 <span data-common-i18n='premium_title'>Premium Membership</span></h1>
-<p style='color:#8a7550' data-common-i18n='premium_subtitle'>Join Montenoir VIP and unlock exclusive features!</p>
+<h1>💎 Premium Üyelik</h1>
+<p style='color:#8a7550'>Montenoir VIP üyeliğine katıl ve özel özellikleri açıkla!</p>
 <div class='msg' id='premiumMsg' style='display:none'></div>
 <div class='vip-container'>
   <div class='vip-card'>
     <div class='vip-title'>👑 Premium</div>
-    <div class='vip-price'>49.99<div class='vip-price-small' data-common-i18n='premium_per_month'>EUR / month</div></div>
+    <div class='vip-price'>49.99<div class='vip-price-small'>EUR / ay</div></div>
     <ul class='vip-features'>
-      <li data-common-i18n='premium_feat_xp'>✨ XP Boost +10%</li>
-      <li data-common-i18n='premium_feat_badge'>👑 Premium Badge</li>
-      <li data-common-i18n='premium_feat_vip_room'>🎭 VIP Room</li>
+      <li>✨ XP Boost +10%</li>
+      <li>👑 Premium Badge</li>
+      <li>🎭 VIP Oda</li>
     </ul>
-    <button class='vip-btn' onclick=\"buyVip('vip-premium')\" data-common-i18n='premium_btn_buy'>Buy Now</button>
+    <button class='vip-btn' onclick=\"buyVip('vip-premium')\">Satın Al</button>
   </div>
   <div class='vip-card premium-plus'>
     <div class='vip-title'>💎 Premium+</div>
-    <div class='vip-price'>89.99<div class='vip-price-small' data-common-i18n='premium_per_month'>EUR / month</div></div>
+    <div class='vip-price'>89.99<div class='vip-price-small'>EUR / ay</div></div>
     <ul class='vip-features'>
-      <li data-common-i18n='premium_plus_bonus'>💰 Daily Bonus +250 Tokens</li>
-      <li data-common-i18n='premium_plus_tarot'>🔮 Tarot -50% Cost</li>
-      <li data-common-i18n='premium_feat_vip_room'>🎭 VIP Room</li>
-      <li data-common-i18n='premium_plus_slot'>🎰 Slot Bonus</li>
-      <li data-common-i18n='premium_plus_badge'>💎 Premium+ Badge</li>
-      <li data-common-i18n='premium_plus_xp'>✨ XP Boost +25%</li>
+      <li>💰 Günlük Bonus +250 Jeton</li>
+      <li>🔮 Tarot -50% Maliyet</li>
+      <li>🎭 VIP Oda</li>
+      <li>🎰 Slot Bonusu</li>
+      <li>💎 Premium+ Badge</li>
+      <li>✨ XP Boost +25%</li>
     </ul>
-    <button class='vip-btn' onclick=\"buyVip('vip-premium-plus')\" data-common-i18n='premium_btn_buy'>Buy Now</button>
+    <button class='vip-btn' onclick=\"buyVip('vip-premium-plus')\">Satın Al</button>
   </div>
 </div>
 <script src='/static/js/site_lang.js'></script>
 <script>
-const STRIPE_READY = __STRIPE_READY__;
+const STRIPE_READY = """ + stripe_ready_js + """;
 const premiumUser = localStorage.getItem('montenoirUser') || localStorage.getItem('loggedUser') || '';
 const msgEl = document.getElementById('premiumMsg');
 buildLangSelector(document.getElementById('langSelector'), applyCommonI18n);
@@ -6358,7 +6879,6 @@ if (params.get('success') && params.get('session_id')) {
 }
 </script>
     </body></html>"""
-    return html.replace("__STRIPE_READY__", stripe_ready_js)
 
 @app.route("/kasa")
 def kasa_page():

@@ -68,7 +68,7 @@
     },
     "number": "XI",
     "name": "ADALET",
-    "type": "minor",
+    "type": "major",
     "image": "11_adalet.webp"
   },
   {
@@ -104,7 +104,7 @@
     },
     "number": "XII",
     "name": "ASILAN ADAM",
-    "type": "minor",
+    "type": "major",
     "image": "12_asili_adam.webp"
   },
   {
@@ -140,7 +140,7 @@
     },
     "number": "XVIII",
     "name": "AY",
-    "type": "minor",
+    "type": "major",
     "image": "18_ay.webp"
   },
   {
@@ -176,7 +176,7 @@
     },
     "number": "V",
     "name": "AZİZ",
-    "type": "minor",
+    "type": "major",
     "image": "05_basrahip.webp"
   },
   {
@@ -212,7 +212,7 @@
     },
     "number": "II",
     "name": "AZİZE",
-    "type": "minor",
+    "type": "major",
     "image": "02_bakireyiz.webp"
   },
   {
@@ -248,7 +248,7 @@
     },
     "number": "VI",
     "name": "AŞIKLAR",
-    "type": "minor",
+    "type": "major",
     "image": "06_asiklar.webp"
   },
   {
@@ -284,7 +284,7 @@
     },
     "number": "I",
     "name": "BÜYÜCÜ",
-    "type": "minor",
+    "type": "major",
     "image": "01_sihirbaz.webp"
   },
   {
@@ -320,7 +320,7 @@
     },
     "number": "XIV",
     "name": "DENGE",
-    "type": "minor",
+    "type": "major",
     "image": "14_itidal.webp"
   },
   {
@@ -356,7 +356,7 @@
     },
     "number": "XXI",
     "name": "DÜNYA",
-    "type": "minor",
+    "type": "major",
     "image": "21_dunya.webp"
   },
   {
@@ -392,7 +392,7 @@
     },
     "number": "IX",
     "name": "ERMİŞ",
-    "type": "minor",
+    "type": "major",
     "image": "09_munzevi.webp"
   },
   {
@@ -428,7 +428,7 @@
     },
     "number": "XIX",
     "name": "GÜNEŞ",
-    "type": "minor",
+    "type": "major",
     "image": "19_gunes.webp"
   },
   {
@@ -464,7 +464,7 @@
     },
     "number": "VIII",
     "name": "GÜÇ",
-    "type": "minor",
+    "type": "major",
     "image": "08_guc.webp"
   },
   {
@@ -500,7 +500,7 @@
     },
     "number": "X",
     "name": "KADER ÇARKI",
-    "type": "minor",
+    "type": "major",
     "image": "10_kader_carki.webp"
   },
   {
@@ -536,7 +536,7 @@
     },
     "number": "XVI",
     "name": "KULE",
-    "type": "minor",
+    "type": "major",
     "image": "16_kule.webp"
   },
   {
@@ -572,7 +572,7 @@
     },
     "number": "XX",
     "name": "MAHKEME (Yargı)",
-    "type": "minor",
+    "type": "major",
     "image": null
   },
   {
@@ -608,7 +608,7 @@
     },
     "number": "VII",
     "name": "SAVAŞ ARABASI",
-    "type": "minor",
+    "type": "major",
     "image": "07_savas_arabasi.webp"
   },
   {
@@ -644,7 +644,7 @@
     },
     "number": "XVII",
     "name": "YILDIZ",
-    "type": "minor",
+    "type": "major",
     "image": "17_yildiz.webp"
   },
   {
@@ -680,7 +680,7 @@
     },
     "number": "XIII",
     "name": "ÖLÜM",
-    "type": "minor",
+    "type": "major",
     "image": "13_olum.webp"
   },
   {
@@ -716,7 +716,7 @@
     },
     "number": "IV",
     "name": "İMPARATOR",
-    "type": "minor",
+    "type": "major",
     "image": "04_imparator.webp"
   },
   {
@@ -752,7 +752,7 @@
     },
     "number": "III",
     "name": "İMPARATORİÇE",
-    "type": "minor",
+    "type": "major",
     "image": "03_imparatorice.webp"
   },
   {
@@ -788,7 +788,2023 @@
     },
     "number": "XV",
     "name": "ŞEYTAN",
-    "type": "minor",
+    "type": "major",
     "image": "15_iblis.webp"
+  },
+  {
+    "number": "100",
+    "name": "Kase (As)",
+    "type": "minor",
+    "image": "100_kase_as.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (As) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (As) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "101",
+    "name": "Kase (2)",
+    "type": "minor",
+    "image": "101_kase_2.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (2) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (2) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "102",
+    "name": "Kase (3)",
+    "type": "minor",
+    "image": "102_kase_3.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (3) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (3) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "103",
+    "name": "Kase (4)",
+    "type": "minor",
+    "image": "103_kase_4.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (4) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (4) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "104",
+    "name": "Kase (5)",
+    "type": "minor",
+    "image": "104_kase_5.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (5) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (5) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "105",
+    "name": "Kase (6)",
+    "type": "minor",
+    "image": "105_kase_6.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (6) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (6) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "106",
+    "name": "Kase (7)",
+    "type": "minor",
+    "image": "106_kase_7.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (7) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (7) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "107",
+    "name": "Kase (8)",
+    "type": "minor",
+    "image": "107_kase_8.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (8) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (8) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "108",
+    "name": "Kase (9)",
+    "type": "minor",
+    "image": "108_kase_9.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (9) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (9) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "109",
+    "name": "Kase (10)",
+    "type": "minor",
+    "image": "109_kase_10.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (10) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (10) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "110",
+    "name": "Kase (Vale)",
+    "type": "minor",
+    "image": "110_kase_vale.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (Vale) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (Vale) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "111",
+    "name": "Kase (Şövalye)",
+    "type": "minor",
+    "image": "111_kase_şövalye.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (Şövalye) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (Şövalye) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "112",
+    "name": "Kase (Kraliçe)",
+    "type": "minor",
+    "image": "112_kase_kraliçe.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (Kraliçe) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (Kraliçe) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "113",
+    "name": "Kase (Kral)",
+    "type": "minor",
+    "image": "113_kase_kral.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kase (Kral) duygular ve ilişkiler ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💧: duygular ve ilişkiler",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kase (Kral) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💧 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "114",
+    "name": "Değnekler (As)",
+    "type": "minor",
+    "image": "114_değnekler_as.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (As) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (As) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "115",
+    "name": "Değnekler (2)",
+    "type": "minor",
+    "image": "115_değnekler_2.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (2) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (2) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "116",
+    "name": "Değnekler (3)",
+    "type": "minor",
+    "image": "116_değnekler_3.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (3) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (3) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "117",
+    "name": "Değnekler (4)",
+    "type": "minor",
+    "image": "117_değnekler_4.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (4) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (4) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "118",
+    "name": "Değnekler (5)",
+    "type": "minor",
+    "image": "118_değnekler_5.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (5) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (5) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "119",
+    "name": "Değnekler (6)",
+    "type": "minor",
+    "image": "119_değnekler_6.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (6) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (6) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "120",
+    "name": "Değnekler (7)",
+    "type": "minor",
+    "image": "120_değnekler_7.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (7) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (7) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "121",
+    "name": "Değnekler (8)",
+    "type": "minor",
+    "image": "121_değnekler_8.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (8) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (8) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "122",
+    "name": "Değnekler (9)",
+    "type": "minor",
+    "image": "122_değnekler_9.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (9) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (9) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "123",
+    "name": "Değnekler (10)",
+    "type": "minor",
+    "image": "123_değnekler_10.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (10) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (10) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "124",
+    "name": "Değnekler (Vale)",
+    "type": "minor",
+    "image": "124_değnekler_vale.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (Vale) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (Vale) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "125",
+    "name": "Değnekler (Şövalye)",
+    "type": "minor",
+    "image": "125_değnekler_şövalye.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (Şövalye) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (Şövalye) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "126",
+    "name": "Değnekler (Kraliçe)",
+    "type": "minor",
+    "image": "126_değnekler_kraliçe.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (Kraliçe) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (Kraliçe) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "127",
+    "name": "Değnekler (Kral)",
+    "type": "minor",
+    "image": "127_değnekler_kral.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Değnekler (Kral) eylem ve yaratıcılık ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 🔥: eylem ve yaratıcılık",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Değnekler (Kral) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 🔥 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "128",
+    "name": "Kılıçlar (As)",
+    "type": "minor",
+    "image": "128_kılıçlar_as.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (As) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (As) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "129",
+    "name": "Kılıçlar (2)",
+    "type": "minor",
+    "image": "129_kılıçlar_2.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (2) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (2) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "130",
+    "name": "Kılıçlar (3)",
+    "type": "minor",
+    "image": "130_kılıçlar_3.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (3) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (3) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "131",
+    "name": "Kılıçlar (4)",
+    "type": "minor",
+    "image": "131_kılıçlar_4.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (4) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (4) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "132",
+    "name": "Kılıçlar (5)",
+    "type": "minor",
+    "image": "132_kılıçlar_5.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (5) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (5) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "133",
+    "name": "Kılıçlar (6)",
+    "type": "minor",
+    "image": "133_kılıçlar_6.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (6) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (6) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "134",
+    "name": "Kılıçlar (7)",
+    "type": "minor",
+    "image": "134_kılıçlar_7.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (7) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (7) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "135",
+    "name": "Kılıçlar (8)",
+    "type": "minor",
+    "image": "135_kılıçlar_8.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (8) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (8) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "136",
+    "name": "Kılıçlar (9)",
+    "type": "minor",
+    "image": "136_kılıçlar_9.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (9) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (9) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "137",
+    "name": "Kılıçlar (10)",
+    "type": "minor",
+    "image": "137_kılıçlar_10.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (10) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (10) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "138",
+    "name": "Kılıçlar (Vale)",
+    "type": "minor",
+    "image": "138_kılıçlar_vale.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (Vale) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (Vale) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "139",
+    "name": "Kılıçlar (Şövalye)",
+    "type": "minor",
+    "image": "139_kılıçlar_şövalye.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (Şövalye) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (Şövalye) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "140",
+    "name": "Kılıçlar (Kraliçe)",
+    "type": "minor",
+    "image": "140_kılıçlar_kraliçe.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (Kraliçe) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (Kraliçe) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "141",
+    "name": "Kılıçlar (Kral)",
+    "type": "minor",
+    "image": "141_kılıçlar_kral.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Kılıçlar (Kral) düşünce ve iletişim ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💨: düşünce ve iletişim",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Kılıçlar (Kral) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💨 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "142",
+    "name": "Paralar (As)",
+    "type": "minor",
+    "image": "142_paralar_as.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (As) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (As) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "143",
+    "name": "Paralar (2)",
+    "type": "minor",
+    "image": "143_paralar_2.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (2) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (2) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "144",
+    "name": "Paralar (3)",
+    "type": "minor",
+    "image": "144_paralar_3.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (3) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (3) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "145",
+    "name": "Paralar (4)",
+    "type": "minor",
+    "image": "145_paralar_4.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (4) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (4) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "146",
+    "name": "Paralar (5)",
+    "type": "minor",
+    "image": "146_paralar_5.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (5) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (5) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "147",
+    "name": "Paralar (6)",
+    "type": "minor",
+    "image": "147_paralar_6.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (6) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (6) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "148",
+    "name": "Paralar (7)",
+    "type": "minor",
+    "image": "148_paralar_7.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (7) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (7) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "149",
+    "name": "Paralar (8)",
+    "type": "minor",
+    "image": "149_paralar_8.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (8) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (8) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "150",
+    "name": "Paralar (9)",
+    "type": "minor",
+    "image": "150_paralar_9.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (9) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (9) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "151",
+    "name": "Paralar (10)",
+    "type": "minor",
+    "image": "151_paralar_10.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (10) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (10) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "152",
+    "name": "Paralar (Vale)",
+    "type": "minor",
+    "image": "152_paralar_vale.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (Vale) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (Vale) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "153",
+    "name": "Paralar (Şövalye)",
+    "type": "minor",
+    "image": "153_paralar_şövalye.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (Şövalye) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (Şövalye) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "154",
+    "name": "Paralar (Kraliçe)",
+    "type": "minor",
+    "image": "154_paralar_kraliçe.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (Kraliçe) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (Kraliçe) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
+  },
+  {
+    "number": "155",
+    "name": "Paralar (Kral)",
+    "type": "minor",
+    "image": "155_paralar_kral.webp",
+    "positions": {
+      "Düz": {
+        "intro": "Paralar (Kral) maddi kaynaklar ile ilgilidir. Basit bir kart olarak başlangıç anlamı taşır.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde bu kartın enerjisi belirtilir.",
+          "kariyer": "Kariyerde bu kartın etkileri görülür.",
+          "para": "Mali konularda bu kartın anlamı uygulanır.",
+          "sağlık": "Sağlıkta bu kartın etkileri hissedilir.",
+          "aile": "Ailede bu kartın enerjisi çalışır."
+        },
+        "symbols": "- 💰: maddi kaynaklar",
+        "questions": "- \"Bu kartın mesajı nedir?\"\n- \"Nasıl tepki vermeliyim?\"\n- \"Ne öğrenebilirim?\"",
+        "weekly": "Bu hafta bu kartın enerjisi hayatınızı etkiler.",
+        "hidden": "\"Her kartın öğretecek bir dersi vardır.\""
+      },
+      "Ters": {
+        "intro": "Paralar (Kral) tersinde engel veya blokaj anlamına gelir. Enerjisi düşüktür.",
+        "life_areas": {
+          "i̇lişki": "İlişkilerde zorluk veya iletişim sorunu olabilir.",
+          "kariyer": "Kariyerde ilerleme engellenir.",
+          "para": "Mali konularda zorluklar görülür.",
+          "sağlık": "Sağlıkta enerji düşüktür.",
+          "aile": "Ailede uyumsuzluk olabilir."
+        },
+        "symbols": "- 💰 (ters): Enerjinin akışkanlığı kesintiye uğrar.",
+        "questions": "- \"Ne engelleniyor?\"\n- \"Nasıl engeli aşabilirim?\"\n- \"Neyi kabul etmeliyim?\"",
+        "weekly": "Bu hafta karşılaşabileceğiniz engelleri tanıyın.",
+        "hidden": "\"Engel aşılabilir, kabulleniş ile başlar.\""
+      }
+    }
   }
 ]
