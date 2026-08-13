@@ -4475,6 +4475,9 @@ def _account_from_data_or_sid(data):
 
 @socketio.on('upload_avatar')
 def upload_avatar(data):
+    import base64
+    import time
+
     account = _account_from_data_or_sid(data)
     avatar_data = data.get('avatarData', '')
     code = data.get('room')
@@ -4489,6 +4492,36 @@ def upload_avatar(data):
         emit('avatar_upload_result', {'ok': False, 'msg': 'Resim çok büyük. 1.8 MB altında bir avatar seç.'})
         return
 
+    # Decode base64 ve dosya olarak kaydet
+    avatar_dir = os.path.join(app.root_path, 'static', 'avatars')
+    os.makedirs(avatar_dir, exist_ok=True)
+    os.chmod(avatar_dir, 0o755)
+
+    try:
+        # Base64'ü decode et
+        header, data_part = avatar_data.split(',', 1)
+        if 'png' in header:
+            ext = 'png'
+        elif 'jpeg' in header or 'jpg' in header:
+            ext = 'jpg'
+        elif 'webp' in header:
+            ext = 'webp'
+        else:
+            ext = 'png'
+
+        file_bytes = base64.b64decode(data_part)
+        avatar_filename = f"{account.lower()}_{int(time.time())}.{ext}"
+        avatar_path = os.path.join(avatar_dir, avatar_filename)
+
+        with open(avatar_path, "wb") as fw:
+            fw.write(file_bytes)
+        os.chmod(avatar_path, 0o644)
+
+        avatar_url = f"/static/avatars/{avatar_filename}"
+    except Exception as e:
+        emit('avatar_upload_result', {'ok': False, 'msg': f'Avatar kaydetme hatası: {str(e)}'})
+        return
+
     with users_txn() as users:
         user_key = find_user_key(users, account)
         if not user_key:
@@ -4496,13 +4529,25 @@ def upload_avatar(data):
             users.clear()
             users.update(load_users())
             user_key = find_user_key(users, account)
-        users[user_key]['avatarData'] = avatar_data
+
+        # Eski avatarı sil
+        old_avatar = users[user_key].get('avatarData', '')
+        if old_avatar and old_avatar.startswith('/static/avatars/'):
+            try:
+                old_path = os.path.join(app.root_path, old_avatar.lstrip('/'))
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            except Exception:
+                pass
+
+        # Yeni dosya yolunu kaydet (base64 değil!)
+        users[user_key]['avatarData'] = avatar_url
         users[user_key]['avatar'] = users[user_key].get('avatar', 'woman.png')
 
     if code in rooms:
         for p in rooms[code].get('players', []):
             if (p.get('account','').lower() == user_key.lower()) or p.get('sid') == request.sid:
-                p['avatarData'] = avatar_data
+                p['avatarData'] = avatar_url
                 p['avatar'] = users[user_key].get('avatar', p.get('avatar', 'woman.png'))
                 p['account'] = user_key
         emit('players_update', {'players': rooms[code]['players'], 'locks': rooms[code]['locks'], 'micStates': rooms[code].get('micStates', {}), 'ready': rooms[code].get('ready', {})}, to=code)
