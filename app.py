@@ -359,31 +359,15 @@ def bootstrap_admin_user():
         })
     print("✅ Admin Yohanna prêt dans la base de données.", flush=True)
 
-def validate_avatar_data(avatar_data):
-    """Validate that avatar file exists, return default if not"""
-    if not avatar_data or not avatar_data.startswith("/static/avatars/"):
-        return avatar_data
-    try:
-        avatar_path = os.path.join(app.root_path, avatar_data.lstrip("/"))
-        if not os.path.exists(avatar_path):
-            # File doesn't exist, return empty to use default
-            return ""
-    except:
-        pass
-    return avatar_data
-
 def public_profile(username, data):
     # Profil public : email caché aux autres joueurs.
-    # Validate avatar data before including in response
-    avatar_data = validate_avatar_data(data.get("avatarData", ""))
-
     p = {
         "username": username,
         "chips": data.get("chips", 1000),
         "wins": data.get("wins", 0),
         "games": data.get("games", 0),
         "avatar": data.get("avatar", "woman.png"),
-        "avatarData": avatar_data,
+        "avatarData": data.get("avatarData", ""),
         "nameColor": data.get("nameColor", "default"),
         "avatarFrame": data.get("avatarFrame", "none"),
         "inventory": data.get("inventory", []),
@@ -4491,6 +4475,9 @@ def _account_from_data_or_sid(data):
 
 @socketio.on('upload_avatar')
 def upload_avatar(data):
+    import base64
+    import time
+
     account = _account_from_data_or_sid(data)
     avatar_data = data.get('avatarData', '')
     code = data.get('room')
@@ -4505,13 +4492,13 @@ def upload_avatar(data):
         emit('avatar_upload_result', {'ok': False, 'msg': 'Resim çok büyük. 1.8 MB altında bir avatar seç.'})
         return
 
-    # Store avatar data in file instead of in database
-    avatar_dir = os.path.join(app.root_path, "static", "avatars")
+    # Decode base64 ve dosya olarak kaydet
+    avatar_dir = os.path.join(app.root_path, 'static', 'avatars')
     os.makedirs(avatar_dir, exist_ok=True)
+    os.chmod(avatar_dir, 0o755)
 
-    # Extract file type from base64 data
-    import base64
     try:
+        # Base64'ü decode et
         header, data_part = avatar_data.split(',', 1)
         if 'png' in header:
             ext = 'png'
@@ -4522,15 +4509,17 @@ def upload_avatar(data):
         else:
             ext = 'png'
 
-        # Decode and save
         file_bytes = base64.b64decode(data_part)
         avatar_filename = f"{account.lower()}_{int(time.time())}.{ext}"
         avatar_path = os.path.join(avatar_dir, avatar_filename)
+
         with open(avatar_path, "wb") as fw:
             fw.write(file_bytes)
+        os.chmod(avatar_path, 0o644)
+
         avatar_url = f"/static/avatars/{avatar_filename}"
     except Exception as e:
-        emit('avatar_upload_result', {'ok': False, 'msg': 'Avatar kaydedilemedi.'})
+        emit('avatar_upload_result', {'ok': False, 'msg': f'Avatar kaydetme hatası: {str(e)}'})
         return
 
     with users_txn() as users:
@@ -4540,7 +4529,18 @@ def upload_avatar(data):
             users.clear()
             users.update(load_users())
             user_key = find_user_key(users, account)
-        # Store file path instead of base64 data
+
+        # Eski avatarı sil
+        old_avatar = users[user_key].get('avatarData', '')
+        if old_avatar and old_avatar.startswith('/static/avatars/'):
+            try:
+                old_path = os.path.join(app.root_path, old_avatar.lstrip('/'))
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            except Exception:
+                pass
+
+        # Yeni dosya yolunu kaydet (base64 değil!)
         users[user_key]['avatarData'] = avatar_url
         users[user_key]['avatar'] = users[user_key].get('avatar', 'woman.png')
 
@@ -5940,6 +5940,7 @@ def _format_card(card, pos='Düz', lang='tr'):
                     life_areas = fr_life_areas if fr_life_areas else life_areas
 
                     # Update card name to French
+                    card_name = fr_card_name
                     result['name'] = fr_card_name
 
     # Translate life_areas field keys for display
@@ -6480,14 +6481,14 @@ textarea{min-height:100px;grid-column:1/-1}
 
 <!-- Spread Selection Buttons -->
 <div style='margin-top:30px;border-top:2px solid #d4af37;padding-top:20px;'>
-<h3 id='spreadSelectTitle' style='text-align:center;color:#d4af37;margin-bottom:15px;'>🎴 Açılım Seçin (200 💰 Jeton)</h3>
+<h3 style='text-align:center;color:#d4af37;margin-bottom:15px;'>🎴 Açılım Seçin (200 💰 Jeton)</h3>
 <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;'>
-<button id='btn-3card' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("3-card")'>🎴 3-Kart<br><small>Geçmiş-Şimdiki-Gelecek</small></button>
-<button id='btn-7card' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("7-card")'>🎴 7-Kart<br><small>Detaylı Yorum</small></button>
-<button id='btn-yesno' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("yes-no")'>✨ Evet/Hayır<br><small>Hızlı Cevap</small></button>
-<button id='btn-love' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("love")'>💕 Aşk<br><small>İlişki</small></button>
-<button id='btn-work' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("work")'>💼 İş<br><small>Kariyer</small></button>
-<button id='btn-general' style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("general")'>🌟 Genel<br><small>Yaşam Rehberi</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("3-card")'>🎴 3-Kart<br><small>Geçmiş-Şimdiki-Gelecek</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("7-card")'>🎴 7-Kart<br><small>Detaylı Yorum</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("yes-no")'>✨ Evet/Hayır<br><small>Hızlı Cevap</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("love")'>💕 Aşk<br><small>İlişki</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("work")'>💼 İş<br><small>Kariyer</small></button>
+<button style='padding:12px;font-size:0.9em;' onclick='getSpreadReading("general")'>🌟 Genel<br><small>Yaşam Rehberi</small></button>
 </div>
 <div id='spreadResult' class='status cardMeaning' style='margin-top:20px;'></div>
 </div>
@@ -6588,76 +6589,6 @@ const TAROT_DECK=[
  {num:'XX',name:'Mahkeme',symbol:'📯',meaning:'Bir uyanış ve hesaplaşma zamanı, geçmişle barış yap.',image:'20_yargi.webp'},
  {num:'XXI',name:'Dünya',symbol:'🌍',meaning:'Bir döngü tamamlanıyor, tatmin ve bütünlük hissi kapıda.',image:'21_dunya.webp'}
 ];
-
-// Spread Button Translations
-const SPREAD_TRANSLATIONS = {
-  'tr': {
-    'title': '🎴 Açılım Seçin (200 💰 Jeton)',
-    '3-card': { emoji: '🎴', name: '3-Kart', desc: 'Geçmiş-Şimdiki-Gelecek' },
-    '7-card': { emoji: '🎴', name: '7-Kart', desc: 'Detaylı Yorum' },
-    'yes-no': { emoji: '✨', name: 'Evet/Hayır', desc: 'Hızlı Cevap' },
-    'love': { emoji: '💕', name: 'Aşk', desc: 'İlişki' },
-    'work': { emoji: '💼', name: 'İş', desc: 'Kariyer' },
-    'general': { emoji: '🌟', name: 'Genel', desc: 'Yaşam Rehberi' }
-  },
-  'fr': {
-    'title': '🎴 Sélectionner un Tirage (200 💰 Jetons)',
-    '3-card': { emoji: '🎴', name: '3 Cartes', desc: 'Passé-Présent-Avenir' },
-    '7-card': { emoji: '🎴', name: '7 Cartes', desc: 'Interprétation Détaillée' },
-    'yes-no': { emoji: '✨', name: 'Oui/Non', desc: 'Réponse Rapide' },
-    'love': { emoji: '💕', name: 'Amour', desc: 'Relation' },
-    'work': { emoji: '💼', name: 'Carrière', desc: 'Travail' },
-    'general': { emoji: '🌟', name: 'Général', desc: 'Guide de Vie' }
-  },
-  'en': {
-    'title': '🎴 Select a Spread (200 💰 Tokens)',
-    '3-card': { emoji: '🎴', name: '3 Cards', desc: 'Past-Present-Future' },
-    '7-card': { emoji: '🎴', name: '7 Cards', desc: 'Detailed Reading' },
-    'yes-no': { emoji: '✨', name: 'Yes/No', desc: 'Quick Answer' },
-    'love': { emoji: '💕', name: 'Love', desc: 'Relationship' },
-    'work': { emoji: '💼', name: 'Career', desc: 'Work' },
-    'general': { emoji: '🌟', name: 'General', desc: 'Life Guidance' }
-  }
-};
-
-function updateSpreadButtons() {
-  const lang = (typeof getSiteLang === 'function') ? getSiteLang() : localStorage.getItem('siteLang') || 'tr';
-  const trans = SPREAD_TRANSLATIONS[lang] || SPREAD_TRANSLATIONS['tr'];
-
-  const titleEl = document.getElementById('spreadSelectTitle');
-  if (titleEl) titleEl.textContent = trans.title;
-
-  const buttons = [
-    { id: 'btn-3card', key: '3-card' },
-    { id: 'btn-7card', key: '7-card' },
-    { id: 'btn-yesno', key: 'yes-no' },
-    { id: 'btn-love', key: 'love' },
-    { id: 'btn-work', key: 'work' },
-    { id: 'btn-general', key: 'general' }
-  ];
-
-  buttons.forEach(btn => {
-    const el = document.getElementById(btn.id);
-    if (el && trans[btn.key]) {
-      const t = trans[btn.key];
-      el.innerHTML = `${t.emoji} ${t.name}<br><small>${t.desc}</small>`;
-    }
-  });
-}
-
-document.addEventListener('DOMContentLoaded', updateSpreadButtons);
-
-// Hook into setSiteLang if available
-if (typeof window !== 'undefined') {
-  const originalSetSiteLang = window.setSiteLang;
-  if (typeof originalSetSiteLang === 'function') {
-    window.setSiteLang = function(lang) {
-      originalSetSiteLang(lang);
-      updateSpreadButtons();
-    };
-  }
-}
-
 function instantTarot(){
  const idx=Math.floor(Math.random()*TAROT_DECK.length);
  const card=TAROT_DECK[idx];
@@ -6806,13 +6737,6 @@ def api_profile_avatar():
 
     avatar_dir = os.path.join(app.root_path, "static", "avatars")
     os.makedirs(avatar_dir, exist_ok=True)
-
-    # Ensure directory has proper permissions
-    try:
-        os.chmod(avatar_dir, 0o755)
-    except:
-        pass
-
     avatar_filename = f"{username.lower()}_{int(time.time())}.{ext}"
     avatar_path = os.path.join(avatar_dir, avatar_filename)
     with open(avatar_path, "wb") as fw:
@@ -6823,17 +6747,6 @@ def api_profile_avatar():
         key = next((k for k in users if k.lower() == username.lower()), None)
         if not key:
             return {"ok": False, "msg": "Kullanıcı bulunamadı."}
-
-        # Delete old avatar file if it exists and is different
-        old_avatar = users[key].get("avatarData", "")
-        if old_avatar and old_avatar.startswith("/static/avatars/") and old_avatar != avatar_url:
-            try:
-                old_path = os.path.join(app.root_path, old_avatar.lstrip("/"))
-                if os.path.exists(old_path):
-                    os.remove(old_path)
-            except Exception:
-                pass
-
         users[key]["avatar"] = avatar_url
         users[key]["avatarData"] = avatar_url
 
@@ -10872,16 +10785,6 @@ def profile_page():
     </script>
     """)
 
-def ensure_avatars_directory():
-    """Ensure avatars directory exists with proper permissions"""
-    try:
-        avatars_dir = os.path.join(app.root_path, "static", "avatars")
-        os.makedirs(avatars_dir, exist_ok=True)
-        os.chmod(avatars_dir, 0o755)
-        print("✓ Avatar directory initialized", flush=True)
-    except Exception as e:
-        print(f"⚠ Avatar directory error: {e}", flush=True)
-
 if __name__ == "__main__":
     import sys, traceback
     try:
@@ -10891,7 +10794,6 @@ if __name__ == "__main__":
             bootstrap_admin_user()
         if "ensure_owner_user" in globals():
             ensure_owner_user()
-        ensure_avatars_directory()
     except Exception:
         traceback.print_exc()
     port = int(os.environ.get("PORT", 10000))
