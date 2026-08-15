@@ -2667,41 +2667,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 }
 
 
-.ownerLuxuryName{color:#d4af37!important;font-weight:900!important;letter-spacing:2px;text-shadow:0 0 8px #d4af37,0 0 22px #000,0 0 36px #ffd700!important;border:1px solid #d4af37;border-radius:999px;padding:2px 8px;background:linear-gradient(145deg,#000,#1b1200,#000);box-shadow:0 0 14px #d4af37,inset 0 0 12px rgba(212,175,55,.25);}
-.ownerOnlyPanel{border:2px solid #d4af37;border-radius:20px;padding:12px;margin:10px 0;background:linear-gradient(145deg,rgba(0,0,0,.95),rgba(35,22,0,.9));box-shadow:0 0 18px rgba(212,175,55,.6);}
-.ownerOnlyPanel h3{color:#ffd700;text-align:center;}
-.name-green{color:#00ff66!important;text-shadow:0 0 10px #00ff66,0 0 22px #00ff66!important;}
-
-.ownerLuxuryName{
-    color:#d4af37!important;
-    font-weight:900!important;
-    letter-spacing:2px!important;
-    text-transform:uppercase;
-    text-shadow:0 0 7px #d4af37,0 0 18px #000,0 0 34px #ffd700,0 0 48px #d4af37!important;
-    border:2px double #d4af37!important;
-    border-radius:999px!important;
-    padding:3px 10px!important;
-    background:
-      radial-gradient(circle at top,#3a2700,#000 62%),
-      linear-gradient(145deg,#000,#1b1200,#000)!important;
-    box-shadow:0 0 14px #d4af37,0 0 32px rgba(212,175,55,.65), inset 0 0 18px rgba(212,175,55,.35)!important;
-}
-.baroqueOwnerFrame img, .baroque-owner img{
-    border:4px double #d4af37!important;
-    box-shadow:0 0 16px #d4af37,0 0 38px #000,0 0 48px rgba(255,215,0,.7)!important;
-}
-.ownerCrownBadge{
-    display:inline-block;
-    margin-left:6px;
-    padding:2px 7px;
-    border:1px solid #d4af37;
-    border-radius:999px;
-    color:#d4af37;
-    background:#000;
-    box-shadow:0 0 12px #d4af37;
-    font-size:11px;
-}
-/* === FINAL BUGFIX OWNER + TAROT === */
 @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Cinzel:wght@400;700;900&display=swap');
 .ownerLuxuryName{
     color:#d4af37!important;
@@ -2727,7 +2692,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     box-shadow:0 0 12px #d4af37;
     font-size:11px;
 }
-.baroque-owner img,.baroqueOwnerFrame img{
+.baroqueOwnerFrame img, .baroque-owner img{
     border:4px double #d4af37!important;
     box-shadow:0 0 16px #d4af37,0 0 38px #000,0 0 48px rgba(255,215,0,.7)!important;
 }
