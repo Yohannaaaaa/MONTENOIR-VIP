@@ -2769,7 +2769,102 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         min-width:0!important;
     }
 }
+
+/* === START SPLASH: logo plein ecran en zoom au lancement de la partie === */
+.startSplash{
+    position:fixed;
+    inset:0;
+    z-index:2147483647;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(circle at center, rgba(212,175,55,.20), rgba(4,3,2,.94) 60%, #030201 100%);
+    opacity:0;
+    pointer-events:none;
+}
+.startSplash.show{
+    animation:cnSplashFade 2.1s cubic-bezier(.16,.9,.28,1) forwards;
+}
+.startSplashInner{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:22px;
+    opacity:0;
+    transform:scale(.35);
+}
+.startSplash.show .startSplashInner{
+    animation:cnSplashZoom 2.1s cubic-bezier(.16,.9,.28,1) forwards;
+}
+.startSplashMark{
+    width:min(58vw,58vh,460px);
+    height:min(58vw,58vh,460px);
+    filter:drop-shadow(0 0 45px rgba(212,175,55,.6));
+}
+.startSplashWord{
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,'Times New Roman',serif;
+    font-weight:700;
+    letter-spacing:.16em;
+    font-size:clamp(2.4rem,8vw,5.6rem);
+    color:#f2dfa0;
+    text-shadow:0 2px 0 #0b0906,0 0 34px rgba(212,175,55,.65);
+}
+.startSplashVip{
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,'Times New Roman',serif;
+    letter-spacing:.55em;
+    padding-left:.55em;
+    font-size:clamp(.9rem,2.2vw,1.2rem);
+    color:#d4af37;
+}
+@keyframes cnSplashFade{
+    0%{opacity:0}
+    8%{opacity:1}
+    76%{opacity:1}
+    100%{opacity:0}
+}
+@keyframes cnSplashZoom{
+    0%{opacity:0;transform:scale(.35)}
+    30%{opacity:1;transform:scale(1.12)}
+    46%{transform:scale(1)}
+    80%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(1.22)}
+}
+@media(prefers-reduced-motion:reduce){
+    .startSplash.show{animation:cnSplashFadeReduced .9s ease forwards;}
+    .startSplash.show .startSplashInner{animation:none;opacity:1;transform:scale(1);}
+}
+@keyframes cnSplashFadeReduced{0%{opacity:0}15%{opacity:1}70%{opacity:1}100%{opacity:0}}
 </style></head><body>
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true"><defs>
+<linearGradient id="cnGoldSheen" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#f2dfa0"/><stop offset="45%" stop-color="#d4af37"/><stop offset="100%" stop-color="#8a6423"/>
+</linearGradient>
+<radialGradient id="cnDiscFace" cx="35%" cy="30%" r="80%">
+<stop offset="0%" stop-color="#241708"/><stop offset="55%" stop-color="#150e06"/><stop offset="100%" stop-color="#0b0906"/>
+</radialGradient>
+<symbol id="cnGlyph" viewBox="0 0 220 220">
+<polygon points="110,50 144,104 76,104"/>
+<circle cx="93" cy="104" r="27"/>
+<circle cx="127" cy="104" r="27"/>
+<circle cx="110" cy="142" r="11"/>
+<polygon points="100,150 120,150 128,172 92,172"/>
+</symbol>
+<symbol id="cnMedallion" viewBox="0 0 220 220">
+<circle cx="110" cy="110" r="100" fill="url(#cnGoldSheen)"/>
+<circle cx="110" cy="110" r="100" fill="none" stroke="#0b0906" stroke-width="1.5" stroke-dasharray="0.6 3.4" opacity="0.55"/>
+<circle cx="110" cy="110" r="86" fill="url(#cnDiscFace)" stroke="#0b0906" stroke-width="2"/>
+<circle cx="110" cy="110" r="86" fill="none" stroke="url(#cnGoldSheen)" stroke-width="1.2" opacity="0.8"/>
+<use href="#cnGlyph" transform="translate(1.6,2.2)" fill="#0b0906" opacity="0.5"/>
+<use href="#cnGlyph" fill="url(#cnGoldSheen)"/>
+</symbol>
+</defs></svg>
+<div id="startSplash" class="startSplash" aria-hidden="true">
+<div class="startSplashInner">
+<svg class="startSplashMark" viewBox="0 0 220 220"><use href="#cnMedallion"/></svg>
+<div class="startSplashWord">CODENAMES</div>
+<div class="startSplashVip">&#9830; VIP &#9830;</div>
+</div>
+</div>
 <div class="vipCasinoMarks"><span class="m1">A♠</span><span class="m2">K♥</span><span class="m3">Q♣</span><span class="m4">J♦</span><span class="m5">♠♥♣♦</span><span class="m6">A K Q J</span></div><div id="profileChip" class="vipProfileChip" onclick="openProfile()">👤 Profil</div><div class="topLeftFixed">
 
 <div class="compactMenuWrap">
@@ -2823,6 +2918,16 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <div id="gameScreen" class="hidden"><div class="panel"><button class="closeTableBtn" onclick="closeCurrentTable()">❌ Bu Masayı Kapat / Yeni Oda Aç</button></div><div class="mainLayout"><div><div class="panel"><button onclick="startTimer()">▶ Süre Başlat</button><button onclick="pauseTimer()">⏸ Durdur</button><button onclick="setTimer(60)">1 dk</button><button onclick="setTimer(180)">3 dk</button><button onclick="setTimer(300)">5 dk</button><button onclick="setTimer(600)">10 dk</button><br>⏱ <span id="timer">05:00</span></div><div class="panel"><h3>🎙 Oda Mikrofonu</h3><button onclick="startMic()">🎙 Aç</button><button onclick="stopMic()">🔇 Kapat</button><span id="micStatus" class="micStatus">Kapalı</span><p style="font-size:12px;color:#d4af37;">Mikrofon sadece oda içinde çalışır. Konuşan kişinin ikonu yeşil yanar.</p></div><div class="panel"><p id="roundText" class="scoreBox">🎮 Tur: 1</p><p id="roleText">Rol: -</p><p id="phaseText" class="statusBox">🎰 Oyun bekliyor...</p><p id="scoreText" class="scoreBox">🏆 Mavi: 0 | Kırmızı: 0</p><p id="chipsText" class="scoreBox">🪙 Jeton: 1000</p></div><div class="teams"><div class="team blueTeam">🔵 MAVİ TAKIM<span class="teamCount">Kalan kelime: <span id="blueCount">9</span></span><div id="bluePlayers" class="playerList"></div></div><div class="team redTeam">🔴 KIRMIZI TAKIM<span class="teamCount">Kalan kelime: <span id="redCount">8</span></span><div id="redPlayers" class="playerList"></div></div></div><div class="panel"><input id="clueText" placeholder="İpucu yaz"><select id="clueNumber"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="∞">♾️</option></select><button onclick="sendClue()">İpucu Ver</button><button onclick="endTurn()" style="background:#008f4c;color:white;">✅ Sırayı Bitir</button><h2 id="clueDisplay">İpucu: -</h2><div id="clueLog">📜 Oyun bandı: Henüz ipucu yok.</div><h2 id="turnDisplay">Sıra: Belirlenmedi</h2></div><div class="board" id="board"></div><div class="panel"><h3>💬 Chat</h3><div class="chatTabs"><button onclick="setChatMode('global')">🌍 Genel</button><button onclick="setChatMode('team')">🔒 Takım</button><button onclick="setChatMode('dm')">📩 DM</button></div><div id="messages"></div><select id="dmTarget"><option value="">DM oyuncu seç</option></select><br><input id="chatInput" placeholder="Mesaj yaz"><button onclick="sendMessage()">Gönder</button><br><button class="emojiBtn" onclick="addEmoji('😂')">😂</button><button class="emojiBtn" onclick="addEmoji('🔥')">🔥</button><button class="emojiBtn" onclick="addEmoji('💀')">💀</button><button class="emojiBtn" onclick="addEmoji('👑')">👑</button><button class="emojiBtn" onclick="addEmoji('❤️')">❤️</button><button class="emojiBtn" onclick="addEmoji('😈')">😈</button><small id="chatModeText" style="color:#ffd700;">Mode: Genel</small></div></div><div class="sidePanel"><h3>👥 Bağlanan Oyuncular</h3><div id="onlinePlayers"></div><div class="spectatorBox"><h3>👀 Seyirciler</h3><div id="spectatorList">-</div></div><hr><h3>🔁 Join Team</h3><button onclick="joinTeam('blue','player')">🔵 Mavi Saha Ajanı</button><button onclick="joinTeam('blue','blueSpy')">🕵️ Mavi Spymaster</button><button onclick="joinTeam('red','player')">🔴 Kırmızı Saha Ajanı</button><button onclick="joinTeam('red','redSpy')">🕵️ Kırmızı Spymaster</button><button onclick="joinTeam('spectator','spectator')">👀 Seyirci</button><hr><h3>👑 Admin Paneli</h3><small>Admin sadece Codenames oyununu yönetir. Bahis, turnuva, jeton, üyelik, ödeme ve tarot yetkisi yoktur.</small><div id="adminPanel"><button onclick="toggleTeamLock('blue')">🔒 Mavi Kilitle</button><button onclick="toggleTeamLock('red')">🔒 Kırmızı Kilitle</button><button onclick="adminNewGame()">🎲 Yeni Oyun</button><button onclick="adminRevealAll()">🃏 Kartları Aç</button><button onclick="adminResetStats()">🏆 Skoru Sıfırla</button></div><hr><h3>🏆 Kazananlar / Oyun Kaydı</h3><div id="historyPanel"></div></div></div></div>
 <script>
 const socket=io();let roomCode='',myName='',myRole='',myTeam='',mySid='',joined=false,isAdmin=false,currentChips=1000;let seconds=300,timerRunning=false,timerInterval=null,micStream=null;let voicePeers={},voiceStarted=false,currentMicStates={},lastPlayers=[],lastLocks={blue:false,red:false},audioContext=null,speakingInterval=null,mySpeaking=false,currentAccount=null,currentProfile=null,pendingAutoSit=false;let lastOpenedStates=[],lastWinner='',dealSoundPlayed=false,chatMode='global',currentReady={};
+let cnSplashDone=false,cnSplashTimer=null;
+function playStartSplash(){
+    const el=document.getElementById('startSplash');
+    if(!el)return;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    clearTimeout(cnSplashTimer);
+    cnSplashTimer=setTimeout(()=>el.classList.remove('show'),2100);
+}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function chipKey(n){return 'codenamesChips_'+(n||'guest')}function getSavedChips(n){let v=localStorage.getItem(chipKey(n));if(v===null)return 1000;let x=parseInt(v);return isNaN(x)?1000:x}function setSavedChips(n,a){localStorage.setItem(chipKey(n),String(a))}function saveLocalProfile(){localStorage.setItem('codenamesRoom',roomCode);localStorage.setItem('codenamesName',myName);localStorage.setItem('codenamesRole',myRole);localStorage.setItem('codenamesTeam',myTeam);localStorage.setItem('codenamesPassword',roomPassword.value||'')}function restoreLocalFields(){let r=localStorage.getItem('codenamesRoom')||'',n=localStorage.getItem('codenamesName')||'',ro=localStorage.getItem('codenamesRole')||'',t=localStorage.getItem('codenamesTeam')||'';if(r)roomInput.value=r;if(n)playerName.value=n;if(ro)roleChoice.value=ro;if(t)teamChoice.value=t}
 function avatarClass(f){return f==='woman.png'?'avatarImg femaleFrame':'avatarImg maleFrame'}function roleLabel(r){if(r==='player')return'Saha Ajanı';if(r==='blueSpy')return'Mavi Spymaster';if(r==='redSpy')return'Kırmızı Spymaster';if(r==='spectator')return'Seyirci';return r}function teamLabel(t){if(t==='blue')return'🔵 Mavi';if(t==='red')return'🔴 Kırmızı';return'👀 Seyirci'}
@@ -3711,8 +3816,10 @@ socket.on('connect',()=>{
     if(d.game && d.game.started){
         lobby.classList.add('hidden');
         gameScreen.classList.remove('hidden');
+        if(!cnSplashDone){cnSplashDone=true;playStartSplash();}
         renderGame(d.game);
     }else{
+        cnSplashDone=false;
         gameScreen.classList.add('hidden');
         lobby.classList.remove('hidden');
     }
