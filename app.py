@@ -2194,7 +2194,7 @@ COMING_SOON_HTML = r'''
 '''
 
 HTML = r'''
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CODENAMES VIP</title><script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>CODENAMES VIP</title><script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
 body{
 margin:0;
@@ -2707,16 +2707,9 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 .ownerOnlyPanel h3{color:#ffd700;text-align:center;}
 .name-green{color:#00ff66!important;text-shadow:0 0 10px #00ff66,0 0 22px #00ff66!important;}
 
-/* === COMPACT TOP MENU FIX === */
-.topLeftFixed{
-    align-items:flex-start!important;
-}
+/* === TOP-LEFT MENU (desktop) === */
 .mainTopBtn{
     display:inline-block!important;
-}
-.compactMenuWrap{
-    position:relative;
-    display:inline-block;
 }
 .menuToggleBtn{
     background:linear-gradient(135deg,#000,#222,#000)!important;
@@ -2724,99 +2717,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     border:2px solid #d4af37!important;
     box-shadow:0 0 12px rgba(212,175,55,.75)!important;
 }
-.compactMenu{
-    display:none;
-    position:absolute;
-    top:42px;
-    left:0;
-    min-width:190px;
-    padding:8px;
-    border:2px solid #d4af37;
-    border-radius:18px;
-    background:rgba(0,0,0,.94);
-    box-shadow:0 0 22px rgba(212,175,55,.85);
-    z-index:1000001;
-}
-.compactMenu.show{
-    display:block;
-}
-.compactMenu button{
-    display:block!important;
-    width:100%!important;
-    text-align:left!important;
-    margin:4px 0!important;
-    font-size:12px!important;
-}
-@media(max-width:800px){
-    .compactMenu{
-        position:fixed;
-        top:70px;
-        left:10px;
-        right:10px;
-        width:auto;
-    }
-}
-
-/* === REAL CLICKABLE LEFT MENU FIX === */
-.topLeftFixed{
-    position:fixed!important;
-    top:15px!important;
-    left:15px!important;
-    z-index:1000002!important;
-    display:flex!important;
-    flex-direction:column!important;
-    align-items:flex-start!important;
-    gap:6px!important;
-    max-width:210px!important;
-    pointer-events:auto!important;
-}
-.topLeftFixed button{
-    width:190px!important;
-    min-height:34px!important;
-    pointer-events:auto!important;
-}
-.compactMenuWrap{
-    width:190px!important;
-    position:relative!important;
-    z-index:1000003!important;
-}
-.compactMenu{
-    display:none;
-    position:absolute!important;
-    top:40px!important;
-    left:0!important;
-    min-width:190px!important;
-    padding:8px!important;
-    border:2px solid #d4af37!important;
-    border-radius:18px!important;
-    background:rgba(0,0,0,.96)!important;
-    box-shadow:0 0 22px rgba(212,175,55,.85)!important;
-    z-index:1000004!important;
-    pointer-events:auto!important;
-}
-.compactMenu.show{display:block!important;}
-.compactMenu button{
-    display:block!important;
-    width:100%!important;
-    text-align:left!important;
-    margin:4px 0!important;
-    font-size:12px!important;
-}
-/* === HARD CLICK CSS FIX === */
-.topLeftFixed,.topLeftFixed *{
-    pointer-events:auto!important;
-}
-.vipCasinoMarks, body::before, body::after{
-    pointer-events:none!important;
-}
-.topLeftFixed{
-    z-index:2147483000!important;
-}
-.compactMenu{
-    z-index:2147483001!important;
-}
-
-/* === MAIN MENU REAL FIX === */
 .topLeftFixed{
     position:fixed!important;
     top:15px!important;
@@ -2848,6 +2748,27 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 .compactMenu.show{display:block!important;}
 .compactMenu button{display:block!important;width:100%!important;text-align:left!important;margin:4px 0!important;font-size:12px!important;}
 .vipCasinoMarks,.casinoMarks,body::before,body::after{pointer-events:none!important;}
+
+/* === TOP-LEFT MENU (mobile): stop pinning it fixed over scrolled content === */
+@media(max-width:800px){
+    .topLeftFixed{
+        position:static!important;
+        flex-direction:row!important;
+        flex-wrap:wrap!important;
+        justify-content:center!important;
+        max-width:100%!important;
+        margin:8px auto!important;
+    }
+    .compactMenuWrap{position:relative!important;}
+    .compactMenu{
+        position:fixed!important;
+        top:70px!important;
+        left:10px!important;
+        right:10px!important;
+        width:auto!important;
+        min-width:0!important;
+    }
+}
 </style></head><body>
 <div class="vipCasinoMarks"><span class="m1">A♠</span><span class="m2">K♥</span><span class="m3">Q♣</span><span class="m4">J♦</span><span class="m5">♠♥♣♦</span><span class="m6">A K Q J</span></div><div id="profileChip" class="vipProfileChip" onclick="openProfile()">👤 Profil</div><div class="topLeftFixed">
 
