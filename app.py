@@ -2235,7 +2235,7 @@ opacity:.035;
 pointer-events:none;
 z-index:0;
 }
-h1{color:#f5d77b;text-shadow:0 0 10px #d4af37,0 0 45px #d4af37;letter-spacing:4px;font-size:50px;margin:25px 0 5px;font-weight:900}.subtitle{color:#d4af37;letter-spacing:3px}button{background:linear-gradient(135deg,#111,#333);color:#f5d77b;border:1px solid #d4af37;border-radius:14px;padding:8px 10px;margin:4px;font-weight:bold;cursor:pointer;font-size:13px}button:hover{box-shadow:0 0 15px #d4af37;transform:scale(1.03)}input,select{padding:10px;border-radius:10px;border:1px solid #d4af37;background:#111;color:white;margin:4px}.panel{margin:15px auto;padding:15px;max-width:1050px;border:1px solid rgba(212,175,55,.45);border-radius:22px;background:rgba(255,255,255,.06)}.hidden{display:none}.topLeftFixed{position:fixed;top:15px;left:15px;z-index:999999;display:flex;gap:8px;flex-wrap:wrap;max-width:58%}.topRightFixed{position:fixed;top:15px;right:15px;z-index:999999;display:flex;align-items:center;gap:8px;border:2px solid #d4af37;border-radius:20px;padding:8px 12px;background:rgba(0,0,0,.65)}.micStatus{color:#ffd700;font-weight:bold}.tableSeat{display:inline-block;width:260px;min-height:140px;margin:10px;padding:12px;border-radius:22px;border:2px solid #d4af37;background:radial-gradient(circle at center,#0f6b3a,#06351f);box-shadow:0 0 20px #00ff99,inset 0 0 25px #001f12;vertical-align:top}.lockedSeat{opacity:.45;filter:grayscale(40%)}.avatarImg{width:42px;height:42px;border-radius:50%;object-fit:cover;border:3px solid #d4af37;box-shadow:0 0 10px #d4af37}.femaleFrame{border:3px solid #ff4fd8!important;box-shadow:0 0 15px #ff4fd8!important}.maleFrame{border:3px solid #111!important;box-shadow:0 0 15px #000!important}.mainLayout{display:grid;grid-template-columns:1fr 330px;gap:15px;max-width:1320px;margin:0 auto}.sidePanel{margin:15px;padding:12px;border-radius:22px;border:2px solid #d4af37;background:linear-gradient(180deg,rgba(18,12,30,.95),rgba(0,0,0,.92));box-shadow:0 0 25px rgba(212,175,55,.5);min-height:400px}.profileCard{margin:6px 0;padding:8px;border-radius:12px;border:1px solid #d4af37;background:linear-gradient(135deg,rgba(60,40,90,.85),rgba(15,10,25,.95));text-align:left;font-size:12px}.profileCard b{font-size:15px;color:white}.adminBadge{color:#ffd700;text-shadow:0 0 10px #d4af37;font-weight:bold}.adminActions button{font-size:11px;padding:5px 7px}.teams{display:flex;justify-content:center;gap:15px;margin:15px;flex-wrap:wrap}.team{padding:15px;width:280px;border-radius:18px;font-weight:bold}.blueTeam{background:linear-gradient(135deg,#0055ff,#00d4ff)}.redTeam{background:linear-gradient(135deg,#ff1f1f,#ff7a00)}.teamCount{display:block;margin-top:8px;font-size:20px;color:white}.scoreBox{font-size:20px;color:#ffd700;text-shadow:0 0 10px #d4af37}.playerList{margin-top:8px;font-size:13px;text-align:left}.statusBox{font-size:21px;color:#ffd700;text-shadow:0 0 15px #d4af37}.board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:900px;margin:20px auto;padding:10px;perspective:1200px}.card{
+h1{color:#f5d77b;text-shadow:0 0 10px #d4af37,0 0 45px #d4af37;letter-spacing:4px;font-size:50px;margin:25px 0 5px;font-weight:900}.subtitle{color:#d4af37;letter-spacing:3px}button{background:linear-gradient(135deg,#111,#333);color:#f5d77b;border:1px solid #d4af37;border-radius:14px;padding:9px 14px;margin:6px;font-weight:bold;cursor:pointer;font-size:13px}button:hover{box-shadow:0 0 15px #d4af37;transform:scale(1.03)}input,select{padding:10px;border-radius:10px;border:1px solid #d4af37;background:#111;color:white;margin:4px}.panel{margin:22px auto;padding:20px;max-width:1050px;border:1px solid rgba(212,175,55,.45);border-radius:22px;background:rgba(255,255,255,.06)}.hidden{display:none}.topLeftFixed{position:fixed;top:15px;left:15px;z-index:999999;display:flex;gap:8px;flex-wrap:wrap;max-width:58%}.topRightFixed{position:fixed;top:15px;right:15px;z-index:999999;display:flex;align-items:center;gap:8px;border:2px solid #d4af37;border-radius:20px;padding:8px 12px;background:rgba(0,0,0,.65)}.micStatus{color:#ffd700;font-weight:bold}.tableSeat{display:inline-block;width:260px;min-height:140px;margin:10px;padding:12px;border-radius:22px;border:2px solid #d4af37;background:radial-gradient(circle at center,#0f6b3a,#06351f);box-shadow:0 0 20px #00ff99,inset 0 0 25px #001f12;vertical-align:top}.lockedSeat{opacity:.45;filter:grayscale(40%)}.avatarImg{width:42px;height:42px;border-radius:50%;object-fit:cover;border:3px solid #d4af37;box-shadow:0 0 10px #d4af37}.femaleFrame{border:3px solid #ff4fd8!important;box-shadow:0 0 15px #ff4fd8!important}.maleFrame{border:3px solid #111!important;box-shadow:0 0 15px #000!important}.mainLayout{display:grid;grid-template-columns:1fr 330px;gap:24px;max-width:1320px;margin:0 auto}.sidePanel{margin:15px;padding:12px;border-radius:22px;border:2px solid #d4af37;background:linear-gradient(180deg,rgba(18,12,30,.95),rgba(0,0,0,.92));box-shadow:0 0 25px rgba(212,175,55,.5);min-height:400px}.profileCard{margin:6px 0;padding:8px;border-radius:12px;border:1px solid #d4af37;background:linear-gradient(135deg,rgba(60,40,90,.85),rgba(15,10,25,.95));text-align:left;font-size:12px}.profileCard b{font-size:15px;color:white}.adminBadge{color:#ffd700;text-shadow:0 0 10px #d4af37;font-weight:bold}.adminActions button{font-size:11px;padding:5px 7px}.teams{display:flex;justify-content:center;gap:22px;margin:22px;flex-wrap:wrap}.team{padding:15px;width:280px;border-radius:18px;font-weight:bold}.blueTeam{background:linear-gradient(135deg,#0055ff,#00d4ff)}.redTeam{background:linear-gradient(135deg,#ff1f1f,#ff7a00)}.teamCount{display:block;margin-top:8px;font-size:20px;color:white}.scoreBox{font-size:20px;color:#ffd700;text-shadow:0 0 10px #d4af37}.playerList{margin-top:8px;font-size:13px;text-align:left}.statusBox{font-size:21px;color:#ffd700;text-shadow:0 0 15px #d4af37}.board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:900px;margin:20px auto;padding:10px;perspective:1200px}.card{
 background:
 linear-gradient(120deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 22%),
 radial-gradient(circle at top left,rgba(255,255,255,.25),transparent 20%),
@@ -2290,7 +2290,8 @@ animation:luxShine 5s infinite;
 }
 .board{
     max-width:1100px!important;
-    gap:16px!important;
+    gap:24px!important;
+    padding:14px!important;
 }
 
 .card.dealCard{
@@ -2477,9 +2478,9 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     }
     .board{
         grid-template-columns:repeat(2, minmax(0,1fr))!important;
-        gap:10px!important;
+        gap:16px!important;
         max-width:96vw!important;
-        padding:6px!important;
+        padding:10px!important;
     }
     .card{
         min-height:112px!important;
@@ -2725,7 +2726,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     display:flex!important;
     flex-direction:column!important;
     align-items:flex-start!important;
-    gap:6px!important;
+    gap:10px!important;
     max-width:210px!important;
     pointer-events:auto!important;
 }
