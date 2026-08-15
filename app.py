@@ -2667,103 +2667,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 }
 
 
-/* === TAROT PORTAL WINDOW ON CODENAMES HOME === */
-.tarotPortalPanel{position:relative;max-width:980px;margin:22px auto;padding:26px;border-radius:30px;border:2px solid #d4af37;background:radial-gradient(circle at top,rgba(212,175,55,.18),transparent 35%),linear-gradient(145deg,rgba(0,0,0,.92),rgba(18,10,0,.94),rgba(0,0,0,.96));box-shadow:0 0 18px rgba(212,175,55,.85),0 0 45px rgba(212,175,55,.42),inset 0 0 30px rgba(212,175,55,.14);overflow:hidden;cursor:pointer;}
-.tarotPortalPanel:before{content:"THE MOON   ✦   THE STAR   ✦   THE LOVERS   ✦   THE HIGH PRIESTESS";position:absolute;left:-8%;top:42%;width:120%;color:#d4af37;opacity:.11;font-size:42px;font-weight:900;letter-spacing:12px;transform:rotate(-6deg);pointer-events:none;}
-.tarotPortalPanel:after{content:"";position:absolute;inset:-35%;background:radial-gradient(circle,rgba(255,255,255,.11),transparent 30%),radial-gradient(circle at 75% 30%,rgba(212,175,55,.12),transparent 22%);filter:blur(22px);opacity:.45;animation:tarotFogMove 8s ease-in-out infinite alternate;pointer-events:none;}
-@keyframes tarotFogMove{from{transform:translateX(-4%) translateY(1%)}to{transform:translateX(5%) translateY(-2%)}}
-.tarotPortalInner{position:relative;z-index:2;display:grid;grid-template-columns:120px 1fr 120px;gap:18px;align-items:center;}
-.tarotMiniCard{height:165px;border:1px solid #d4af37;border-radius:18px;background:linear-gradient(145deg,#050505,#1b1200,#050505);box-shadow:0 0 18px rgba(212,175,55,.55),inset 0 0 18px rgba(212,175,55,.16);display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:42px;opacity:.78;animation:tarotCardFloat 3s ease-in-out infinite alternate;}
-.tarotMiniCard:nth-child(3){animation-delay:.8s}@keyframes tarotCardFloat{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-8px) rotate(2deg)}}
-.tarotPortalTitle{font-size:40px;font-weight:900;color:#d4af37;text-shadow:0 0 12px #d4af37,0 0 36px rgba(212,175,55,.9);letter-spacing:3px;}
-.tarotPortalSub{color:#f7e4a3;font-size:15px;letter-spacing:2px;margin-top:8px;}
-.tarotPortalBtn{margin-top:18px;display:inline-block;padding:14px 28px;border-radius:999px;border:2px solid #d4af37;background:linear-gradient(145deg,#000,#2a1b00,#000);color:#d4af37;font-weight:900;box-shadow:0 0 16px #d4af37,0 0 42px rgba(212,175,55,.58);text-shadow:0 0 10px #d4af37;}
-.tarotCandleLine{margin-top:10px;font-size:30px;filter:drop-shadow(0 0 14px #d4af37);animation:tarotCandle 1.6s infinite alternate ease-in-out;}
-@keyframes tarotCandle{from{opacity:.72;transform:scale(.99)}to{opacity:1;transform:scale(1.03)}}
-.tarotBtnMain{background:linear-gradient(145deg,#000,#1b1300,#000)!important;color:#d4af37!important;border:2px solid #d4af37!important;box-shadow:0 0 14px #d4af37,0 0 35px rgba(212,175,55,.55)!important;text-shadow:0 0 10px #d4af37!important;}
-@media(max-width:800px){.tarotPortalInner{grid-template-columns:1fr}.tarotMiniCard{display:none}.tarotPortalTitle{font-size:28px}}
-
-/* === CLEAN TAROT TOP-RIGHT BUTTON: no central portal === */
-.tarotTopBtn{
-    position:fixed;
-    top:64px;
-    right:15px;
-    z-index:999999;
-    background:linear-gradient(145deg,#000,#1b1300,#000)!important;
-    color:#d4af37!important;
-    border:2px solid #d4af37!important;
-    border-radius:16px!important;
-    padding:10px 15px!important;
-    font-size:13px!important;
-    font-weight:900!important;
-    box-shadow:0 0 14px #d4af37,0 0 35px rgba(212,175,55,.55), inset 0 0 12px rgba(212,175,55,.15)!important;
-    text-shadow:0 0 10px #d4af37!important;
-}
-.tarotTopBtn:hover{
-    transform:scale(1.04);
-    box-shadow:0 0 22px #ffd700,0 0 52px rgba(212,175,55,.75)!important;
-}
-.tarotPortalPanel{display:none!important;}
-@media(max-width:800px){
-    .tarotTopBtn{
-        position:sticky!important;
-        top:48px!important;
-        right:auto!important;
-        margin:6px auto!important;
-        display:block!important;
-        width:fit-content!important;
-    }
-}
-
-.ownerLuxuryName{color:#d4af37!important;font-weight:900!important;letter-spacing:2px;text-shadow:0 0 8px #d4af37,0 0 22px #000,0 0 36px #ffd700!important;border:1px solid #d4af37;border-radius:999px;padding:2px 8px;background:linear-gradient(145deg,#000,#1b1200,#000);box-shadow:0 0 14px #d4af37,inset 0 0 12px rgba(212,175,55,.25);}
-.ownerOnlyPanel{border:2px solid #d4af37;border-radius:20px;padding:12px;margin:10px 0;background:linear-gradient(145deg,rgba(0,0,0,.95),rgba(35,22,0,.9));box-shadow:0 0 18px rgba(212,175,55,.6);}
-.ownerOnlyPanel h3{color:#ffd700;text-align:center;}
-#tarotTopBtn.tarotTopBtn{position:static!important;left:auto!important;right:auto!important;top:auto!important;}
-.name-green{color:#00ff66!important;text-shadow:0 0 10px #00ff66,0 0 22px #00ff66!important;}
-
-.ownerLuxuryName{
-    color:#d4af37!important;
-    font-weight:900!important;
-    letter-spacing:2px!important;
-    text-transform:uppercase;
-    text-shadow:0 0 7px #d4af37,0 0 18px #000,0 0 34px #ffd700,0 0 48px #d4af37!important;
-    border:2px double #d4af37!important;
-    border-radius:999px!important;
-    padding:3px 10px!important;
-    background:
-      radial-gradient(circle at top,#3a2700,#000 62%),
-      linear-gradient(145deg,#000,#1b1200,#000)!important;
-    box-shadow:0 0 14px #d4af37,0 0 32px rgba(212,175,55,.65), inset 0 0 18px rgba(212,175,55,.35)!important;
-}
-.baroqueOwnerFrame img, .baroque-owner img{
-    border:4px double #d4af37!important;
-    box-shadow:0 0 16px #d4af37,0 0 38px #000,0 0 48px rgba(255,215,0,.7)!important;
-}
-.ownerCrownBadge{
-    display:inline-block;
-    margin-left:6px;
-    padding:2px 7px;
-    border:1px solid #d4af37;
-    border-radius:999px;
-    color:#d4af37;
-    background:#000;
-    box-shadow:0 0 12px #d4af37;
-    font-size:11px;
-}
-.tarotTopBtn{
-    position:static!important;
-    display:inline-block!important;
-    max-width:210px!important;
-    white-space:normal!important;
-    line-height:1.15!important;
-    background:linear-gradient(145deg,#000,#1b1300,#000)!important;
-    color:#d4af37!important;
-    border:2px solid #d4af37!important;
-    box-shadow:0 0 14px #d4af37,0 0 35px rgba(212,175,55,.55), inset 0 0 12px rgba(212,175,55,.15)!important;
-    text-shadow:0 0 10px #d4af37!important;
-}
-
-/* === FINAL BUGFIX OWNER + TAROT === */
 @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Cinzel:wght@400;700;900&display=swap');
 .ownerLuxuryName{
     color:#d4af37!important;
@@ -2789,7 +2692,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     box-shadow:0 0 12px #d4af37;
     font-size:11px;
 }
-.baroque-owner img,.baroqueOwnerFrame img{
+.baroqueOwnerFrame img, .baroque-owner img{
     border:4px double #d4af37!important;
     box-shadow:0 0 16px #d4af37,0 0 38px #000,0 0 48px rgba(255,215,0,.7)!important;
 }
@@ -2802,23 +2705,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     box-shadow:0 0 18px rgba(212,175,55,.6);
 }
 .ownerOnlyPanel h3{color:#ffd700;text-align:center;}
-.tarotTopBtn{
-    position:static!important;
-    display:block!important;
-    width:178px!important;
-    max-width:178px!important;
-    white-space:normal!important;
-    line-height:1.05!important;
-    font-size:10px!important;
-    padding:7px 8px!important;
-    margin:4px!important;
-    background:linear-gradient(145deg,#000,#1b1300,#000)!important;
-    color:#d4af37!important;
-    border:2px solid #d4af37!important;
-    border-radius:14px!important;
-    box-shadow:0 0 14px #d4af37,0 0 35px rgba(212,175,55,.55), inset 0 0 12px rgba(212,175,55,.15)!important;
-    text-shadow:0 0 10px #d4af37!important;
-}
 .name-green{color:#00ff66!important;text-shadow:0 0 10px #00ff66,0 0 22px #00ff66!important;}
 
 /* === COMPACT TOP MENU FIX === */
@@ -2860,22 +2746,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     text-align:left!important;
     margin:4px 0!important;
     font-size:12px!important;
-}
-.tarotTopBtn{
-    position:static!important;
-    display:inline-block!important;
-    max-width:210px!important;
-    white-space:normal!important;
-    line-height:1.1!important;
-    font-size:11px!important;
-    padding:8px 10px!important;
-    margin:4px!important;
-    background:linear-gradient(145deg,#000,#1b1300,#000)!important;
-    color:#d4af37!important;
-    border:2px solid #d4af37!important;
-    border-radius:14px!important;
-    box-shadow:0 0 14px #d4af37,0 0 35px rgba(212,175,55,.55), inset 0 0 12px rgba(212,175,55,.15)!important;
-    text-shadow:0 0 10px #d4af37!important;
 }
 @media(max-width:800px){
     .compactMenu{
@@ -2932,17 +2802,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     margin:4px 0!important;
     font-size:12px!important;
 }
-.tarotTopBtn{
-    position:static!important;
-    display:block!important;
-    width:190px!important;
-    max-width:190px!important;
-    white-space:normal!important;
-    line-height:1.05!important;
-    font-size:10px!important;
-    padding:7px 8px!important;
-}
-
 /* === HARD CLICK CSS FIX === */
 .topLeftFixed,.topLeftFixed *{
     pointer-events:auto!important;
@@ -2988,7 +2847,6 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 }
 .compactMenu.show{display:block!important;}
 .compactMenu button{display:block!important;width:100%!important;text-align:left!important;margin:4px 0!important;font-size:12px!important;}
-.tarotTopBtn{position:static!important;display:block!important;width:190px!important;max-width:190px!important;white-space:normal!important;line-height:1.05!important;font-size:10px!important;padding:7px 8px!important;}
 .vipCasinoMarks,.casinoMarks,body::before,body::after{pointer-events:none!important;}
 </style></head><body>
 <div class="vipCasinoMarks"><span class="m1">A♠</span><span class="m2">K♥</span><span class="m3">Q♣</span><span class="m4">J♦</span><span class="m5">♠♥♣♦</span><span class="m6">A K Q J</span></div><div id="profileChip" class="vipProfileChip" onclick="openProfile()">👤 Profil</div><div class="topLeftFixed">
