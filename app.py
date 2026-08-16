@@ -1,5 +1,3 @@
-import gevent.monkey
-gevent.monkey.patch_all()
 import string
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template_string, request, redirect, render_template, jsonify
@@ -19,10 +17,10 @@ except Exception:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'codenamesvip'
-socketio = SocketIO(app, cors_allowed_origins='*', async_mode='gevent')
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 rooms = {}
 MAX_PLAYERS = 10
-# socketio runs each handler in its own greenlet (async_mode='gevent'); this guards
+# socketio runs each handler on its own OS thread (async_mode='threading'); this guards
 # the read-modify-write sections of shared room/user state that must not interleave
 # (e.g. two players revealing a card at the same instant).
 _state_lock = threading.RLock()
@@ -293,13 +291,13 @@ def save_users(users):
         json.dump(users, f, ensure_ascii=False, indent=2)
     os.replace(tmp_path, USERS_FILE)
 
-# save_users() persists the *entire* users dict every time. Handlers run concurrently
-# (one greenlet per connection under async_mode='gevent'), so two overlapping requests
-# for the same (or even a different) user -- e.g. an avatar upload racing a chip update
-# or a profile view -- can each call load_users() before either has saved; whichever
-# save_users() runs last then silently overwrites the other's change with its own stale
-# snapshot (this is how uploaded avatars kept getting wiped). users_txn() makes the whole
-# load-mutate-save sequence atomic so no other greenlet can read a snapshot mid-update.
+# save_users() persists the *entire* users dict every time. With async_mode='threading',
+# handlers run on real concurrent OS threads, so two overlapping requests for the same
+# (or even a different) user -- e.g. an avatar upload racing a chip update or a profile
+# view -- can each call load_users() before either has saved; whichever save_users() runs
+# last then silently overwrites the other's change with its own stale snapshot (this is
+# how uploaded avatars kept getting wiped). users_txn() makes the whole load-mutate-save
+# sequence atomic so no other thread can read a snapshot mid-update.
 _users_lock = threading.RLock()
 
 @contextmanager
