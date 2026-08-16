@@ -2858,19 +2858,20 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     .statusBox{font-size:14px!important;}
     .closeTableBtn{font-size:11px!important;padding:6px 10px!important;}
     .ownerLuxuryName{
-        font-size:11px!important;
-        padding:1px 6px!important;
+        font-size:9px!important;
+        padding:1px 4px!important;
         letter-spacing:0!important;
         border:1px solid #d4af37!important;
         background:none!important;
         box-shadow:none!important;
         text-shadow:none!important;
+        border-radius:6px!important;
     }
     .playerList .ownerLuxuryName,.playerList .genderFemaleName,.playerList .genderMaleName{
-        font-size:9px!important;
+        font-size:8px!important;
     }
     .profileCard .genderFemaleName,.profileCard .genderMaleName{
-        font-size:11px!important;
+        font-size:9px!important;
     }
     #clueDisplay,#turnDisplay{font-size:16px!important;margin:6px 0!important;}
     #clueLog{font-size:11px!important;margin-top:6px!important;}
