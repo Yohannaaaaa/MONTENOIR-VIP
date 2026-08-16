@@ -2486,10 +2486,10 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         padding:5px!important;
     }
     .card{
-        min-height:72px!important;
-        font-size:10px!important;
-        border-radius:10px!important;
-        padding:12px 3px 4px 3px!important;
+        min-height:56px!important;
+        font-size:9px!important;
+        border-radius:8px!important;
+        padding:10px 2px 3px 2px!important;
         letter-spacing:0!important;
     }
     .card::after{
@@ -2510,8 +2510,8 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 }
 @media(max-width:420px){
     .card{
-        min-height:64px!important;
-        font-size:9px!important;
+        min-height:50px!important;
+        font-size:8px!important;
     }
 }
 
@@ -2802,14 +2802,41 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         display:block!important;
     }
     .teams{
-        gap:10px!important;
-        margin:10px auto!important;
+        gap:6px!important;
+        margin:6px auto!important;
     }
     .team{
+        flex:1 1 0!important;
         width:auto!important;
-        max-width:280px!important;
-        margin:0 auto!important;
-        padding:10px!important;
+        min-width:0!important;
+        max-width:220px!important;
+        margin:0!important;
+        padding:5px 8px!important;
+        border-radius:12px!important;
+        font-size:11px!important;
+        overflow-wrap:break-word!important;
+    }
+    .teamCount{
+        font-size:11px!important;
+        margin-top:2px!important;
+    }
+    .playerList{
+        font-size:9px!important;
+        margin-top:2px!important;
+        line-height:1.2!important;
+        overflow-wrap:break-word!important;
+    }
+    .playerList hr{margin:2px 0!important;}
+    .team .avatarImg{
+        width:18px!important;
+        height:18px!important;
+    }
+    .team .micBadge{
+        width:10px!important;
+        height:10px!important;
+        font-size:7px!important;
+        top:-4px!important;
+        right:-5px!important;
     }
     .vipProfileChip{
         padding:5px 9px!important;
@@ -2822,13 +2849,17 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         min-height:0!important;
     }
     .panel{
-        padding:10px 14px!important;
-        margin:12px auto!important;
-        border-radius:16px!important;
+        padding:8px 12px!important;
+        margin:6px auto!important;
+        border-radius:14px!important;
     }
-    .panel.collapsible{padding:6px 14px!important;}
-    .scoreBox{font-size:15px!important;}
-    .statusBox{font-size:16px!important;}
+    .panel.collapsible{padding:5px 12px!important;}
+    .scoreBox{font-size:13px!important;}
+    .statusBox{font-size:14px!important;}
+    .closeTableBtn{font-size:11px!important;padding:6px 10px!important;}
+    #clueDisplay,#turnDisplay{font-size:16px!important;margin:6px 0!important;}
+    #clueLog{font-size:11px!important;margin-top:6px!important;}
+    #clueText,#clueNumber{font-size:12px!important;padding:7px!important;}
     .panel p{margin:6px 0!important;}
     .panel h3{font-size:15px!important;margin:6px 0!important;}
     .statusPanel{
@@ -2991,7 +3022,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 <h1>♠️ CODENAMES VIP ♦️</h1><p class="subtitle">Luxury Online Multiplayer Edition</p>
 
 <div id="lobby" class="panel"><div class="hidden"><h2>🎰 Oda Sistemi</h2><input id="roomInput" placeholder="Oda kodu (varsa)"><button onclick="joinExistingRoom()">Odaya Katıl</button></div><h3 id="roomText">Oda: -</h3><button id="copyLinkBtn" class="hidden" onclick="copyRoomLink()">🔗 Davet Linkini Kopyala</button><hr><h3>Profil Oluştur / Masaya Otur</h3><input id="playerName" placeholder="Oyuncu adı"><select id="avatarChoice"><option value="woman.png">Kadın</option><option value="man.png">Erkek</option></select><select id="teamChoice"><option value="blue">🔵 Mavi Masa</option><option value="red">🔴 Kırmızı Masa</option><option value="spectator">👀 Seyirci</option></select><select id="roleChoice"><option value="player">Saha Ajanı</option><option value="blueSpy">Mavi Spymaster</option><option value="redSpy">Kırmızı Spymaster</option><option value="spectator">Seyirci</option></select><br><button onclick="sitAtTable()">Masaya Otur</button><button onclick="toggleReady()">✅ Hazırım</button><button class="leaveSeatBtn" onclick="leaveTable()">🚪 Masadan Ayrıl / Değiştir</button><button class="closeTableBtn" onclick="closeCurrentTable()">❌ Masayı Kapat</button><button onclick="startGame()">🚀 Oyunu Başlat</button><div id="readyInfo" style="color:#ffd700;margin-top:8px;">Hazır durumu: -</div><div><div class="tableSeat" id="blueSeatBox"><div>🔵 MAVİ MASA <span id="blueLockText"></span></div><div id="blueLobby"></div></div><div class="tableSeat" id="redSeatBox"><div>🔴 KIRMIZI MASA <span id="redLockText"></span></div><div id="redLobby"></div></div><div class="tableSeat" id="spectatorSeatBox"><div>👀 SEYİRCİLER</div><div id="spectatorLobby"></div></div></div></div>
-<div id="gameScreen" class="hidden"><div class="panel"><button class="closeTableBtn" onclick="closeCurrentTable()">❌ Bu Masayı Kapat / Yeni Oda Aç</button></div><div class="mainLayout"><div><div class="panel collapsible"><div class="collapseHead" onclick="toggleCollapse('timerBody')">⏱ <span id="timer">05:00</span><span class="collapseArrow">▾</span></div><div id="timerBody" class="hidden"><button onclick="startTimer()">▶ Süre Başlat</button><button onclick="pauseTimer()">⏸ Durdur</button><button onclick="setTimer(60)">1 dk</button><button onclick="setTimer(180)">3 dk</button><button onclick="setTimer(300)">5 dk</button><button onclick="setTimer(600)">10 dk</button></div></div><div class="panel collapsible"><div class="collapseHead" onclick="toggleCollapse('micBody')">🎙 <span id="micStatus" class="micStatus">Kapalı</span><span class="collapseArrow">▾</span></div><div id="micBody" class="hidden"><button onclick="startMic()">🎙 Aç</button><button onclick="stopMic()">🔇 Kapat</button><p style="font-size:12px;color:#d4af37;">Mikrofon sadece oda içinde çalışır. Konuşan kişinin ikonu yeşil yanar.</p></div></div><div class="panel statusPanel"><p id="roundText" class="scoreBox">🎮 Tur: 1</p><p id="roleText">Rol: -</p><p id="phaseText" class="statusBox">🎰 Oyun bekliyor...</p><p id="scoreText" class="scoreBox">🏆 Mavi: 0 | Kırmızı: 0</p><p id="chipsText" class="scoreBox">🪙 Jeton: 1000</p></div><div class="teams"><div class="team blueTeam">🔵 MAVİ TAKIM<span class="teamCount">Kalan kelime: <span id="blueCount">9</span></span><div id="bluePlayers" class="playerList"></div></div><div class="team redTeam">🔴 KIRMIZI TAKIM<span class="teamCount">Kalan kelime: <span id="redCount">8</span></span><div id="redPlayers" class="playerList"></div></div></div><div class="panel"><input id="clueText" placeholder="İpucu yaz"><select id="clueNumber"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="∞">♾️</option></select><button onclick="sendClue()">İpucu Ver</button><button onclick="endTurn()" style="background:#008f4c;color:white;">✅ Sırayı Bitir</button><h2 id="clueDisplay">İpucu: -</h2><div id="clueLog">📜 Oyun bandı: Henüz ipucu yok.</div><h2 id="turnDisplay">Sıra: Belirlenmedi</h2></div><div class="board" id="board"></div><div class="panel"><h3>💬 Chat</h3><div class="chatTabs"><button onclick="setChatMode('global')">🌍 Genel</button><button onclick="setChatMode('team')">🔒 Takım</button><button onclick="setChatMode('dm')">📩 DM</button></div><div id="messages"></div><select id="dmTarget"><option value="">DM oyuncu seç</option></select><br><input id="chatInput" placeholder="Mesaj yaz"><button onclick="sendMessage()">Gönder</button><br><button class="emojiBtn" onclick="addEmoji('😂')">😂</button><button class="emojiBtn" onclick="addEmoji('🔥')">🔥</button><button class="emojiBtn" onclick="addEmoji('💀')">💀</button><button class="emojiBtn" onclick="addEmoji('👑')">👑</button><button class="emojiBtn" onclick="addEmoji('❤️')">❤️</button><button class="emojiBtn" onclick="addEmoji('😈')">😈</button><small id="chatModeText" style="color:#ffd700;">Mode: Genel</small></div></div><div class="sidePanel"><h3>👥 Bağlanan Oyuncular</h3><div id="onlinePlayers"></div><div class="spectatorBox"><h3>👀 Seyirciler</h3><div id="spectatorList">-</div></div><hr><h3>🔁 Join Team</h3><button onclick="joinTeam('blue','player')">🔵 Mavi Saha Ajanı</button><button onclick="joinTeam('blue','blueSpy')">🕵️ Mavi Spymaster</button><button onclick="joinTeam('red','player')">🔴 Kırmızı Saha Ajanı</button><button onclick="joinTeam('red','redSpy')">🕵️ Kırmızı Spymaster</button><button onclick="joinTeam('spectator','spectator')">👀 Seyirci</button><hr><h3>👑 Admin Paneli</h3><small>Admin sadece Codenames oyununu yönetir. Bahis, turnuva, jeton, üyelik, ödeme ve tarot yetkisi yoktur.</small><div id="adminPanel"><button onclick="toggleTeamLock('blue')">🔒 Mavi Kilitle</button><button onclick="toggleTeamLock('red')">🔒 Kırmızı Kilitle</button><button onclick="adminNewGame()">🎲 Yeni Oyun</button><button onclick="adminRevealAll()">🃏 Kartları Aç</button><button onclick="adminResetStats()">🏆 Skoru Sıfırla</button></div><hr><h3>🏆 Kazananlar / Oyun Kaydı</h3><div id="historyPanel"></div></div></div></div>
+<div id="gameScreen" class="hidden"><div class="panel"><button class="closeTableBtn" onclick="closeCurrentTable()">❌ Bu Masayı Kapat / Yeni Oda Aç</button></div><div class="mainLayout"><div><div class="panel collapsible"><div class="collapseHead" onclick="toggleCollapse('timerBody')">⏱ <span id="timer">05:00</span><span class="collapseArrow">▾</span></div><div id="timerBody" class="hidden"><button onclick="startTimer()">▶ Süre Başlat</button><button onclick="pauseTimer()">⏸ Durdur</button><button onclick="setTimer(60)">1 dk</button><button onclick="setTimer(180)">3 dk</button><button onclick="setTimer(300)">5 dk</button><button onclick="setTimer(600)">10 dk</button></div></div><div class="panel collapsible"><div class="collapseHead" onclick="toggleCollapse('micBody')">🎙 <span id="micStatus" class="micStatus">Kapalı</span><span class="collapseArrow">▾</span></div><div id="micBody" class="hidden"><button onclick="startMic()">🎙 Aç</button><button onclick="stopMic()">🔇 Kapat</button><p style="font-size:12px;color:#d4af37;">Mikrofon sadece oda içinde çalışır. Konuşan kişinin ikonu yeşil yanar.</p></div></div><div class="panel statusPanel"><p id="roundText" class="scoreBox">🎮 Tur: 1</p><p id="roleText">Rol: -</p><p id="phaseText" class="statusBox">🎰 Oyun bekliyor...</p><p id="scoreText" class="scoreBox">🏆 Mavi: 0 | Kırmızı: 0</p><p id="chipsText" class="scoreBox">🪙 Jeton: 1000</p></div><div class="teams"><div class="team blueTeam">🔵 MAVİ TAKIM<span class="teamCount">Kalan kelime: <span id="blueCount">9</span></span><div id="bluePlayers" class="playerList"></div></div><div class="team redTeam">🔴 KIRMIZI TAKIM<span class="teamCount">Kalan kelime: <span id="redCount">8</span></span><div id="redPlayers" class="playerList"></div></div></div><div class="panel"><input id="clueText" placeholder="İpucu yaz"><select id="clueNumber"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="∞">♾️</option></select><button onclick="sendClue()">İpucu Ver</button><button onclick="endTurn()" style="background:#008f4c;color:white;">✅ Sırayı Bitir</button><h2 id="clueDisplay">İpucu: -</h2><div id="clueLog">📜 Oyun bandı: Henüz ipucu yok.</div><h2 id="turnDisplay">Sıra: Belirlenmedi</h2></div><div class="board" id="board"></div><div class="panel collapsible"><div class="collapseHead" onclick="toggleCollapse('chatBody')">💬 Chat<span class="collapseArrow">▾</span></div><div id="chatBody" class="hidden"><div class="chatTabs"><button onclick="setChatMode('global')">🌍 Genel</button><button onclick="setChatMode('team')">🔒 Takım</button><button onclick="setChatMode('dm')">📩 DM</button></div><div id="messages"></div><select id="dmTarget"><option value="">DM oyuncu seç</option></select><br><input id="chatInput" placeholder="Mesaj yaz"><button onclick="sendMessage()">Gönder</button><br><button class="emojiBtn" onclick="addEmoji('😂')">😂</button><button class="emojiBtn" onclick="addEmoji('🔥')">🔥</button><button class="emojiBtn" onclick="addEmoji('💀')">💀</button><button class="emojiBtn" onclick="addEmoji('👑')">👑</button><button class="emojiBtn" onclick="addEmoji('❤️')">❤️</button><button class="emojiBtn" onclick="addEmoji('😈')">😈</button><small id="chatModeText" style="color:#ffd700;">Mode: Genel</small></div></div><div class="sidePanel"><h3>👥 Bağlanan Oyuncular</h3><div id="onlinePlayers"></div><div class="collapseHead" onclick="toggleCollapse('sideExtra')">▾ Diğer</div><div id="sideExtra" class="hidden"><div class="spectatorBox"><h3>👀 Seyirciler</h3><div id="spectatorList">-</div></div><hr><h3>🔁 Join Team</h3><button onclick="joinTeam('blue','player')">🔵 Mavi Saha Ajanı</button><button onclick="joinTeam('blue','blueSpy')">🕵️ Mavi Spymaster</button><button onclick="joinTeam('red','player')">🔴 Kırmızı Saha Ajanı</button><button onclick="joinTeam('red','redSpy')">🕵️ Kırmızı Spymaster</button><button onclick="joinTeam('spectator','spectator')">👀 Seyirci</button><hr><h3>👑 Admin Paneli</h3><small>Admin sadece Codenames oyununu yönetir. Bahis, turnuva, jeton, üyelik, ödeme ve tarot yetkisi yoktur.</small><div id="adminPanel"><button onclick="toggleTeamLock('blue')">🔒 Mavi Kilitle</button><button onclick="toggleTeamLock('red')">🔒 Kırmızı Kilitle</button><button onclick="adminNewGame()">🎲 Yeni Oyun</button><button onclick="adminRevealAll()">🃏 Kartları Aç</button><button onclick="adminResetStats()">🏆 Skoru Sıfırla</button></div><hr><h3>🏆 Kazananlar / Oyun Kaydı</h3><div id="historyPanel"></div></div></div></div>
 <script>
 const socket=io();let roomCode='',myName='',myRole='',myTeam='',mySid='',joined=false,isAdmin=false,currentChips=1000;let seconds=300,timerRunning=false,timerInterval=null,micStream=null;let voicePeers={},voiceStarted=false,currentMicStates={},lastPlayers=[],lastLocks={blue:false,red:false},audioContext=null,speakingInterval=null,mySpeaking=false,currentAccount=null,currentProfile=null,pendingAutoSit=false,pendingSit=false,linkRoom='';let lastOpenedStates=[],lastWinner='',dealSoundPlayed=false,chatMode='global',currentReady={};
 let cnSplashDone=false,cnSplashTimer=null;
