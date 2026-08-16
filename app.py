@@ -766,7 +766,10 @@ def load_words(category='default'):
     return FALLBACK
 
 def room_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    while True:
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        if code not in rooms:
+            return code
 
 def new_game(category='default'):
     words = load_words(category)
