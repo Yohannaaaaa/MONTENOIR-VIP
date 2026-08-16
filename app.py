@@ -2486,10 +2486,10 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         padding:5px!important;
     }
     .card{
-        min-height:72px!important;
-        font-size:10px!important;
-        border-radius:10px!important;
-        padding:12px 3px 4px 3px!important;
+        min-height:56px!important;
+        font-size:9px!important;
+        border-radius:8px!important;
+        padding:10px 2px 3px 2px!important;
         letter-spacing:0!important;
     }
     .card::after{
@@ -2510,8 +2510,8 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
 }
 @media(max-width:420px){
     .card{
-        min-height:64px!important;
-        font-size:9px!important;
+        min-height:50px!important;
+        font-size:8px!important;
     }
 }
 
@@ -2849,13 +2849,17 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         min-height:0!important;
     }
     .panel{
-        padding:10px 14px!important;
-        margin:12px auto!important;
-        border-radius:16px!important;
+        padding:8px 12px!important;
+        margin:6px auto!important;
+        border-radius:14px!important;
     }
-    .panel.collapsible{padding:6px 14px!important;}
-    .scoreBox{font-size:15px!important;}
-    .statusBox{font-size:16px!important;}
+    .panel.collapsible{padding:5px 12px!important;}
+    .scoreBox{font-size:13px!important;}
+    .statusBox{font-size:14px!important;}
+    .closeTableBtn{font-size:11px!important;padding:6px 10px!important;}
+    #clueDisplay,#turnDisplay{font-size:16px!important;margin:6px 0!important;}
+    #clueLog{font-size:11px!important;margin-top:6px!important;}
+    #clueText,#clueNumber{font-size:12px!important;padding:7px!important;}
     .panel p{margin:6px 0!important;}
     .panel h3{font-size:15px!important;margin:6px 0!important;}
     .statusPanel{
