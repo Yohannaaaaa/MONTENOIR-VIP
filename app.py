@@ -2777,6 +2777,43 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         width:auto!important;
         min-width:0!important;
     }
+    #langSelector{
+        position:static!important;
+        bottom:auto!important;
+        left:auto!important;
+        max-width:100%!important;
+        justify-content:center!important;
+        margin:8px auto!important;
+    }
+    .tableSeat{
+        width:auto!important;
+        min-width:0!important;
+        max-width:280px!important;
+        min-height:0!important;
+        margin:8px auto!important;
+        padding:8px!important;
+        display:block!important;
+    }
+    .teams{
+        gap:10px!important;
+        margin:10px auto!important;
+    }
+    .team{
+        width:auto!important;
+        max-width:280px!important;
+        margin:0 auto!important;
+        padding:10px!important;
+    }
+    .vipProfileChip{
+        padding:5px 9px!important;
+        font-size:12px!important;
+        min-height:36px!important;
+    }
+    .mainTopBtn,.menuToggleBtn{
+        font-size:12px!important;
+        padding:7px 10px!important;
+        min-height:0!important;
+    }
 }
 
 /* === START SPLASH: logo plein ecran en zoom au lancement de la partie === */
