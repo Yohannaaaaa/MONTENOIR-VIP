@@ -2472,8 +2472,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         margin:8px!important;
     }
     .vipProfileChip{
-        position:sticky!important;
-        top:0!important;
+        position:static!important;
         right:auto!important;
         margin:8px auto!important;
         width:fit-content!important;
@@ -2857,6 +2856,12 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     .scoreBox{font-size:13px!important;}
     .statusBox{font-size:14px!important;}
     .closeTableBtn{font-size:11px!important;padding:6px 10px!important;}
+    .playerList .ownerLuxuryName,.playerList .genderFemaleName,.playerList .genderMaleName{
+        font-size:9px!important;
+        padding:1px 6px!important;
+        letter-spacing:0!important;
+        border-width:1px!important;
+    }
     #clueDisplay,#turnDisplay{font-size:16px!important;margin:6px 0!important;}
     #clueLog{font-size:11px!important;margin-top:6px!important;}
     #clueText,#clueNumber{font-size:12px!important;padding:7px!important;}
@@ -3270,13 +3275,11 @@ function updateProfileChip(){
     if(currentAccount){
         const avatarSrc = (currentProfile && currentProfile.avatarData) ? currentProfile.avatarData : defaultAvatarData((currentProfile && currentProfile.avatar) || 'woman.png');
         const isOwner = (currentAccount || '').toLowerCase() === 'yohanna';
-        const vip = isOwner ? '<span class="ownerCrownBadge">👑 OWNER</span>' : (currentProfile && currentProfile.vip ? '<span class="vipBadgeSmall">VIP</span>' : '');
-        const genderCls = isOwner ? 'ownerLuxuryName' : (((currentProfile && currentProfile.avatar) === 'man.png') ? 'genderMaleName' : 'genderFemaleName');
         const imgBorder = isOwner ? '4px double #d4af37' : '2px solid #d4af37';
         const imgShadow = isOwner ? '0 0 16px #d4af37,0 0 34px #000,0 0 48px rgba(255,215,0,.7)' : '0 0 10px #d4af37';
         const chipsText = isOwner ? '∞' : currentChips;
         const xpText = ((currentProfile && currentProfile.wins)||0)*100 + ((currentProfile && currentProfile.games)||0)*10;
-        profileChip.innerHTML = '<img src="'+avatarSrc+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:'+imgBorder+';box-shadow:'+imgShadow+';"> <span class="'+genderCls+'">'+currentAccount+'</span>'+vip+' <span class="xpMini">🏆 XP '+xpText+'</span> <span>🪙 '+chipsText+'</span>';
+        profileChip.innerHTML = '<img src="'+avatarSrc+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:'+imgBorder+';box-shadow:'+imgShadow+';"> <span class="xpMini">🏆 XP '+xpText+'</span> <span>🪙 '+chipsText+'</span>';
     }else{
         profileChip.innerHTML='👤 Profil';
     }
