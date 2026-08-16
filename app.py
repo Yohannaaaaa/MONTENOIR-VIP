@@ -2802,35 +2802,38 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         display:block!important;
     }
     .teams{
-        gap:10px!important;
-        margin:10px auto!important;
+        gap:6px!important;
+        margin:6px auto!important;
     }
     .team{
         width:auto!important;
         min-width:0!important;
-        max-width:280px!important;
+        max-width:220px!important;
         margin:0 auto!important;
-        padding:8px!important;
-        font-size:14px!important;
+        padding:5px 8px!important;
+        border-radius:12px!important;
+        font-size:11px!important;
     }
     .teamCount{
-        font-size:14px!important;
-        margin-top:4px!important;
+        font-size:11px!important;
+        margin-top:2px!important;
     }
     .playerList{
-        font-size:10px!important;
-        margin-top:4px!important;
-        line-height:1.3!important;
+        font-size:9px!important;
+        margin-top:2px!important;
+        line-height:1.2!important;
     }
-    .playerList hr{margin:4px 0!important;}
+    .playerList hr{margin:2px 0!important;}
     .team .avatarImg{
-        width:24px!important;
-        height:24px!important;
+        width:18px!important;
+        height:18px!important;
     }
     .team .micBadge{
-        width:12px!important;
-        height:12px!important;
-        font-size:8px!important;
+        width:10px!important;
+        height:10px!important;
+        font-size:7px!important;
+        top:-4px!important;
+        right:-5px!important;
     }
     .vipProfileChip{
         padding:5px 9px!important;
