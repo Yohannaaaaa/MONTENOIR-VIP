@@ -2806,13 +2806,15 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         margin:6px auto!important;
     }
     .team{
+        flex:1 1 0!important;
         width:auto!important;
         min-width:0!important;
         max-width:220px!important;
-        margin:0 auto!important;
+        margin:0!important;
         padding:5px 8px!important;
         border-radius:12px!important;
         font-size:11px!important;
+        overflow-wrap:break-word!important;
     }
     .teamCount{
         font-size:11px!important;
@@ -2822,6 +2824,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         font-size:9px!important;
         margin-top:2px!important;
         line-height:1.2!important;
+        overflow-wrap:break-word!important;
     }
     .playerList hr{margin:2px 0!important;}
     .team .avatarImg{
