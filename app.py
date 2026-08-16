@@ -2763,10 +2763,19 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         flex-direction:row!important;
         flex-wrap:wrap!important;
         justify-content:center!important;
+        align-items:center!important;
+        gap:8px!important;
         max-width:100%!important;
         margin:8px auto!important;
     }
-    .compactMenuWrap{position:relative!important;}
+    .topLeftFixed button{
+        width:auto!important;
+        min-width:0!important;
+        padding:8px 12px!important;
+        font-size:12px!important;
+        white-space:nowrap!important;
+    }
+    .compactMenuWrap{position:relative!important;width:auto!important;}
     .compactMenu{
         position:fixed!important;
         top:70px!important;
