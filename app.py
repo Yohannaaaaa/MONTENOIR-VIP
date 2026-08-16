@@ -2500,6 +2500,7 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         padding:6px 1px 2px 1px!important;
         line-height:1.05!important;
     }
+    .card::after{display:none!important;}
     .revealBtn,.guessBtn{
         font-size:7px!important;
         padding:1px 3px!important;
@@ -2856,11 +2857,20 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
     .scoreBox{font-size:13px!important;}
     .statusBox{font-size:14px!important;}
     .closeTableBtn{font-size:11px!important;padding:6px 10px!important;}
-    .playerList .ownerLuxuryName,.playerList .genderFemaleName,.playerList .genderMaleName{
-        font-size:9px!important;
+    .ownerLuxuryName{
+        font-size:11px!important;
         padding:1px 6px!important;
         letter-spacing:0!important;
-        border-width:1px!important;
+        border:1px solid #d4af37!important;
+        background:none!important;
+        box-shadow:none!important;
+        text-shadow:none!important;
+    }
+    .playerList .ownerLuxuryName,.playerList .genderFemaleName,.playerList .genderMaleName{
+        font-size:9px!important;
+    }
+    .profileCard .genderFemaleName,.profileCard .genderMaleName{
+        font-size:11px!important;
     }
     #clueDisplay,#turnDisplay{font-size:16px!important;margin:6px 0!important;}
     #clueLog{font-size:11px!important;margin-top:6px!important;}
