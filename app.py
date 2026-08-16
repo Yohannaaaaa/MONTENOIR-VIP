@@ -2477,35 +2477,38 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         z-index:1000000!important;
     }
     .board{
-        grid-template-columns:repeat(2, minmax(0,1fr))!important;
-        gap:16px!important;
-        max-width:96vw!important;
-        padding:10px!important;
+        grid-template-columns:repeat(5, minmax(0,1fr))!important;
+        gap:6px!important;
+        max-width:99vw!important;
+        padding:5px!important;
     }
     .card{
-        min-height:112px!important;
-        font-size:15px!important;
-        border-radius:18px!important;
-        padding:26px 6px 14px 6px!important;
+        min-height:72px!important;
+        font-size:10px!important;
+        border-radius:10px!important;
+        padding:12px 3px 4px 3px!important;
+        letter-spacing:0!important;
+    }
+    .card::after{
+        font-size:7px!important;
+        top:3px!important;
+        right:4px!important;
     }
     .card .wordText{
-        padding:14px 2px 4px 2px!important;
+        padding:6px 1px 2px 1px!important;
         line-height:1.05!important;
     }
     .revealBtn,.guessBtn{
-        font-size:10px!important;
-        padding:3px 5px!important;
+        font-size:7px!important;
+        padding:1px 3px!important;
     }
-    .revealBtn{top:4px!important;left:4px!important;}
-    .guessBtn{top:4px!important;right:4px!important;}
+    .revealBtn{top:2px!important;left:2px!important;}
+    .guessBtn{top:2px!important;right:2px!important;}
 }
 @media(max-width:420px){
-    .board{
-        grid-template-columns:repeat(2, minmax(0,1fr))!important;
-    }
     .card{
-        min-height:105px!important;
-        font-size:13px!important;
+        min-height:64px!important;
+        font-size:9px!important;
     }
 }
 
