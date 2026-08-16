@@ -2821,6 +2821,16 @@ text-shadow:0 0 20px #d4af37,0 0 50px #d4af37;
         padding:7px 10px!important;
         min-height:0!important;
     }
+    .panel{
+        padding:10px 14px!important;
+        margin:12px auto!important;
+        border-radius:16px!important;
+    }
+    .panel.collapsible{padding:6px 14px!important;}
+    .scoreBox{font-size:15px!important;}
+    .statusBox{font-size:16px!important;}
+    .panel p{margin:6px 0!important;}
+    .panel h3{font-size:15px!important;margin:6px 0!important;}
 }
 
 /* === START SPLASH: logo plein ecran en zoom au lancement de la partie === */
